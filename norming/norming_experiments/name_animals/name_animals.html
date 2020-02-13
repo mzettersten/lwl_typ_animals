@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <script src="lib/jspsych.js"></script>
+    <script src="lib/plugins/jspsych-survey-text-columnResponse-edited.js"></script>
+	<script src="lib/plugins/jspsych-instructions.js"></script>
+    <link rel="stylesheet" href="lib/css/jspsych.css"></link>
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script>
+  </head>
+  <body></body>
+  <script>
+	  
+	  
+	  // generate a random subject ID
+	  var subject_id = Math.floor(Math.random()*1000000);
+	  subject_id="p"+subject_id.toString();
+	  
+	  //save workerID if it is part of the survey URL ?workerId=
+	  function getParamFromURL( name ) {
+		  name = name.replace(/[\[]/,"\\[").replace(/[\]]/,"\\]");
+		  var regexS = "[\?&]"+name+"=([^&#]*)";
+		  var regex = new RegExp( regexS );
+		  var results = regex.exec( window.location.href );
+		  if( results == null )
+			  return "";
+		  else
+			  return results[1];
+	  };
+	  
+	  //save qualtricsID if it is part of the survey URL ?qualtricsId=
+	  var qualtricsId = getParamFromURL( 'qualtricsId' );
+	  //otherwise just use the randomly generated subject ID
+	  if (qualtricsId==="") {
+	  	qualtricsId=subject_id;
+	  };
+	  
+	  qualtricsId.replace(/[^A-Za-z0-9_]/g, "");
+	  
+	  //set nameability condition from URL
+	  var birds_typical_assignment=parseInt(getParamFromURL( 'btcond' ));
+	  var birds_atypical_assignment=parseInt(getParamFromURL( 'bacond' ));
+	  var cats_typical_assignment=parseInt(getParamFromURL( 'ctcond' ));
+	  var cats_atypical_assignment=parseInt(getParamFromURL( 'cacond' ));
+	  var dogs_typical_assignment=parseInt(getParamFromURL( 'dtcond' ));
+	  var dogs_atypical_assignment=parseInt(getParamFromURL( 'dacond' ));
+	  var fish_typical_assignment=parseInt(getParamFromURL( 'ftcond' ));
+	  var fish_atypical_assignment=parseInt(getParamFromURL( 'facond' ));
+	  
+	  //hard coded due to variance in images per category
+	  var num_assignment_ids = [
+		  10,
+		  10,
+		  8,
+		  9,
+		  8,
+		  8,
+		  9,
+		  8
+	  ];
+	  
+	  var assignment_ids = [
+		  birds_atypical_assignment,
+		  birds_typical_assignment,
+		  cats_atypical_assignment,
+		  cats_typical_assignment,
+		  dogs_atypical_assignment,
+		  dogs_typical_assignment,
+		  fish_atypical_assignment,
+		  fish_typical_assignment   
+	  ];
+	  console.log(assignment_ids);
+	  
+	  var condition_indices_cleaned=[];
+	  
+	  for (i=0; i < assignment_ids.length;  i++){
+		  cur_id=assignment_ids[i];
+		  cur_num_assignment_id=num_assignment_ids[i];
+		  cur_id_list= [...Array(cur_num_assignment_id).keys()];
+		  console.log(cur_id_list);
+		  console.log(cur_id_list);
+		  if (cur_id in cur_id_list) {
+			  condition_indices_cleaned.push(cur_id);
+		  } else {
+			  condition_indices_cleaned.push(jsPsych.randomization.shuffle(cur_id_list)[0]);
+		  }
+	  }
+	  
+	  console.log(condition_indices_cleaned);
+	  
+	  
+	  //access trial spreadsheet
+	  var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1i4zcIKoPelm709dUpb42cYf1rYeReYvPMVwcx1nWQdw/edit?usp=sharing';
+
+	  var tabletop = Tabletop.init( { key: publicSpreadsheetUrl,
+	                     callback: startExperiment,
+	                     simpleSheet: false } )
+	
+    // record the condition assignment in the jsPsych data
+    // this adds a property called 'subject' and a property called 'condition' to every trial
+    jsPsych.data.addProperties({
+		subject: subject_id,
+		condition: condition_indices_cleaned.join(),
+		//workerId: workerId,
+		qualtricsId: qualtricsId
+	});
+	
+	//define timeline parameters as global variables
+	var timeline = [];
+	var experimentFinal = [];
+	
+	
+	
+	function createTrials(data, tabletop) {
+		
+		//extract data from each animal sheet
+	
+	  birds = data["birds"]["elements"];
+	  console.log(birds);
+	  cats = data["cats"]["elements"];
+	  console.log(cats);
+	  dogs = data["dogs"]["elements"];
+	  console.log(dogs);
+	  fish = data["fish"]["elements"];
+	  console.log(fish);
+	  
+	  // split  into typical and atypical data
+  
+	  birds_typical = [];
+	  birds_atypical = [];
+	  for (i = 0; i < birds.length;  i++){
+	
+	  	var cur_trial = birds[i];
+	
+	  	if (cur_trial["typicality_subjective"]=="typical") {
+	  		birds_typical.push(cur_trial);
+	  	} else if (cur_trial["typicality_subjective"]=="atypical") {
+	  		birds_atypical.push(cur_trial);
+	  	}
+	  };
+	  console.log(birds_typical);
+	  console.log(birds_atypical);
+	  
+	  cats_typical = [];
+	  cats_atypical = [];
+	  for (i = 0; i < cats.length;  i++){
+	
+	  	var cur_trial = cats[i];
+	
+	  	if (cur_trial["typicality_subjective"]=="typical") {
+	  		cats_typical.push(cur_trial);
+	  	} else if (cur_trial["typicality_subjective"]=="atypical") {
+	  		cats_atypical.push(cur_trial);
+	  	}
+	  };
+	  console.log(cats_typical);
+	  console.log(cats_atypical);
+	  
+	  dogs_typical = [];
+	  dogs_atypical = [];
+	  for (i = 0; i < dogs.length;  i++){
+	
+	  	var cur_trial = dogs[i];
+	
+	  	if (cur_trial["typicality_subjective"]=="typical") {
+	  		dogs_typical.push(cur_trial);
+	  	} else if (cur_trial["typicality_subjective"]=="atypical") {
+	  		dogs_atypical.push(cur_trial);
+	  	}
+	  };
+	  console.log(dogs_typical);
+	  console.log(dogs_atypical);
+	  
+	  fish_typical = [];
+	  fish_atypical = [];
+	  for (i = 0; i < fish.length;  i++){
+	
+	  	var cur_trial = fish[i];
+	
+	  	if (cur_trial["typicality_subjective"]=="typical") {
+	  		fish_typical.push(cur_trial);
+	  	} else if (cur_trial["typicality_subjective"]=="atypical") {
+	  		fish_atypical.push(cur_trial);
+	  	}
+	  };
+	  console.log(fish_typical);
+	  console.log(fish_atypical);
+	  
+	  possible_trials_list=[
+		  birds_atypical,
+		  birds_typical,
+		  cats_atypical,
+		  cats_typical,
+		  dogs_atypical,
+		  dogs_typical,
+		  fish_atypical,
+		  fish_typical
+	  ];
+	
+	  
+	  
+	  var image_list = [
+	  ];
+	  var stim_path="lib/images/"
+	  
+	  for (i = 0; i < possible_trials_list.length;  i++){
+		  cur_trial_type = possible_trials_list[i];
+		  cur_index = condition_indices_cleaned[i];
+		  console.log(cur_trial_type);
+		  console.log(cur_index)
+		  console.log(cur_trial_type[cur_index]);
+		  image_list.push(stim_path+cur_trial_type[cur_index]["image_experiment_name"]);
+	  }
+	  
+  	//randomize images
+  	var images_shuffled=jsPsych.randomization.shuffle(image_list);
+	
+  	var check_images=jsPsych.randomization.shuffle(["lib/images/horse.jpg","lib/images/giraffe.jpg"])
+	
+  	images_shuffled.splice(0, 0, check_images[0]);
+  	images_shuffled.splice(5, 0, check_images[1]);
+	
+    var initial_instructions = {
+    type: 'instructions',
+    size: 350,
+    pages: [
+            "Welcome to the experiment! In this HIT, we will ask you to name pictures of animals. On each trial, you will see an image. Using one (or at most two) words, type what you would call the animal into the text box."
+            +"<br>" + "<br>"
+            +"When you are ready, press next to start the experiment."
+            ],
+    show_clickable_nav: true
+    }
+	
+	timeline.push(initial_instructions);
+	
+	for (var i = 0; i < images_shuffled.length; i++) {
+		
+		cur_image = images_shuffled[i];
+		
+		var survey_block = {
+			type: 'survey-text-columnResponse',
+			preamble: 'Please name the animal in 1 or 2 words.',
+			questions: [{prompt: "<img src='" +cur_image+ "' width='350' height='350'>", columns: 20}],
+			button_label: 'submit',
+			feedback: 'You entered an invalid response. Please describe the picture in as few words as possible.',
+			post_trial_gap: 200,
+			data: {image: cur_image, imageName: cur_image.replace(stim_path,'').replace("_600x600.jpg","")},
+		};
+		
+		timeline.push(survey_block);
+	};
+	
+  
+  //create random code for final message
+  //start code creation script
+  function randLetter() {
+  var a_z = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  var int =  Math.floor((Math.random() * a_z.length));
+  var rand_letter = a_z[int];
+  return rand_letter;
+  };
+  
+  var secretCode = "NAMINAL"
+  var code="";
+  
+  for (var i = 0; i < 7; i++){
+  code = code.concat(randLetter());
+  }
+  code = code.concat(secretCode);
+  
+  for (var i = 0; i < 10; i++){
+  code = code.concat(randLetter());
+  }
+  //end code creation script
+  
+  
+  //debrief and code message
+  var final_instructions = {
+  type: 'instructions',
+  size: 350,
+  pages: [
+          'Thanks for participating! This HIT is an experiment in which we are collecting information on how people name animals.  By participating in this study, you are helping us in ongoing work on how children learn new words, such as the words for familiar and unfamiliar animals. If you have any questions, please feel free to send us a message (zettersten@wisc.edu)!'
+          +"<br>" + "<br>"
+          +'<center>Your completion code for <u>mTurk</u> is</center>'
+          +"<br>"
+          +'<center><u><b style="font-size:20px">'+ code +'</b></u></center>'
+          +"<br>"
+          +'<center>Please copy/paste this code into the mTurk box.</center>'
+          ],
+  show_clickable_nav: false
+  };
+  
+  //add instructions trial to experiment
+  experimentFinal.push(final_instructions);
+  
+  
+};
+
+//preload all images
+var image_set = [
+	"lib/images/horse.jpg",
+	"lib/images/giraffe.jpg",
+	"lib/images/betafish_600x600.jpg",
+	"lib/images/catfish_600x600.jpg",
+	"lib/images/cuttlefish_600x600.jpg",
+	"lib/images/lionfish_600x600.jpg",
+	"lib/images/pufferfish_600x600.jpg",
+	"lib/images/salmon_600x600.jpg",
+	"lib/images/seahorse_600x600.jpg",
+	"lib/images/stingray_600x600.jpg",
+	"lib/images/sturgeon_600x600.jpg",
+	"lib/images/angelfish_600x600.jpg",
+	"lib/images/bass_600x600.jpg",
+	"lib/images/bluetang_600x600.jpg",
+	"lib/images/bluegill_600x600.jpg",
+	"lib/images/clownfish_600x600.jpg",
+	"lib/images/goldfish_600x600.jpg",
+	"lib/images/koi_600x600.jpg",
+	"lib/images/sergeantmajor_600x600.jpg",
+	"lib/images/afghanhound_600x600.jpg",
+	"lib/images/bassethound_600x600.jpg",
+	"lib/images/chihuahua_600x600.jpg",
+	"lib/images/greyhound_600x600.jpg",
+	"lib/images/pug_600x600.jpg",
+	"lib/images/saintbernard_600x600.jpg",
+	"lib/images/sheepdog_600x600.jpg",
+	"lib/images/yorkshireterrier_600x600.jpg",
+	"lib/images/foxhound_600x600.jpg",
+	"lib/images/beagle_600x600.jpg",
+	"lib/images/dalmatian_600x600.jpg",
+	"lib/images/germanshepherd_600x600.jpg",
+	"lib/images/goldenretriever_600x600.jpg",
+	"lib/images/labrador_600x600.jpg",
+	"lib/images/rottweiler_600x600.jpg",
+	"lib/images/husky_600x600.jpg",
+	"lib/images/americancurl_600x600.jpg",
+	"lib/images/cornishrex_600x600.jpg",
+	"lib/images/exotic_600x600.jpg",
+	"lib/images/oriental_600x600.jpg",
+	"lib/images/sandcat_600x600.jpg",
+	"lib/images/siamese_600x600.jpg",
+	"lib/images/siberian_600x600.jpg",
+	"lib/images/sphynx_600x600.jpg",
+	"lib/images/tabby_600x600.jpg",
+	"lib/images/bengal_600x600.jpg",
+	"lib/images/britishshorthair_600x600.jpg",
+	"lib/images/shorthair_calico_600x600.jpg",
+	"lib/images/burmese_600x600.jpg",
+	"lib/images/chartreux_600x600.jpg",
+	"lib/images/arabianmau_600x600.jpg",
+	"lib/images/egyptianmau_600x600.jpg",
+	"lib/images/toyger_600x600.jpg",
+	"lib/images/heron_600x600.jpg",
+	"lib/images/kingfisher_600x600.jpg",
+	"lib/images/kookaburra_600x600.jpg",
+	"lib/images/owl_600x600.jpg",
+	"lib/images/peacock_600x600.jpg",
+	"lib/images/pelican_600x600.jpg",
+	"lib/images/puffin_600x600.jpg",
+	"lib/images/toucan_600x600.jpg",
+	"lib/images/turkey_600x600.jpg",
+	"lib/images/vulture_600x600.jpg",
+	"lib/images/bluejay_600x600.jpg",
+	"lib/images/cardinal_600x600.jpg",
+	"lib/images/cedarwaxwing_600x600.jpg",
+	"lib/images/falcon_600x600.jpg",
+	"lib/images/goldfinch_600x600.jpg",
+	"lib/images/parrot_600x600.jpg",
+	"lib/images/pigeon_600x600.jpg",
+	"lib/images/robin_600x600.jpg",
+	"lib/images/seagull_600x600.jpg",
+	"lib/images/sparrow_600x600.jpg"
+];
+
+console.log(image_set.length);
+
+jsPsych.pluginAPI.preloadImages(image_set, 
+	function(){
+		//start experiment
+		startExperiment();
+ });
+
+  
+  
+//function to initialize the experiment; will be called once all images are preloaded
+function startExperiment(data, tabletop) {
+
+	createTrials(data,tabletop);
+  jsPsych.init({
+	  timeline: timeline,
+	  show_progress_bar: true,
+	  fullscreen: true,
+	  on_finish: function(data) {
+	  		  //jsPsych.data.displayData("csv");
+	  		  jsPsych.data.get().localSave('csv',"name_animals_"+subject_id+".csv");
+	  		  saveData("name_animals_"+subject_id, jsPsych.data.get().csv());
+	  		  jsPsych.init({
+	  			  timeline: experimentFinal
+	  		  })
+	  }
+  });
+};
+  
+  
+  
+  //Added: function for Javascript-PHP communication
+  function saveData(name, data){
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'save_data.php'); // 'write_data.php' is the path to the php file described above.
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({filename: name, filedata: data}));
+  }
+  
+
+  
+
+  </script>
+</html>
