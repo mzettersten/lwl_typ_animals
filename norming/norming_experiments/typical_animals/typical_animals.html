@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-
+    <script src="lib/js/jquery.min.js"></script>
+   	<script src="lib/js/jquery-ui.min.js"></script>
     <script src="lib/jspsych.js"></script>
     <script src="lib/plugins/jspsych-survey-likert-edited.js"></script>
 	<script src="lib/plugins/jspsych-instructions.js"></script>
@@ -314,7 +315,6 @@ function startExperiment(data, tabletop) {
 	  on_finish: function(data) {
 	  		  //jsPsych.data.displayData("csv");
 	  		  jsPsych.data.get().localSave('csv',"typical_animals_"+subject_id+".csv");
-			  // this only works if server is set up to store the data via php
 	  		  saveData("typical_animals_"+subject_id, jsPsych.data.get().csv());
 	  		  jsPsych.init({
 	  			  timeline: experimentFinal

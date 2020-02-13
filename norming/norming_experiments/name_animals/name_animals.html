@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-
+    <script src="lib/js/jquery.min.js"></script>
+   	<script src="lib/js/jquery-ui.min.js"></script>
     <script src="lib/jspsych.js"></script>
     <script src="lib/plugins/jspsych-survey-text-columnResponse-edited.js"></script>
 	<script src="lib/plugins/jspsych-instructions.js"></script>
@@ -69,7 +70,6 @@
 		  fish_atypical_assignment,
 		  fish_typical_assignment   
 	  ];
-	  console.log(assignment_ids);
 	  
 	  var condition_indices_cleaned=[];
 	  
@@ -77,16 +77,12 @@
 		  cur_id=assignment_ids[i];
 		  cur_num_assignment_id=num_assignment_ids[i];
 		  cur_id_list= [...Array(cur_num_assignment_id).keys()];
-		  console.log(cur_id_list);
-		  console.log(cur_id_list);
 		  if (cur_id in cur_id_list) {
 			  condition_indices_cleaned.push(cur_id);
 		  } else {
 			  condition_indices_cleaned.push(jsPsych.randomization.shuffle(cur_id_list)[0]);
 		  }
 	  }
-	  
-	  console.log(condition_indices_cleaned);
 	  
 	  
 	  //access trial spreadsheet
@@ -116,13 +112,9 @@
 		//extract data from each animal sheet
 	
 	  birds = data["birds"]["elements"];
-	  console.log(birds);
 	  cats = data["cats"]["elements"];
-	  console.log(cats);
 	  dogs = data["dogs"]["elements"];
-	  console.log(dogs);
 	  fish = data["fish"]["elements"];
-	  console.log(fish);
 	  
 	  // split  into typical and atypical data
   
@@ -138,8 +130,6 @@
 	  		birds_atypical.push(cur_trial);
 	  	}
 	  };
-	  console.log(birds_typical);
-	  console.log(birds_atypical);
 	  
 	  cats_typical = [];
 	  cats_atypical = [];
@@ -153,8 +143,6 @@
 	  		cats_atypical.push(cur_trial);
 	  	}
 	  };
-	  console.log(cats_typical);
-	  console.log(cats_atypical);
 	  
 	  dogs_typical = [];
 	  dogs_atypical = [];
@@ -168,8 +156,6 @@
 	  		dogs_atypical.push(cur_trial);
 	  	}
 	  };
-	  console.log(dogs_typical);
-	  console.log(dogs_atypical);
 	  
 	  fish_typical = [];
 	  fish_atypical = [];
@@ -183,8 +169,6 @@
 	  		fish_atypical.push(cur_trial);
 	  	}
 	  };
-	  console.log(fish_typical);
-	  console.log(fish_atypical);
 	  
 	  possible_trials_list=[
 		  birds_atypical,
@@ -206,9 +190,6 @@
 	  for (i = 0; i < possible_trials_list.length;  i++){
 		  cur_trial_type = possible_trials_list[i];
 		  cur_index = condition_indices_cleaned[i];
-		  console.log(cur_trial_type);
-		  console.log(cur_index)
-		  console.log(cur_trial_type[cur_index]);
 		  image_list.push(stim_path+cur_trial_type[cur_index]["image_experiment_name"]);
 	  }
 	  
@@ -371,8 +352,6 @@ var image_set = [
 	"lib/images/seagull_600x600.jpg",
 	"lib/images/sparrow_600x600.jpg"
 ];
-
-console.log(image_set.length);
 
 jsPsych.pluginAPI.preloadImages(image_set, 
 	function(){
