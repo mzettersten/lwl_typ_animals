@@ -314,6 +314,7 @@ function startExperiment(data, tabletop) {
 	  on_finish: function(data) {
 	  		  //jsPsych.data.displayData("csv");
 	  		  jsPsych.data.get().localSave('csv',"typical_animals_"+subject_id+".csv");
+			  // this only works if server is set up to store the data via php
 	  		  saveData("typical_animals_"+subject_id, jsPsych.data.get().csv());
 	  		  jsPsych.init({
 	  			  timeline: experimentFinal
