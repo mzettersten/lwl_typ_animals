@@ -1,0 +1,71 @@
+category,category_plural,typicality_subjective,animal_name,original_image_name,source,final_image_name,final_image_name_ext,image_experiment_name
+bird,birds,atypical,heron,heron_boss,BOSS,heron,_600x600.jpg,heron_600x600.jpg
+bird,birds,atypical,king fisher,kingfisher_boss,BOSS,kingfisher,_600x600.jpg,kingfisher_600x600.jpg
+bird,birds,atypical,kookaburra,kookaburra_mz_1,https://unsplash.com/photos/TwQP2gDmUJA,kookaburra,_600x600.jpg,kookaburra_600x600.jpg
+bird,birds,atypical,owl,owl_boss,BOSS,owl,_600x600.jpg,owl_600x600.jpg
+bird,birds,atypical,peacock,peacock_boss,BOSS,peacock,_600x600.jpg,peacock_600x600.jpg
+bird,birds,atypical,pelican,pelican_boss,BOSS,pelican,_600x600.jpg,pelican_600x600.jpg
+bird,birds,atypical,puffin,puffin_hw,https://unsplash.com/photos/Dq88eI3asTE,puffin,_600x600.jpg,puffin_600x600.jpg
+bird,birds,atypical,toucan,toucan_boss,BOSS,toucan,_600x600.jpg,toucan_600x600.jpg
+bird,birds,atypical,turkey,turkey_boss,BOSS,turkey,_600x600.jpg,turkey_600x600.jpg
+bird,birds,atypical,vulture,vulture_boss,BOSS,vulture,_600x600.jpg,vulture_600x600.jpg
+bird,birds,typical,bluejay,bluejay_boss,BOSS,bluejay,_600x600.jpg,bluejay_600x600.jpg
+bird,birds,typical,cardinal,cardinal_mz_2,https://unsplash.com/photos/BxmvI3hutWs,cardinal,_600x600.jpg,cardinal_600x600.jpg
+bird,birds,typical,cedar wax wing,cedarwaxwing_boss,BOSS,cedarwaxwing,_600x600.jpg,cedarwaxwing_600x600.jpg
+bird,birds,typical,falcon,falcon_mz_1,https://upload.wikimedia.org/wikipedia/commons/9/9a/Falco_peregrinus_good_-_Christopher_Watson.jpg,falcon,_600x600.jpg,falcon_600x600.jpg
+bird,birds,typical,goldfinch,goldfinch_boss,BOSS,goldfinch,_600x600.jpg,goldfinch_600x600.jpg
+bird,birds,typical,parrot,parrot_boss,BOSS,parrot,_600x600.jpg,parrot_600x600.jpg
+bird,birds,typical,pigeon,pigeon_mz,https://upload.wikimedia.org/wikipedia/commons/4/43/Common_pigeon_-_Piccione_selvatico_occidentale_%28Columba_livia%29.jpg,pigeon,_600x600.jpg,pigeon_600x600.jpg
+bird,birds,typical,robin,robin_mz,https://unsplash.com/photos/rP4IAAk3hGw,robin,_600x600.jpg,robin_600x600.jpg
+bird,birds,typical,seagull,seagull_mz,https://unsplash.com/photos/qrP9Q4ttNLs,seagull,_600x600.jpg,seagull_600x600.jpg
+bird,birds,typical,sparrow,sparrow_mz,https://commons.wikimedia.org/wiki/File:Tree_Sparrow_Japan_Flip.jpg,sparrow,_600x600.jpg,sparrow_600x600.jpg
+cat,cats,atypical,American Curl,americancurl_mz_1,https://commons.wikimedia.org/wiki/File:American_curl_fond_blanc.jpg,americancurl,_600x600.jpg,americancurl_600x600.jpg
+cat,cats,atypical,Cornish rex,cornishrex_mz_1,https://commons.wikimedia.org/wiki/File:Cornish_Rex.jpg,cornishrex,_600x600.jpg,cornishrex_600x600.jpg
+cat,cats,atypical,exotic,exotic_mz_1,https://commons.wikimedia.org/wiki/File:Exotic_Shorthair.jpg,exotic,_600x600.jpg,exotic_600x600.jpg
+cat,cats,atypical,oriental,oriental_mz,https://en.wikipedia.org/wiki/File:Fatale_de_la_l%C3%A9gende_d%27ali.jpg,oriental,_600x600.jpg,oriental_600x600.jpg
+cat,cats,atypical,sandcat,sandcat_mz,https://upload.wikimedia.org/wikipedia/commons/7/70/Sand_cat_%284571207173%29.jpg,sandcat,_600x600.jpg,sandcat_600x600.jpg
+cat,cats,atypical,siamese,siamesecat_hw_2,https://pixabay.com/photos/cat-siamese-cat-fur-kitten-2068462/,siamese,_600x600.jpg,siamese_600x600.jpg
+cat,cats,atypical,siberian,siberian_mz_3,https://commons.wikimedia.org/wiki/File:Siberian_Forest_Cat.jpg,siberian,_600x600.jpg,siberian_600x600.jpg
+cat,cats,atypical,sphynx,sphynx_mz_4,https://commons.wikimedia.org/wiki/File:Sphynx_-_cat._img_046.jpg,sphynx,_600x600.jpg,sphynx_600x600.jpg
+cat,cats,typical,american shorthair,cat_mz_1,https://en.wikipedia.org/wiki/Tabby_cat#/media/File:Cat_November_2010-1a.jpg,tabby,_600x600.jpg,tabby_600x600.jpg
+cat,cats,typical,bengal,bengal_mz_4,https://commons.wikimedia.org/wiki/File:Brown_spotted_tabby_bengal_cat.jpg,bengal,_600x600.jpg,bengal_600x600.jpg
+cat,cats,typical,british shorthair,britishshorthair_mz_2,https://commons.wikimedia.org/wiki/File:British_Shorthair._Female._18_months_old.jpg,britishshorthair,_600x600.jpg,britishshorthair_600x600.jpg
+cat,cats,typical,british shorthair,britishshorthair_calico_mz,https://commons.wikimedia.org/wiki/File:British_shorthair_with_calico_coat_(2).jpg,shorthair_calico,_600x600.jpg,shorthair_calico_600x600.jpg
+cat,cats,typical,burmese,burmese_hw,https://pixabay.com/photos/animals-cute-cat-pet-breed-burmese-3273782/,burmese,_600x600.jpg,burmese_600x600.jpg
+cat,cats,typical,chartreux,chartreux_mz_2,https://www.pexels.com/photo/animals-cat-chartreux-mieze-357182/,chartreux,_600x600.jpg,chartreux_600x600.jpg
+cat,cats,typical,mau,arabianmau_mz_1,https://commons.wikimedia.org/wiki/File:Arabian_Mau1.jpg,arabianmau,_600x600.jpg,arabianmau_600x600.jpg
+cat,cats,typical,mau,egyptianmau_mz_1,https://commons.wikimedia.org/wiki/File:Egyptian_Mau_Bronze.jpg,egyptianmau,_600x600.jpg,egyptianmau_600x600.jpg
+cat,cats,typical,toyger,toyger_mz_2,https://www.flickr.com/photos/erlon10/8088944726,toyger,_600x600.jpg,toyger_600x600.jpg
+dog,dogs,atypical,afghan hound,afghanhound_mz_1,https://commons.wikimedia.org/wiki/File:Arabian_Hound_001_U.jpg,afghanhound,_600x600.jpg,afghanhound_600x600.jpg
+dog,dogs,atypical,basset hound,bassethound_boss,BOSS,bassethound,_600x600.jpg,bassethound_600x600.jpg
+dog,dogs,atypical,chihuahua,chihuahua_mz_4,https://www.pxfuel.com/en/free-photo-ojhbm,chihuahua,_600x600.jpg,chihuahua_600x600.jpg
+dog,dogs,atypical,greyhound,greyhound_BOSS,BOSS,greyhound,_600x600.jpg,greyhound_600x600.jpg
+dog,dogs,atypical,pug,pug_mz,https://commons.wikimedia.org/wiki/File:Mops_oct09_cropped2.jpg,pug,_600x600.jpg,pug_600x600.jpg
+dog,dogs,atypical,saint bernard,saintbernard_boss,BOSS,saintbernard,_600x600.jpg,saintbernard_600x600.jpg
+dog,dogs,atypical,sheepdog,sheepdog_er,EmbersonRubenstein,sheepdog,_600x600.jpg,sheepdog_600x600.jpg
+dog,dogs,atypical,yorkshire terrier,yorkshireterrier_hw,https://pixabay.com/photos/yorkshire-terrier-terrier-dog-361730/,yorkshireterrier,_600x600.jpg,yorkshireterrier_600x600.jpg
+dog,dogs,typical,american foxhound,foxhound_mz,"https://commons.wikimedia.org/wiki/File:BIR_Grupp_6-_AMERICAN_FOXHOUND,_J%C3%A4%C3%A4r%C3%A4p%C3%A4%C3%A4_Flikka_(23607404123).jpg",foxhound,_600x600.jpg,foxhound_600x600.jpg
+dog,dogs,typical,beagle,beagle_mz_4,https://commons.wikimedia.org/wiki/File:Beagle_1.jpg,beagle,_600x600.jpg,beagle_600x600.jpg
+dog,dogs,typical,dalmatian,dalmatian_boss,BOSS,dalmatian,_600x600.jpg,dalmatian_600x600.jpg
+dog,dogs,typical,german shepherd,germanshepherd_mz_1,https://commons.wikimedia.org/wiki/File:02.Owczarek_niemiecki_u%C5%BCytkowy_kr%C3%B3tkow%C5%82osy_suka.jpg,germanshepherd,_600x600.jpg,germanshepherd_600x600.jpg
+dog,dogs,typical,golden retriever,goldenretriever_hw,https://pixabay.com/photos/dog-lake-constance-golden-retriever-1994692/,goldenretriever,_600x600.jpg,goldenretriever_600x600.jpg
+dog,dogs,typical,labrador retriever,labrador_mz_1,https://commons.wikimedia.org/wiki/File:Black_labrador_retriever.jpg,labrador,_600x600.jpg,labrador_600x600.jpg
+dog,dogs,typical,rottweiler,rottweiler_mz_2,https://commons.wikimedia.org/wiki/File:02_I_Exposici%C3%B3n_Monogr%C3%A1fica_Club_Rottweiler_de_Espa%C3%B1a_-_Santa_Brigida_-_Gran_Canaria.jpg,rottweiler,_600x600.jpg,rottweiler_600x600.jpg
+dog,dogs,typical,siberian husky,husky_hw,https://pixabay.com/photos/dog-husky-sled-dog-animal-2016708/,husky,_600x600.jpg,husky_600x600.jpg
+fish,fish,atypical,beta  fish,betafish_mz_1,https://commons.wikimedia.org/wiki/File:Male_Betta_-34245661920.jpg,betafish,_600x600.jpg,betafish_600x600.jpg
+fish,fish,atypical,catfish,catfish_hw,https://commons.wikimedia.org/wiki/File:Blue_catfish_tenn_aquarium.JPG,catfish,_600x600.jpg,catfish_600x600.jpg
+fish,fish,atypical,cuttlefish,cuttlefish_boss,BOSS,cuttlefish,_600x600.jpg,cuttlefish_600x600.jpg
+fish,fish,atypical,lion fish,lionfish_mz,https://unsplash.com/photos/gULJzSnDuZU,lionfish,_600x600.jpg,lionfish_600x600.jpg
+fish,fish,atypical,pufferfish,pufferfish_er,EmbersonRubenstein,pufferfish,_600x600.jpg,pufferfish_600x600.jpg
+fish,fish,atypical,salmon,salmon_boss,BOSS,salmon,_600x600.jpg,salmon_600x600.jpg
+fish,fish,atypical,seahorse,seahorse_mz_1,https://unsplash.com/photos/fG1fdervp1E,seahorse,_600x600.jpg,seahorse_600x600.jpg
+fish,fish,atypical,stingray,stingray_boss,BOSS,stingray,_600x600.jpg,stingray_600x600.jpg
+fish,fish,atypical,sturgeon,sturgeon_boss,BOSS,sturgeon,_600x600.jpg,sturgeon_600x600.jpg
+fish,fish,typical,angelfish,angelfish_mz_2,https://www.pexels.com/photo/angel-fish-blueface-angel-coral-marine-fish-1699246/,angelfish,_600x600.jpg,angelfish_600x600.jpg
+fish,fish,typical,bass,rockbass_boss,BOSS,bass,_600x600.jpg,bass_600x600.jpg
+fish,fish,typical,blue tang,bluetang_mz_2,https://unsplash.com/photos/9FvTOCfvt_w,bluetang,_600x600.jpg,bluetang_600x600.jpg
+fish,fish,typical,bluegill,bluegill_mz,https://commons.wikimedia.org/wiki/File:Bluegill_(fish).jpg,bluegill,_600x600.jpg,bluegill_600x600.jpg
+fish,fish,typical,clownfish,clownfish_mz,https://unsplash.com/photos/rEM3cK8F1pk,clownfish,_600x600.jpg,clownfish_600x600.jpg
+fish,fish,typical,goldfish,goldfish_hw,https://pixabay.com/photos/veiltail-fish-goldfish-swim-11453/,goldfish,_600x600.jpg,goldfish_600x600.jpg
+fish,fish,typical,koi,koi_mz,https://www.flickr.com/photos/oregonstateuniversity/13311666853,koi,_600x600.jpg,koi_600x600.jpg
+fish,fish,typical,sergeant major,sergeantmajor_hw_1,https://unsplash.com/photos/mjPMBpsxICY,sergeantmajor,_600x600.jpg,sergeantmajor_600x600.jpg
