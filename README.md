@@ -9,6 +9,10 @@ Demo of experiment testing word recognition for typical and atypical exemplars i
 
 (Note that your  browser window will go to fullscreen. Click Esc if you would like to leave fullscreen mode).
 
+[An example trial list can be viewed here](https://docs.google.com/spreadsheets/d/1pub4ZIhPw9XYxMUPjyrj3eIku_YdQ1TYmEu8WPwyiDw/edit?usp=sharing)
+
+
+
 ## Stimuli
 
 Repository containing images of typical and atypical category members (current categories: bird, cat, dog, fish).
