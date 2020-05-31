@@ -73,7 +73,6 @@ jsPsych.plugins["audio-button-response-flexiblelocations"] = (function() {
         default: '8px',
         description: 'Left margin of button.'
       },
-      // ron
       set_background: {
         type: jsPsych.plugins.parameterType.STRING,
         pretty_name: 'Assign background image',
@@ -86,6 +85,12 @@ jsPsych.plugins["audio-button-response-flexiblelocations"] = (function() {
         default: true,
         description: 'If true, the trial will end when user makes a response.'
       },
+	  response_possible: {
+        type: jsPsych.plugins.parameterType.BOOL,
+        pretty_name: 'Whether a choice response is possible',
+        default: true,
+        description: 'If true, then the user can make responses.'
+	  },
       trial_ends_after_audio: {
         type: jsPsych.plugins.parameterType.BOOL,
         pretty_name: 'Trial ends after audio',
@@ -153,10 +158,14 @@ jsPsych.plugins["audio-button-response-flexiblelocations"] = (function() {
 		display_element.innerHTML = html;
 
 		for (var i = 0; i < trial.choices.length; i++) {
+		  
+  		  if (trial.response_possible) {
       display_element.querySelector('#jspsych-audio-button-response-button-' + i).addEventListener('click', function(e){
-        var choice = e.currentTarget.getAttribute('data-choice'); // don't use dataset for jsdom compatibility
-        after_response(choice);
+		  
+			  var choice = e.currentTarget.getAttribute('data-choice'); // don't use dataset for jsdom compatibility
+	          after_response(choice);
       });
+  };
     }
 
     // store response

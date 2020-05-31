@@ -26,7 +26,7 @@
 
 //Enter subject id
 //var subject_id = prompt("Enter subject id", "test");
-var subject_id = test;
+var subject_id = "test";
 
 //var trial_order = prompt("Order (1-8)","1");
 var trial_order = "1";
@@ -75,22 +75,30 @@ function createTrials(data, tabletop) {
 
   timeline.push(welcome);
 
-  timeline.push(instructions);
-
   var expLength = data.length;
   var audioExt="stimuli/sounds/"
   var imageStart='<img src= "stimuli/images/'
-  var imageStop= '.jpg"  title = "" width="300" height="250">'
+  var imageStop= '_600x600.jpg"  title = "" width="400" height="400">'
 
 
   lwl_stimuli = []
 
   for (var i = 0; i < expLength; i++) {
     lwl_stimuli.push(
-    {stimulus: audioExt+data[i]['stimulus']+".wav",
+    {stimulus: audioExt+data[i]['auditory_stimulus']+".wav",
     choices:[imageStart+data[i]['left_image']+imageStop, imageStart+data[i]['right_image']+imageStop],
     set_background:data[i]['background'],
-    data:{condition:data[i]['condition'],target_side:data[i]['target_side'],correct_response:data[i]['correct_response'],background:data[i]['background']}
+    data:{
+		left_typicality: data[i]['left_typicality'],
+		left_category: data[i]['left_category'],
+		left_image: data[i]['left_image'],
+		right_typicality: data[i]['left_typicality'],
+		right_category: data[i]['left_category'],
+		right_image: data[i]['right_image'],
+		target_label: data[i]['target_label'],
+		target_side:data[i]['target_side'],
+		correct_response:data[i]['correct_response'],
+		background:data[i]['background']}
     })
   }
 
@@ -99,12 +107,15 @@ function createTrials(data, tabletop) {
     type: 'audio-button-response-flexiblelocations',
     margin_top: ['300px','300px'],
     margin_bottom: ['0px','0px'],
-    margin_left: ['0px','89px'],
+    margin_left: ['0px','200px'],
     margin_right: ['89px','0px'],
     // set_background: 'face-closed',
     // set_background:data.background,
     timeline: lwl_stimuli,
+	  response_possible: false,
     data: jsPsych.timelineVariable('data'),
+	  response_ends_trial: false,
+	  trial_duration: 5500,
     on_finish: function(data) {
       data.correct = data.button_pressed == data.correct_response;
     }
@@ -122,54 +133,78 @@ function createTrials(data, tabletop) {
 
 var imageExt = 'stimuli/images/'
 
-var images = [imageExt+'Apple.jpg',
-imageExt+'Ball.jpg',
-imageExt+'Ball2.jpg',
-imageExt+'Bear.jpg',
-imageExt+'Bear2.jpg',
-imageExt+'Bib.jpg',
-imageExt+'black.jpg',
-imageExt+'Blocks.jpg',
-imageExt+'blue.png',
-imageExt+'Boat.jpg',
-imageExt+'bunnies.gif',
-imageExt+'Cake.jpg',
-imageExt+'Cake2.jpg',
-imageExt+'Carrots.jpg',
-imageExt+'Cheese.jpg',
-imageExt+'Cheese2.jpg',
-imageExt+'Comb.jpg',
-imageExt+'Cookie.jpg',
-imageExt+'Cookie2.jpg',
-imageExt+'Corn.jpg',
-imageExt+'Doll.jpg',
-imageExt+'Donut.jpg',
-imageExt+'Duck.jpg',
-imageExt+'Duck2.jpg',
-imageExt+'face-closed.jpg',
-imageExt+'face-open.jpg',
-imageExt+'fireworks_left.jpg',
-imageExt+'fireworks_right.jpg',
-imageExt+'Grapes.jpg',
-imageExt+'Hammer.jpg',
-imageExt+'kitchen.jpg',
-imageExt+'Novel1.jpg',
-imageExt+'Novel2.jpg',
-imageExt+'Novel3.jpg',
-imageExt+'Novel4.jpg',
-imageExt+'playroom.jpg',
-imageExt+'Puzzle.jpg',
-imageExt+'Truck.jpg',
-imageExt+'Truck2.jpg',
-imageExt+'Zipper.jpg'];
+
+var images = [
+"afghanhound_600x600.jpg",
+"balloons left.jpg",
+"balloons right.jpg",
+"bassethound_600x600.jpg",
+"beach left.jpg",
+"beach right.jpg",
+"beagle_600x600.jpg",
+"betafish_600x600.jpg",
+"black-background.jpg",
+"black.jpg",
+"bluegill_600x600.jpg",
+"cedarwaxwing_600x600.jpg",
+"cornishrex_600x600.jpg",
+"fireworks_left.jpg",
+"fireworks_right.jpg",
+"germanshepherd_600x600.jpg",
+"kingfisher_600x600.jpg",
+"kookaburra_600x600.jpg",
+"lionfish_600x600.jpg",
+"mountain left.jpg",
+"mountain right.jpg",
+"ocean left.jpg",
+"ocean right.jpg",
+"oriental_600x600.jpg",
+"sergeantmajor_600x600.jpg",
+"shorthair_calico_600x600.jpg",
+"sparrow_600x600.jpg",
+"tabby_600x600.jpg"
+]
+
+var preload_images=[];
+
+for (var k = 0; k < images.length; k++) {
+	preload_images.push(imageExt+images[k]);
+};
+
+var audio = [
+	"where_1_silence_the_fish_4.wav",
+	"where_1_silence_the_cat_1.wav",
+	"where_1_silence_the_dog_1.wav",
+	"see_1_silence_the_dog_see_1.wav",
+	"see_1_silence_the_fish_see_2.wav",
+	"where_1_silence_the_bird_1.wav",
+	"see_1_silence_the_bird_see_1.wav",
+	"see_1_silence_the_cat_see_3.wav",
+	"look_1_silence_the_cat_1.wav",
+	"look_1_silence_the_dog_1.wav",
+	"look_1_silence_the_fish_4.wav",
+	"find_1_silence_the_fish_4.wav",
+	"look_1_silence_the_bird_1.wav",
+	"find_1_silence_the_cat_1.wav",
+	"find_1_silence_the_dog_1.wav",
+	"find_1_silence_the_bird_1.wav",
+	"done.wav"
+];
+
+var preload_audio  = [];
+
+for (var l = 0; l < preload_audio.length; l++) {
+	preload_audio.push(imageExt+audio[l]);
+};
 
 
 function startExperiment(data, tabletop) {
 	createTrials(data,tabletop);
 jsPsych.init({
   timeline: timeline,
-  // preload_audio:audio,
-  preload_images:images,
+  preload_audio:preload_audio,
+  preload_images:preload_images,
+	default_iti: 300,
   on_finish: function() {
     //jsPsych.data.displayData();
     // save_data('lwl_typ_demo','V1',subject_id, jsPsych.data.dataAsCSV());
