@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Basic LWL</title>
+  <meta charset="utf-8"/>
+  <script src="jspsych-6.1.0/jspsych.js"> </script>
+  <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script>
+  <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
+  <script src="jspsych-6.1.0/plugins/jspsych-fullscreen.js"></script>
+  <script src="jspsych-6.1.0/plugins/jspsych-audio-button-response-flexiblelocations.js"></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script>
+  <link rel="stylesheet" href="jspsych-6.1.0/css/jspsych.css",type="text/css"> </link>
+  <link href="css/jspsych.css" rel="stylesheet" type="text/css"></link>
+  <style>
+  div.absolute {
+    position: absolute;
+    left: 10px;
+    right:0px;
+    top:10px;
+    border: 3px solid #73AD21;
+    /* background-image: url("stimuli/images/face-closed.jpg"); */
+  }
+  </style>
+</head>
+<body>
+  <div id="jspsych-lwl"></div>
+</body>
+
+<script>
+
+
+// $('body,html').addClass('stop-scrolling');
+//$('body').bind('touchmove', function(e){e.preventDefault()})
+
+
+//Enter subject id
+var subject_id = prompt("Enter subject id", "test");
+var trial_order = prompt("Order (1-8)","1");
+
+var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1CbJfFGvxbQbdGwK85xz8LEIpOO0umJKJcSZ5L7aKB1E/pubhtml';
+
+var tabletop = Tabletop.init( { key: publicSpreadsheetUrl,
+                   callback: startExperiment,
+                   // wanted:["Order_1"],
+                   simpleSheet: false } )
+
+
+// function showInfo(data, tabletop) {
+//   alert('Successfully processed!')
+//   console.log(data);
+// }
+
+
+document.body.style.backgroundColor = "black";
+// document.body.style.backgroundImage = "url('stimuli/images/black-background.jpg')";
+document.body.style.backgroundSize = "100%";
+document.body.style.backgroundPosition = "top";
+document.body.style.backgroundRepeat = "no-repeat";
+
+
+var timeline = []
+
+function createTrials(data, tabletop) {
+
+  data = data['Order_'+trial_order]['elements']
+  console.log(data);
+
+  //stim = tabletop.sheets("stimulus_sheet").toArray()
+
+  // var welcome = {
+  //   type: "html-keyboard-response",
+  //   stimulus: "Welcome to the experiment. Press any key to begin."
+  // };
+
+  var welcome = {
+    type: "fullscreen",
+    // fullscreen_mode: false,
+    message: "",
+    button_label: "Start",
+    delay_after: 250
+  }
+
+  timeline.push(welcome);
+
+  var instructions = {
+    type: 'audio-button-response-flexiblelocations',
+    stimulus: 'stimuli/sounds/Intro.wav',
+    margin_top: ['400px'],
+    margin_bottom: ['0px'],
+    set_background: 'face-closed',
+    choices: ['Go']
+  }
+
+  timeline.push(instructions);
+
+  var expLength = data.length;
+  var audioExt="stimuli/sounds/"
+  var imageStart='<img src= "stimuli/images/'
+  var imageStop= '.jpg"  title = "" width="300" height="250">'
+
+
+  lwl_stimuli = []
+
+  for (var i = 0; i < expLength; i++) {
+    lwl_stimuli.push(
+    {stimulus: audioExt+data[i]['stimulus']+".wav",
+    choices:[imageStart+data[i]['left_image']+imageStop, imageStart+data[i]['right_image']+imageStop],
+    set_background:data[i]['background'],
+    data:{condition:data[i]['condition'],target_side:data[i]['target_side'],correct_response:data[i]['correct_response'],background:data[i]['background']}
+    })
+  }
+
+
+  var lwl_trials = {
+    type: 'audio-button-response-flexiblelocations',
+    margin_top: ['300px','300px'],
+    margin_bottom: ['0px','0px'],
+    margin_left: ['0px','89px'],
+    margin_right: ['89px','0px'],
+    // set_background: 'face-closed',
+    // set_background:data.background,
+    timeline: lwl_stimuli,
+    data: jsPsych.timelineVariable('data'),
+    on_finish: function(data) {
+      data.correct = data.button_pressed == data.correct_response;
+    }
+  }
+
+  timeline.push(lwl_trials);
+
+  var fullscreen_exit = {
+    type: 'fullscreen',
+    fullscreen_mode: false
+  }
+  timeline.push(fullscreen_exit)
+};
+
+
+var imageExt = 'stimuli/images/'
+
+var images = [imageExt+'Apple.jpg',
+imageExt+'Ball.jpg',
+imageExt+'Ball2.jpg',
+imageExt+'Bear.jpg',
+imageExt+'Bear2.jpg',
+imageExt+'Bib.jpg',
+imageExt+'black.jpg',
+imageExt+'Blocks.jpg',
+imageExt+'blue.png',
+imageExt+'Boat.jpg',
+imageExt+'bunnies.gif',
+imageExt+'Cake.jpg',
+imageExt+'Cake2.jpg',
+imageExt+'Carrots.jpg',
+imageExt+'Cheese.jpg',
+imageExt+'Cheese2.jpg',
+imageExt+'Comb.jpg',
+imageExt+'Cookie.jpg',
+imageExt+'Cookie2.jpg',
+imageExt+'Corn.jpg',
+imageExt+'Doll.jpg',
+imageExt+'Donut.jpg',
+imageExt+'Duck.jpg',
+imageExt+'Duck2.jpg',
+imageExt+'face-closed.jpg',
+imageExt+'face-open.jpg',
+imageExt+'fireworks_left.jpg',
+imageExt+'fireworks_right.jpg',
+imageExt+'Grapes.jpg',
+imageExt+'Hammer.jpg',
+imageExt+'kitchen.jpg',
+imageExt+'Novel1.jpg',
+imageExt+'Novel2.jpg',
+imageExt+'Novel3.jpg',
+imageExt+'Novel4.jpg',
+imageExt+'playroom.jpg',
+imageExt+'Puzzle.jpg',
+imageExt+'Truck.jpg',
+imageExt+'Truck2.jpg',
+imageExt+'Zipper.jpg'];
+
+
+function startExperiment(data, tabletop) {
+	createTrials(data,tabletop);
+jsPsych.init({
+  timeline: timeline,
+  // preload_audio:audio,
+  preload_images:images,
+  on_finish: function() {
+    //jsPsych.data.displayData();
+    // save_data('lwl_typ_demo','V1',subject_id, jsPsych.data.dataAsCSV());
+  }
+});
+};
+
+// function save_data(experiment, version,identifier, data){
+// 	$.ajax({
+// 		type: 'post',
+// 		cache: false,
+// 		url: 'https://data.infantlearning.waisman.wisc.edu/infantdb/datastore/save/',
+// 		data: {
+// 			experiment: experiment,
+// 	version: version,
+// 			identifier: identifier,
+// 			data: data
+// 		}
+// 	})
+// };
+
+
+</script>
+
+</html>
