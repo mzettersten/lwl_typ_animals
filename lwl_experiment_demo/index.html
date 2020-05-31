@@ -12,16 +12,6 @@
   <script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script>
   <link rel="stylesheet" href="jspsych-6.1.0/css/jspsych.css",type="text/css"> </link>
   <link href="css/jspsych.css" rel="stylesheet" type="text/css"></link>
-  <style>
-  div.absolute {
-    position: absolute;
-    left: 10px;
-    right:0px;
-    top:10px;
-    border: 3px solid #73AD21;
-    /* background-image: url("stimuli/images/face-closed.jpg"); */
-  }
-  </style>
 </head>
 <body>
   <div id="jspsych-lwl"></div>
@@ -35,21 +25,17 @@
 
 
 //Enter subject id
-var subject_id = prompt("Enter subject id", "test");
-var trial_order = prompt("Order (1-8)","1");
+//var subject_id = prompt("Enter subject id", "test");
+var subject_id = test;
+
+//var trial_order = prompt("Order (1-8)","1");
+var trial_order = "1";
 
 var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1CbJfFGvxbQbdGwK85xz8LEIpOO0umJKJcSZ5L7aKB1E/pubhtml';
 
 var tabletop = Tabletop.init( { key: publicSpreadsheetUrl,
                    callback: startExperiment,
-                   // wanted:["Order_1"],
                    simpleSheet: false } )
-
-
-// function showInfo(data, tabletop) {
-//   alert('Successfully processed!')
-//   console.log(data);
-// }
 
 
 document.body.style.backgroundColor = "black";
@@ -63,7 +49,7 @@ var timeline = []
 
 function createTrials(data, tabletop) {
 
-  data = data['Order_'+trial_order]['elements']
+  data = data['order'+trial_order]['elements']
   console.log(data);
 
   //stim = tabletop.sheets("stimulus_sheet").toArray()
