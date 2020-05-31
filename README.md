@@ -21,4 +21,4 @@ Link to norming studies (demo):
 
 - [nameability ratings demo](https://mzettersten.github.io/lwl_typ_animals/norming/norming_experiments/name_animals/name_animals.html)
 
-- [typicality ratings demo] (https://mzettersten.github.io/lwl_typ_animals/norming/norming_experiments/typical_animals/typical_animals.html)
+- [typicality ratings demo](https://mzettersten.github.io/lwl_typ_animals/norming/norming_experiments/typical_animals/typical_animals.html)
