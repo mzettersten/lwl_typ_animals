@@ -5,7 +5,9 @@ Repository for experiments on the development of category-based word knowledge/ 
 
 Demo of experiment testing word recognition for typical and atypical exemplars in a looking-while-listening paradigm.
 
-![Click here to view the demo][https://mzettersten.github.io/lwl_typ_animals/lwl_experiment_demo/index.html]
+<a href="https://mzettersten.github.io/lwl_typ_animals/lwl_experiment_demo/index.html">Click here to view the demo</a>
+
+[Click here to view the demo](https://mzettersten.github.io/lwl_typ_animals/lwl_experiment_demo/index.html)
 
 ## Stimuli
 
