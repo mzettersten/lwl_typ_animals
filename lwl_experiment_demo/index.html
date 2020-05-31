@@ -31,7 +31,18 @@ var subject_id = test;
 //var trial_order = prompt("Order (1-8)","1");
 var trial_order = "1";
 
-var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1CbJfFGvxbQbdGwK85xz8LEIpOO0umJKJcSZ5L7aKB1E/pubhtml';
+var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1pub4ZIhPw9XYxMUPjyrj3eIku_YdQ1TYmEu8WPwyiDw/edit?usp=sharing';
+
+// function init() {
+//   Tabletop.init( {
+//     key: 'https://docs.google.com/spreadsheets/d/0AmYzu_s7QHsmdDNZUzRlYldnWTZCLXdrMXlYQzVxSFE/pubhtml',
+//     simpleSheet: true }
+//   ).then(function(data, tabletop) {
+//     console.log(data)
+//   })
+// }
+// window.addEventListener('DOMContentLoaded', init)
+
 
 var tabletop = Tabletop.init( { key: publicSpreadsheetUrl,
                    callback: startExperiment,
