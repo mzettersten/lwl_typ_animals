@@ -68,11 +68,6 @@ function createTrials(data, tabletop) {
 
   //stim = tabletop.sheets("stimulus_sheet").toArray()
 
-  // var welcome = {
-  //   type: "html-keyboard-response",
-  //   stimulus: "Welcome to the experiment. Press any key to begin."
-  // };
-
   var welcome = {
     type: "fullscreen",
     // fullscreen_mode: false,
@@ -82,15 +77,6 @@ function createTrials(data, tabletop) {
   }
 
   timeline.push(welcome);
-
-  var instructions = {
-    type: 'audio-button-response-flexiblelocations',
-    stimulus: 'stimuli/sounds/Intro.wav',
-    margin_top: ['400px'],
-    margin_bottom: ['0px'],
-    set_background: 'face-closed',
-    choices: ['Go']
-  }
 
   timeline.push(instructions);
 
