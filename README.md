@@ -1,8 +1,15 @@
 # lwl_typ_animals
 Repository for experiments on the development of category-based word knowledge/ expertise in word meanings.
 
+## LWL Experiment Demo
 
+Demo of experiment testing word recognition for typical and atypical exemplars in a looking-while-listening paradigm.
 
+[https://mzettersten.github.io/lwl_typ_animals/lwl_experiment_demo/index.html]
+
+## Stimuli
+
+Repository containing images of typical and atypical category members (current categories: bird, cat, dog, fish).
 
 ## Norming: Nameability and Typicality Ratings
 
