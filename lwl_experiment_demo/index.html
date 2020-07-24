@@ -10,7 +10,7 @@
   <script src="jspsych-6.1.0/plugins/jspsych-fullscreen.js"></script>
   <script src="jspsych-6.1.0/plugins/jspsych-audio-button-response-flexiblelocations.js"></script>
   <!-- <script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script> -->
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.1.2/papaparse.min.js"></script>
   <link rel="stylesheet" href="jspsych-6.1.0/css/jspsych.css",type="text/css"> </link>
   <link href="css/jspsych.css" rel="stylesheet" type="text/css"></link>
 </head>
@@ -53,17 +53,16 @@ var publicSpreadsheetUrl = 'https://github.com/mzettersten/lwl_typ_animals/blob/
 //                    simpleSheet: false } )
 	
 
-function init() {
-	Papa.parse(publicSpreadsheetUrl, {
+Papa.parse(publicSpreadsheetUrl, {
 	          download: true,
 	          header: true,
+		dynamicTyping: true,
 	          complete: function(results) {
 	            var data = results.data
 	            console.log(data)
 				startExperiment(data);
 	          }
 	        })
-		};
 
 //window.addEventListener('DOMContentLoaded', init)
 
