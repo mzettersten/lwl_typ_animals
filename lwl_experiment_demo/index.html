@@ -9,7 +9,8 @@
   <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
   <script src="jspsych-6.1.0/plugins/jspsych-fullscreen.js"></script>
   <script src="jspsych-6.1.0/plugins/jspsych-audio-button-response-flexiblelocations.js"></script>
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script>
+  <!-- <script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script> -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
   <link rel="stylesheet" href="jspsych-6.1.0/css/jspsych.css",type="text/css"> </link>
   <link href="css/jspsych.css" rel="stylesheet" type="text/css"></link>
 </head>
@@ -31,7 +32,8 @@ var subject_id = "test";
 //var trial_order = prompt("Order (1-8)","1");
 var trial_order = "1";
 
-var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1pub4ZIhPw9XYxMUPjyrj3eIku_YdQ1TYmEu8WPwyiDw/edit?usp=sharing';
+//var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1pub4ZIhPw9XYxMUPjyrj3eIku_YdQ1TYmEu8WPwyiDw/edit?usp=sharing';
+var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUUsmuogjN1gG6NKdFz3Nu-ADCnNYRz4lmpVeOzvGSGRT9MwFXYyGuo446nHB62j2aLn4r1hX_hPjw/pub?output=csv'
 
 // function init() {
 //   Tabletop.init( {
@@ -44,10 +46,23 @@ var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1pub4ZIhPw9XY
 // window.addEventListener('DOMContentLoaded', init)
 
 
-var tabletop = Tabletop.init( { key: publicSpreadsheetUrl,
-                   callback: startExperiment,
-                   simpleSheet: false } )
+// var tabletop = Tabletop.init( { key: publicSpreadsheetUrl,
+//                    callback: startExperiment,
+//                    simpleSheet: false } )
+	
 
+Papa.parse(publicSpreadsheetUrl, {
+	          download: true,
+	          header: true,
+		dynamicTyping: true,
+	          complete: function(results) {
+	            var data = results.data
+	            console.log(data)
+				startExperiment(data);
+	          }
+	        })
+
+//window.addEventListener('DOMContentLoaded', init)
 
 document.body.style.backgroundColor = "black";
 // document.body.style.backgroundImage = "url('stimuli/images/black-background.jpg')";
@@ -58,9 +73,10 @@ document.body.style.backgroundRepeat = "no-repeat";
 
 var timeline = []
 
-function createTrials(data, tabletop) {
-
-  data = data['order'+trial_order]['elements']
+//function createTrials(data, tabletop) {
+function createTrials(data) {
+	
+  //data = data['order'+trial_order]['elements']
   console.log(data);
 
   //stim = tabletop.sheets("stimulus_sheet").toArray()
@@ -198,8 +214,10 @@ for (var l = 0; l < preload_audio.length; l++) {
 };
 
 
-function startExperiment(data, tabletop) {
-	createTrials(data,tabletop);
+//function startExperiment(data, tabletop) {
+function startExperiment(data) {
+	//createTrials(data,tabletop);
+	createTrials(data);
 jsPsych.init({
   timeline: timeline,
   preload_audio:preload_audio,
