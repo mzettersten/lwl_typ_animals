@@ -1,0 +1,489 @@
+[
+  {
+    "kind": "exp-lookit-calibration",
+    "calibrationLength": 4000,
+    "startSessionRecording": true,
+    "images": {}
+  },
+  {
+    "audio": "trial1Audio",
+    "images": [
+      {
+        "id": "L1",
+        "src": "trial1Left",
+        "position": "left"
+      },
+      {
+        "id": "R1",
+        "src": "trial1Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial2Audio",
+    "images": [
+      {
+        "id": "L2",
+        "src": "trial2Left",
+        "position": "left"
+      },
+      {
+        "id": "R2",
+        "src": "trial2Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial3Audio",
+    "images": [
+      {
+        "id": "L3",
+        "src": "trial3Left",
+        "position": "left"
+      },
+      {
+        "id": "R3",
+        "src": "trial3Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial4Audio",
+    "images": [
+      {
+        "id": "L4",
+        "src": "trial4Left",
+        "position": "left"
+      },
+      {
+        "id": "R4",
+        "src": "trial4Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial5Audio",
+    "images": [
+      {
+        "id": "L5",
+        "src": "trial5Left",
+        "position": "left"
+      },
+      {
+        "id": "R5",
+        "src": "trial5Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial6Audio",
+    "images": [
+      {
+        "id": "L6",
+        "src": "trial6Left",
+        "position": "left"
+      },
+      {
+        "id": "R6",
+        "src": "trial6Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial7Audio",
+    "images": [
+      {
+        "id": "L7",
+        "src": "trial7Left",
+        "position": "left"
+      },
+      {
+        "id": "R7",
+        "src": "trial7Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial8Audio",
+    "images": [
+      {
+        "id": "L8",
+        "src": "trial8Left",
+        "position": "left"
+      },
+      {
+        "id": "R8",
+        "src": "trial8Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial9Audio",
+    "images": [
+      {
+        "id": "L9",
+        "src": "trial9Left",
+        "position": "left"
+      },
+      {
+        "id": "R9",
+        "src": "trial9Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial10Audio",
+    "images": [
+      {
+        "id": "L10",
+        "src": "trial10Left",
+        "position": "left"
+      },
+      {
+        "id": "R10",
+        "src": "trial10Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial11Audio",
+    "images": [
+      {
+        "id": "L11",
+        "src": "trial11Left",
+        "position": "left"
+      },
+      {
+        "id": "R11",
+        "src": "trial11Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial12Audio",
+    "images": [
+      {
+        "id": "L12",
+        "src": "trial12Left",
+        "position": "left"
+      },
+      {
+        "id": "R12",
+        "src": "trial12Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial13Audio",
+    "images": [
+      {
+        "id": "L13",
+        "src": "trial13Left",
+        "position": "left"
+      },
+      {
+        "id": "R13",
+        "src": "trial13Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial14Audio",
+    "images": [
+      {
+        "id": "L14",
+        "src": "trial14Left",
+        "position": "left"
+      },
+      {
+        "id": "R14",
+        "src": "trial14Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial15Audio",
+    "images": [
+      {
+        "id": "L15",
+        "src": "trial15Left",
+        "position": "left"
+      },
+      {
+        "id": "R15",
+        "src": "trial15Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial16Audio",
+    "images": [
+      {
+        "id": "L16",
+        "src": "trial16Left",
+        "position": "left"
+      },
+      {
+        "id": "R16",
+        "src": "trial16Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial17Audio",
+    "images": [
+      {
+        "id": "L17",
+        "src": "trial17Left",
+        "position": "left"
+      },
+      {
+        "id": "R17",
+        "src": "trial17Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial18Audio",
+    "images": [
+      {
+        "id": "L18",
+        "src": "trial18Left",
+        "position": "left"
+      },
+      {
+        "id": "R18",
+        "src": "trial18Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial19Audio",
+    "images": [
+      {
+        "id": "L19",
+        "src": "trial19Left",
+        "position": "left"
+      },
+      {
+        "id": "R19",
+        "src": "trial19Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial20Audio",
+    "images": [
+      {
+        "id": "L20",
+        "src": "trial20Left",
+        "position": "left"
+      },
+      {
+        "id": "R20",
+        "src": "trial20Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial21Audio",
+    "images": [
+      {
+        "id": "L21",
+        "src": "trial21Left",
+        "position": "left"
+      },
+      {
+        "id": "R21",
+        "src": "trial21Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial22Audio",
+    "images": [
+      {
+        "id": "L22",
+        "src": "trial22Left",
+        "position": "left"
+      },
+      {
+        "id": "R22",
+        "src": "trial22Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial23Audio",
+    "images": [
+      {
+        "id": "L23",
+        "src": "trial23Left",
+        "position": "left"
+      },
+      {
+        "id": "R23",
+        "src": "trial23Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial24Audio",
+    "images": [
+      {
+        "id": "L24",
+        "src": "trial24Left",
+        "position": "left"
+      },
+      {
+        "id": "R24",
+        "src": "trial24Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial25Audio",
+    "images": [
+      {
+        "id": "L25",
+        "src": "trial25Left",
+        "position": "left"
+      },
+      {
+        "id": "R25",
+        "src": "trial25Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial26Audio",
+    "images": [
+      {
+        "id": "L26",
+        "src": "trial26Left",
+        "position": "left"
+      },
+      {
+        "id": "R26",
+        "src": "trial26Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial27Audio",
+    "images": [
+      {
+        "id": "L27",
+        "src": "trial27Left",
+        "position": "left"
+      },
+      {
+        "id": "R27",
+        "src": "trial27Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial28Audio",
+    "images": [
+      {
+        "id": "L28",
+        "src": "trial28Left",
+        "position": "left"
+      },
+      {
+        "id": "R28",
+        "src": "trial28Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial29Audio",
+    "images": [
+      {
+        "id": "L29",
+        "src": "trial29Left",
+        "position": "left"
+      },
+      {
+        "id": "R29",
+        "src": "trial29Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial30Audio",
+    "images": [
+      {
+        "id": "L30",
+        "src": "trial30Left",
+        "position": "left"
+      },
+      {
+        "id": "R30",
+        "src": "trial30Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial31Audio",
+    "images": [
+      {
+        "id": "L31",
+        "src": "trial31Left",
+        "position": "left"
+      },
+      {
+        "id": "R31",
+        "src": "trial31Right",
+        "position": "right"
+      }
+    ]
+  },
+  {
+    "audio": "trial32Audio",
+    "endSessionRecording": true,
+    "images": [
+      {
+        "id": "L32",
+        "src": "trial32Left",
+        "position": "left"
+      },
+      {
+        "id": "R32",
+        "src": "trial32Right",
+        "position": "right"
+      }
+    ]
+  }
+]
