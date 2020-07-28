@@ -2,8 +2,7 @@
   {
     "kind": "exp-lookit-calibration",
     "calibrationLength": 4000,
-    "startSessionRecording": true,
-    "images": {}
+    "startSessionRecording": true
   },
   {
     "audio": "trial1Audio",
