@@ -31,6 +31,7 @@ convert_order <- function(trial_list) {
 order_1 <- convert_order(trial_list_1)
 order_2 <- trial_list_1 %>% 
   map_df(rev) %>%
+  mutate(trial_number=seq(1,length(trial_list[,1]))) %>%
   convert_order()
 
 parameter_list <- bind_rows(
