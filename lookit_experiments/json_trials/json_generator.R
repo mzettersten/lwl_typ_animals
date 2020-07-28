@@ -29,7 +29,9 @@ convert_order <- function(trial_list) {
 }
 
 order_1 <- convert_order(trial_list_1)
-order_2 <- convert_order(trial_list_1)
+order_2 <- trial_list_1 %>% 
+  map_df(rev) %>%
+  convert_order()
 
 parameter_list <- bind_rows(
   order_1,
