@@ -1,11 +1,8 @@
 library(tidyverse)
 library(jsonlite)
+library(readxl)
 
-#### read in csv ####
-trial_list_1 <- read.csv("demo_trial_list.csv")
-
-
-#### parameter list ####
+#### functions ####
 convert_order <- function(trial_list) {
   trial_list_wide <- trial_list %>%
     select(trial_number,auditory_stimulus,left_image,right_image) %>%
@@ -28,23 +25,27 @@ convert_order <- function(trial_list) {
   return(trial_list_wide)
 }
 
-order_1 <- convert_order(trial_list_1)
-order_2 <- trial_list_1 %>% 
-  map_df(rev) %>%
-  mutate(trial_number=seq(1,length(trial_list[,1]))) %>%
-  convert_order()
+#### parameter list ####
 
-parameter_list <- bind_rows(
-  order_1,
-  order_2
-)
+#sheet list
+sheet_list <- c("order1","order1_opptarget","order1_pairing","order1_opptarget_pairing","order2","order2_opptarget","order2_pairing","order2_opptarget_pairing")
+
+parameter_list <- data.frame()
+
+for (sheet in sheet_list) {
+  print(sheet)
+  cur_trial_list <- read_excel("CATegories_trial_orders.xlsx",sheet=sheet)
+  cur_order <- convert_order(cur_trial_list)
+  parameter_list <- bind_rows(
+    cur_order,
+    parameter_list
+  )
+}
 
 parameter_list_json <- toJSON(parameter_list,pretty=TRUE)
 
 
 write(parameter_list_json, "parameter_list_json.json")
-
-### frame list ###
 
 #### parameters
 trial_num <- length(trial_list[,1])

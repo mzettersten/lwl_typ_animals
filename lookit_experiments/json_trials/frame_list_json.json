@@ -2,7 +2,8 @@
   {
     "kind": "exp-lookit-calibration",
     "calibrationLength": 4000,
-    "startSessionRecording": true
+    "startSessionRecording": true,
+    "images": {}
   },
   {
     "audio": "trial1Audio",
@@ -276,6 +277,7 @@
   },
   {
     "audio": "trial19Audio",
+    "endSessionRecording": true,
     "images": [
       {
         "id": "L19",
@@ -285,202 +287,6 @@
       {
         "id": "R19",
         "src": "trial19Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial20Audio",
-    "images": [
-      {
-        "id": "L20",
-        "src": "trial20Left",
-        "position": "left"
-      },
-      {
-        "id": "R20",
-        "src": "trial20Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial21Audio",
-    "images": [
-      {
-        "id": "L21",
-        "src": "trial21Left",
-        "position": "left"
-      },
-      {
-        "id": "R21",
-        "src": "trial21Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial22Audio",
-    "images": [
-      {
-        "id": "L22",
-        "src": "trial22Left",
-        "position": "left"
-      },
-      {
-        "id": "R22",
-        "src": "trial22Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial23Audio",
-    "images": [
-      {
-        "id": "L23",
-        "src": "trial23Left",
-        "position": "left"
-      },
-      {
-        "id": "R23",
-        "src": "trial23Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial24Audio",
-    "images": [
-      {
-        "id": "L24",
-        "src": "trial24Left",
-        "position": "left"
-      },
-      {
-        "id": "R24",
-        "src": "trial24Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial25Audio",
-    "images": [
-      {
-        "id": "L25",
-        "src": "trial25Left",
-        "position": "left"
-      },
-      {
-        "id": "R25",
-        "src": "trial25Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial26Audio",
-    "images": [
-      {
-        "id": "L26",
-        "src": "trial26Left",
-        "position": "left"
-      },
-      {
-        "id": "R26",
-        "src": "trial26Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial27Audio",
-    "images": [
-      {
-        "id": "L27",
-        "src": "trial27Left",
-        "position": "left"
-      },
-      {
-        "id": "R27",
-        "src": "trial27Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial28Audio",
-    "images": [
-      {
-        "id": "L28",
-        "src": "trial28Left",
-        "position": "left"
-      },
-      {
-        "id": "R28",
-        "src": "trial28Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial29Audio",
-    "images": [
-      {
-        "id": "L29",
-        "src": "trial29Left",
-        "position": "left"
-      },
-      {
-        "id": "R29",
-        "src": "trial29Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial30Audio",
-    "images": [
-      {
-        "id": "L30",
-        "src": "trial30Left",
-        "position": "left"
-      },
-      {
-        "id": "R30",
-        "src": "trial30Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial31Audio",
-    "images": [
-      {
-        "id": "L31",
-        "src": "trial31Left",
-        "position": "left"
-      },
-      {
-        "id": "R31",
-        "src": "trial31Right",
-        "position": "right"
-      }
-    ]
-  },
-  {
-    "audio": "trial32Audio",
-    "endSessionRecording": true,
-    "images": [
-      {
-        "id": "L32",
-        "src": "trial32Left",
-        "position": "left"
-      },
-      {
-        "id": "R32",
-        "src": "trial32Right",
         "position": "right"
       }
     ]
