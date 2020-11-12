@@ -1,0 +1,1112 @@
+{
+    "frames": {
+        "study-intro": {
+            "kind": "exp-lookit-text",
+            "blocks": [
+                {
+                    "emph": true,
+                    "text": "Important: your baby does not need to be with you until the study starts.<br><br>First, we will explain what will happen during this session!",
+                    "title": "Overview of the 'CATegory' study"
+                },
+                 {
+                    "text": "1. Consent video: You'll read some information about the study. If you'd like your child to participate, you'll record a video agreeing to a statement."
+                },
+                {
+                    "text": "2. Instructions and preview: You'll learn about what to expect during the study, and have the opportunity to look at some examples ahead of time."
+                },
+                {
+                    "text": "3. Setup: You will adjust your computer so that your baby will be able to see and hear the study."
+                },
+                {
+                    "text": "4. Study: Your child will see pictures and hear some sentences for 3-5 minutes."
+                },
+                {
+                    "text": "5. Survey: You will be asked to answer a few final general questions."
+                },
+                {
+                    "text": "Then you're all done!"
+                }
+            ]
+        },
+        "video-config": {
+            "kind": "exp-video-config",
+            "troubleshootingIntro": "If you’re having any difficulties getting your webcam set up, please feel free to email the Infant Learning Lab at infantlearninglab@waisman.wisc.edu."
+        },
+        "exp-procedure": {
+            "kind": "choice",
+            "sampler": "random-parameter-set",
+            "frameList": [
+                {
+                    "audio": "begin",
+                    "images": "",
+                    "doRecording": false
+                },
+                {
+                    "kind": "exp-lookit-calibration",
+                    "calibrationLength": 4000,
+                    "images": ""
+
+                },
+                {
+                    "audio": "trial1Audio",
+                    "images": [
+                      {
+                        "id": "L1",
+                        "src": "trial1Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R1",
+                        "src": "trial1Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial2Audio",
+                    "images": [
+                      {
+                        "id": "L2",
+                        "src": "trial2Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R2",
+                        "src": "trial2Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial3Audio",
+                    "images": [
+                      {
+                        "id": "L3",
+                        "src": "trial3Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R3",
+                        "src": "trial3Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial4Audio",
+                    "images": [
+                      {
+                        "id": "L4",
+                        "src": "trial4Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R4",
+                        "src": "trial4Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial5Audio",
+                    "images": [
+                      {
+                        "id": "L5",
+                        "src": "trial5Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R5",
+                        "src": "trial5Right",
+                        "position": "right"
+                      }
+                    ],
+                    "durationSeconds": 5.2
+                  },
+                {
+                    "audio": "trial6Audio",
+                    "images": [
+                      {
+                        "id": "L6",
+                        "src": "trial6Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R6",
+                        "src": "trial6Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial7Audio",
+                    "images": [
+                      {
+                        "id": "L7",
+                        "src": "trial7Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R7",
+                        "src": "trial7Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial8Audio",
+                    "images": [
+                      {
+                        "id": "L8",
+                        "src": "trial8Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R8",
+                        "src": "trial8Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial9Audio",
+                    "images": [
+                      {
+                        "id": "L9",
+                        "src": "trial9Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R9",
+                        "src": "trial9Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial10Audio",
+                    "images": [
+                      {
+                        "id": "L10",
+                        "src": "trial10Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R10",
+                        "src": "trial10Right",
+                        "position": "right"
+                      }
+                    ],
+                    "durationSeconds": 5.2
+                  },
+                {
+                    "audio": "trial11Audio",
+
+                    "images": [
+                      {
+                        "id": "L11",
+                        "src": "trial11Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R11",
+                        "src": "trial11Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial12Audio",
+                    "images": [
+                      {
+                        "id": "L12",
+                        "src": "trial12Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R12",
+                        "src": "trial12Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial13Audio",
+                    "images": [
+                      {
+                        "id": "L13",
+                        "src": "trial13Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R13",
+                        "src": "trial13Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial14Audio",
+                    "images": [
+                      {
+                        "id": "L14",
+                        "src": "trial14Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R14",
+                        "src": "trial14Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial15Audio",
+                    "images": [
+                      {
+                        "id": "L15",
+                        "src": "trial15Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R15",
+                        "src": "trial15Right",
+                        "position": "right"
+                      }
+                    ],
+                    "durationSeconds": 5.2
+                  },
+                {
+                    "audio": "trial16Audio",
+                    "images": [
+                      {
+                        "id": "L16",
+                        "src": "trial16Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R16",
+                        "src": "trial16Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial17Audio",
+                    "images": [
+                      {
+                        "id": "L17",
+                        "src": "trial17Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R17",
+                        "src": "trial17Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial18Audio",
+                    "images": [
+                      {
+                        "id": "L18",
+                        "src": "trial18Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R18",
+                        "src": "trial18Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "trial19Audio",
+                    "images": [
+                      {
+                        "id": "L19",
+                        "src": "trial19Left",
+                        "position": "left"
+                      },
+                      {
+                        "id": "R19",
+                        "src": "trial19Right",
+                        "position": "right"
+                      }
+                    ]
+                  },
+                {
+                    "audio": "done",
+                    "doRecording": false,
+                    "images":[
+                        {
+                            "id": "end",
+                            "src": "endPhoto.jpg",
+                            "position": "fill"
+                        }
+                    ]
+                }
+            ],
+            "parameterSets": [
+                {
+                "trial1Audio": "where_1_silence_the_fish_4",
+                "trial2Audio": "look_1_silence_the_cat_1",
+                "trial3Audio": "see_1_silence_the_bird_see_1",
+                "trial4Audio": "find_1_silence_the_dog_1",
+                "trial5Audio": "acrossTheUniverse000",
+                "trial6Audio": "see_1_silence_the_dog_see_1",
+                "trial7Audio": "look_1_silence_the_fish_4",
+                "trial8Audio": "find_1_silence_the_bird_1",
+                "trial9Audio": "where_1_silence_the_cat_1",
+                "trial10Audio": "yellow001",
+                "trial11Audio": "see_1_silence_the_fish_see_2",
+                "trial12Audio": "where_1_silence_the_dog_1",
+                "trial13Audio": "find_1_silence_the_cat_1",
+                "trial14Audio": "look_1_silence_the_bird_1",
+                "trial15Audio": "acrossTheUniverse016",
+                "trial16Audio": "where_1_silence_the_bird_1",
+                "trial17Audio": "see_1_silence_the_cat_see_3",
+                "trial18Audio": "look_1_silence_the_dog_1",
+                "trial19Audio": "find_1_silence_the_fish_4",
+                "trial1Left": "oriental_600x600.jpg",
+                "trial2Left": "bluegill_600x600.jpg",
+                "trial3Left": "sparrow_600x600.jpg",
+                "trial4Left": "bassethound_600x600.jpg",
+                "trial5Left": "balloons_left_600x600.jpg",
+                "trial6Left": "kookaburra_600x600.jpg",
+                "trial7Left": "betafish_600x600.jpg",
+                "trial8Left": "germanshepherd_600x600.jpg",
+                "trial9Left": "shorthair_calico_600x600.jpg",
+                "trial10Left": "beach_left_600x600.jpg",
+                "trial11Left": "bluegill_600x600.jpg",
+                "trial12Left": "sparrow_600x600.jpg",
+                "trial13Left": "betafish_600x600.jpg",
+                "trial14Left": "kookaburra_600x600.jpg",
+                "trial15Left": "fireworks_left_600x600.jpg",
+                "trial16Left": "bassethound_600x600.jpg",
+                "trial17Left": "oriental_600x600.jpg",
+                "trial18Left": "germanshepherd_600x600.jpg",
+                "trial19Left": "shorthair_calico_600x600.jpg",
+                "trial1Right": "lionfish_600x600.jpg",
+                "trial2Right": "tabby_600x600.jpg",
+                "trial3Right": "beagle_600x600.jpg",
+                "trial4Right": "kingfisher_600x600.jpg",
+                "trial5Right": "balloons_right_600x600.jpg",
+                "trial6Right": "afghanhound_600x600.jpg",
+                "trial7Right": "cornishrex_600x600.jpg",
+                "trial8Right": "cedarwaxwing_600x600.jpg",
+                "trial9Right": "sergeantmajor_600x600.jpg",
+                "trial10Right": "beach_right_600x600.jpg",
+                "trial11Right": "tabby_600x600.jpg",
+                "trial12Right": "beagle_600x600.jpg",
+                "trial13Right": "cornishrex_600x600.jpg",
+                "trial14Right": "afghanhound_600x600.jpg",
+                "trial15Right": "fireworks_right_600x600.jpg",
+                "trial16Right": "kingfisher_600x600.jpg",
+                "trial17Right": "lionfish_600x600.jpg",
+                "trial18Right": "cedarwaxwing_600x600.jpg",
+                "trial19Right": "sergeantmajor_600x600.jpg"
+              },
+                {
+                "trial1Audio": "look_1_silence_the_cat_1",
+                "trial2Audio": "where_1_silence_the_fish_4",
+                "trial3Audio": "find_1_silence_the_dog_1",
+                "trial4Audio": "see_1_silence_the_bird_see_1",
+                "trial5Audio": "acrossTheUniverse000",
+                "trial6Audio": "find_1_silence_the_bird_1",
+                "trial7Audio": "where_1_silence_the_cat_1",
+                "trial8Audio": "see_1_silence_the_dog_see_1",
+                "trial9Audio": "look_1_silence_the_fish_4",
+                "trial10Audio": "yellow001",
+                "trial11Audio": "find_1_silence_the_cat_1",
+                "trial12Audio": "look_1_silence_the_bird_1",
+                "trial13Audio": "see_1_silence_the_fish_see_2",
+                "trial14Audio": "where_1_silence_the_dog_1",
+                "trial15Audio": "acrossTheUniverse016",
+                "trial16Audio": "look_1_silence_the_dog_1",
+                "trial17Audio": "find_1_silence_the_fish_4",
+                "trial18Audio": "where_1_silence_the_bird_1",
+                "trial19Audio": "see_1_silence_the_cat_see_3",
+                "trial1Left": "oriental_600x600.jpg",
+                "trial2Left": "bluegill_600x600.jpg",
+                "trial3Left": "sparrow_600x600.jpg",
+                "trial4Left": "bassethound_600x600.jpg",
+                "trial5Left": "balloons_left_600x600.jpg",
+                "trial6Left": "kookaburra_600x600.jpg",
+                "trial7Left": "betafish_600x600.jpg",
+                "trial8Left": "germanshepherd_600x600.jpg",
+                "trial9Left": "shorthair_calico_600x600.jpg",
+                "trial10Left": "beach_left_600x600.jpg",
+                "trial11Left": "bluegill_600x600.jpg",
+                "trial12Left": "sparrow_600x600.jpg",
+                "trial13Left": "betafish_600x600.jpg",
+                "trial14Left": "kookaburra_600x600.jpg",
+                "trial15Left": "fireworks_left_600x600.jpg",
+                "trial16Left": "bassethound_600x600.jpg",
+                "trial17Left": "oriental_600x600.jpg",
+                "trial18Left": "germanshepherd_600x600.jpg",
+                "trial19Left": "shorthair_calico_600x600.jpg",
+                "trial1Right": "lionfish_600x600.jpg",
+                "trial2Right": "tabby_600x600.jpg",
+                "trial3Right": "beagle_600x600.jpg",
+                "trial4Right": "kingfisher_600x600.jpg",
+                "trial5Right": "balloons_right_600x600.jpg",
+                "trial6Right": "afghanhound_600x600.jpg",
+                "trial7Right": "cornishrex_600x600.jpg",
+                "trial8Right": "cedarwaxwing_600x600.jpg",
+                "trial9Right": "sergeantmajor_600x600.jpg",
+                "trial10Right": "beach_right_600x600.jpg",
+                "trial11Right": "tabby_600x600.jpg",
+                "trial12Right": "beagle_600x600.jpg",
+                "trial13Right": "cornishrex_600x600.jpg",
+                "trial14Right": "afghanhound_600x600.jpg",
+                "trial15Right": "fireworks_right_600x600.jpg",
+                "trial16Right": "kingfisher_600x600.jpg",
+                "trial17Right": "lionfish_600x600.jpg",
+                "trial18Right": "cedarwaxwing_600x600.jpg",
+                "trial19Right": "sergeantmajor_600x600.jpg"
+              },
+                {
+                "trial1Audio": "where_1_silence_the_fish_4",
+                "trial2Audio": "look_1_silence_the_cat_1",
+                "trial3Audio": "see_1_silence_the_bird_see_1",
+                "trial4Audio": "find_1_silence_the_dog_1",
+                "trial5Audio": "acrossTheUniverse000",
+                "trial6Audio": "see_1_silence_the_dog_see_1",
+                "trial7Audio": "look_1_silence_the_fish_4",
+                "trial8Audio": "find_1_silence_the_bird_1",
+                "trial9Audio": "where_1_silence_the_cat_1",
+                "trial10Audio": "yellow001",
+                "trial11Audio": "see_1_silence_the_fish_see_2",
+                "trial12Audio": "where_1_silence_the_dog_1",
+                "trial13Audio": "find_1_silence_the_cat_1",
+                "trial14Audio": "look_1_silence_the_bird_1",
+                "trial15Audio": "acrossTheUniverse016",
+                "trial16Audio": "where_1_silence_the_bird_1",
+                "trial17Audio": "see_1_silence_the_cat_see_3",
+                "trial18Audio": "look_1_silence_the_dog_1",
+                "trial19Audio": "find_1_silence_the_fish_4",
+                "trial1Left": "cornishrex_600x600.jpg",
+                "trial2Left": "sergeantmajor_600x600.jpg",
+                "trial3Left": "cedarwaxwing_600x600.jpg",
+                "trial4Left": "afghanhound_600x600.jpg",
+                "trial5Left": "balloons_left_600x600.jpg",
+                "trial6Left": "kookaburra_600x600.jpg",
+                "trial7Left": "betafish_600x600.jpg",
+                "trial8Left": "germanshepherd_600x600.jpg",
+                "trial9Left": "shorthair_calico_600x600.jpg",
+                "trial10Left": "beach_left_600x600.jpg",
+                "trial11Left": "sergeantmajor_600x600.jpg",
+                "trial12Left": "cedarwaxwing_600x600.jpg",
+                "trial13Left": "betafish_600x600.jpg",
+                "trial14Left": "kookaburra_600x600.jpg",
+                "trial15Left": "fireworks_left_600x600.jpg",
+                "trial16Left": "afghanhound_600x600.jpg",
+                "trial17Left": "cornishrex_600x600.jpg",
+                "trial18Left": "germanshepherd_600x600.jpg",
+                "trial19Left": "shorthair_calico_600x600.jpg",
+                "trial1Right": "lionfish_600x600.jpg",
+                "trial2Right": "tabby_600x600.jpg",
+                "trial3Right": "beagle_600x600.jpg",
+                "trial4Right": "kingfisher_600x600.jpg",
+                "trial5Right": "balloons_right_600x600.jpg",
+                "trial6Right": "bassethound_600x600.jpg",
+                "trial7Right": "oriental_600x600.jpg",
+                "trial8Right": "sparrow_600x600.jpg",
+                "trial9Right": "bluegill_600x600.jpg",
+                "trial10Right": "beach_right_600x600.jpg",
+                "trial11Right": "tabby_600x600.jpg",
+                "trial12Right": "beagle_600x600.jpg",
+                "trial13Right": "oriental_600x600.jpg",
+                "trial14Right": "bassethound_600x600.jpg",
+                "trial15Right": "fireworks_right_600x600.jpg",
+                "trial16Right": "kingfisher_600x600.jpg",
+                "trial17Right": "lionfish_600x600.jpg",
+                "trial18Right": "sparrow_600x600.jpg",
+                "trial19Right": "bluegill_600x600.jpg"
+              },
+                {
+                "trial1Audio": "look_1_silence_the_cat_1",
+                "trial2Audio": "where_1_silence_the_fish_4",
+                "trial3Audio": "find_1_silence_the_dog_1",
+                "trial4Audio": "see_1_silence_the_bird_see_1",
+                "trial5Audio": "acrossTheUniverse000",
+                "trial6Audio": "find_1_silence_the_bird_1",
+                "trial7Audio": "where_1_silence_the_cat_1",
+                "trial8Audio": "see_1_silence_the_dog_see_1",
+                "trial9Audio": "look_1_silence_the_fish_4",
+                "trial10Audio": "yellow001",
+                "trial11Audio": "find_1_silence_the_cat_1",
+                "trial12Audio": "look_1_silence_the_bird_1",
+                "trial13Audio": "see_1_silence_the_fish_see_2",
+                "trial14Audio": "where_1_silence_the_dog_1",
+                "trial15Audio": "acrossTheUniverse016",
+                "trial16Audio": "look_1_silence_the_dog_1",
+                "trial17Audio": "find_1_silence_the_fish_4",
+                "trial18Audio": "where_1_silence_the_bird_1",
+                "trial19Audio": "see_1_silence_the_cat_see_3",
+                "trial1Left": "cornishrex_600x600.jpg",
+                "trial2Left": "sergeantmajor_600x600.jpg",
+                "trial3Left": "cedarwaxwing_600x600.jpg",
+                "trial4Left": "afghanhound_600x600.jpg",
+                "trial5Left": "balloons_left_600x600.jpg",
+                "trial6Left": "kookaburra_600x600.jpg",
+                "trial7Left": "betafish_600x600.jpg",
+                "trial8Left": "germanshepherd_600x600.jpg",
+                "trial9Left": "shorthair_calico_600x600.jpg",
+                "trial10Left": "beach_left_600x600.jpg",
+                "trial11Left": "sergeantmajor_600x600.jpg",
+                "trial12Left": "cedarwaxwing_600x600.jpg",
+                "trial13Left": "betafish_600x600.jpg",
+                "trial14Left": "kookaburra_600x600.jpg",
+                "trial15Left": "fireworks_left_600x600.jpg",
+                "trial16Left": "afghanhound_600x600.jpg",
+                "trial17Left": "cornishrex_600x600.jpg",
+                "trial18Left": "germanshepherd_600x600.jpg",
+                "trial19Left": "shorthair_calico_600x600.jpg",
+                "trial1Right": "lionfish_600x600.jpg",
+                "trial2Right": "tabby_600x600.jpg",
+                "trial3Right": "beagle_600x600.jpg",
+                "trial4Right": "kingfisher_600x600.jpg",
+                "trial5Right": "balloons_right_600x600.jpg",
+                "trial6Right": "bassethound_600x600.jpg",
+                "trial7Right": "oriental_600x600.jpg",
+                "trial8Right": "sparrow_600x600.jpg",
+                "trial9Right": "bluegill_600x600.jpg",
+                "trial10Right": "beach_right_600x600.jpg",
+                "trial11Right": "tabby_600x600.jpg",
+                "trial12Right": "beagle_600x600.jpg",
+                "trial13Right": "oriental_600x600.jpg",
+                "trial14Right": "bassethound_600x600.jpg",
+                "trial15Right": "fireworks_right_600x600.jpg",
+                "trial16Right": "kingfisher_600x600.jpg",
+                "trial17Right": "lionfish_600x600.jpg",
+                "trial18Right": "sparrow_600x600.jpg",
+                "trial19Right": "bluegill_600x600.jpg"
+              },
+                {
+                "trial1Audio": "find_1_silence_the_fish_4",
+                "trial2Audio": "look_1_silence_the_dog_1",
+                "trial3Audio": "see_1_silence_the_cat_see_3",
+                "trial4Audio": "where_1_silence_the_bird_1",
+                "trial5Audio": "acrossTheUniverse000",
+                "trial6Audio": "look_1_silence_the_bird_1",
+                "trial7Audio": "find_1_silence_the_cat_1",
+                "trial8Audio": "where_1_silence_the_dog_1",
+                "trial9Audio": "see_1_silence_the_fish_see_2",
+                "trial10Audio": "yellow001",
+                "trial11Audio": "where_1_silence_the_cat_1",
+                "trial12Audio": "find_1_silence_the_bird_1",
+                "trial13Audio": "look_1_silence_the_fish_4",
+                "trial14Audio": "see_1_silence_the_dog_see_1",
+                "trial15Audio": "acrossTheUniverse016",
+                "trial16Audio": "find_1_silence_the_dog_1",
+                "trial17Audio": "see_1_silence_the_bird_see_1",
+                "trial18Audio": "look_1_silence_the_cat_1",
+                "trial19Audio": "where_1_silence_the_fish_4",
+                "trial1Left": "shorthair_calico_600x600.jpg",
+                "trial2Left": "germanshepherd_600x600.jpg",
+                "trial3Left": "oriental_600x600.jpg",
+                "trial4Left": "bassethound_600x600.jpg",
+                "trial5Left": "balloons_left_600x600.jpg",
+                "trial6Left": "kookaburra_600x600.jpg",
+                "trial7Left": "betafish_600x600.jpg",
+                "trial8Left": "sparrow_600x600.jpg",
+                "trial9Left": "bluegill_600x600.jpg",
+                "trial10Left": "beach_left_600x600.jpg",
+                "trial11Left": "shorthair_calico_600x600.jpg",
+                "trial12Left": "germanshepherd_600x600.jpg",
+                "trial13Left": "betafish_600x600.jpg",
+                "trial14Left": "kookaburra_600x600.jpg",
+                "trial15Left": "fireworks_left_600x600.jpg",
+                "trial16Left": "bassethound_600x600.jpg",
+                "trial17Left": "sparrow_600x600.jpg",
+                "trial18Left": "bluegill_600x600.jpg",
+                "trial19Left": "oriental_600x600.jpg",
+                "trial1Right": "sergeantmajor_600x600.jpg",
+                "trial2Right": "cedarwaxwing_600x600.jpg",
+                "trial3Right": "lionfish_600x600.jpg",
+                "trial4Right": "kingfisher_600x600.jpg",
+                "trial5Right": "balloons_right_600x600.jpg",
+                "trial6Right": "afghanhound_600x600.jpg",
+                "trial7Right": "cornishrex_600x600.jpg",
+                "trial8Right": "beagle_600x600.jpg",
+                "trial9Right": "tabby_600x600.jpg",
+                "trial10Right": "beach_right_600x600.jpg",
+                "trial11Right": "sergeantmajor_600x600.jpg",
+                "trial12Right": "cedarwaxwing_600x600.jpg",
+                "trial13Right": "cornishrex_600x600.jpg",
+                "trial14Right": "afghanhound_600x600.jpg",
+                "trial15Right": "fireworks_right_600x600.jpg",
+                "trial16Right": "kingfisher_600x600.jpg",
+                "trial17Right": "beagle_600x600.jpg",
+                "trial18Right": "tabby_600x600.jpg",
+                "trial19Right": "lionfish_600x600.jpg"
+              },
+                {
+                "trial1Audio": "see_1_silence_the_cat_see_3",
+                "trial2Audio": "where_1_silence_the_bird_1",
+                "trial3Audio": "find_1_silence_the_fish_4",
+                "trial4Audio": "look_1_silence_the_dog_1",
+                "trial5Audio": "acrossTheUniverse000",
+                "trial6Audio": "where_1_silence_the_dog_1",
+                "trial7Audio": "see_1_silence_the_fish_see_2",
+                "trial8Audio": "look_1_silence_the_bird_1",
+                "trial9Audio": "find_1_silence_the_cat_1",
+                "trial10Audio": "yellow001",
+                "trial11Audio": "look_1_silence_the_fish_4",
+                "trial12Audio": "see_1_silence_the_dog_see_1",
+                "trial13Audio": "where_1_silence_the_cat_1",
+                "trial14Audio": "find_1_silence_the_bird_1",
+                "trial15Audio": "acrossTheUniverse016",
+                "trial16Audio": "see_1_silence_the_bird_see_1",
+                "trial17Audio": "find_1_silence_the_dog_1",
+                "trial18Audio": "where_1_silence_the_fish_4",
+                "trial19Audio": "look_1_silence_the_cat_1",
+                "trial1Left": "shorthair_calico_600x600.jpg",
+                "trial2Left": "germanshepherd_600x600.jpg",
+                "trial3Left": "oriental_600x600.jpg",
+                "trial4Left": "bassethound_600x600.jpg",
+                "trial5Left": "balloons_left_600x600.jpg",
+                "trial6Left": "kookaburra_600x600.jpg",
+                "trial7Left": "betafish_600x600.jpg",
+                "trial8Left": "sparrow_600x600.jpg",
+                "trial9Left": "bluegill_600x600.jpg",
+                "trial10Left": "beach_left_600x600.jpg",
+                "trial11Left": "shorthair_calico_600x600.jpg",
+                "trial12Left": "germanshepherd_600x600.jpg",
+                "trial13Left": "betafish_600x600.jpg",
+                "trial14Left": "kookaburra_600x600.jpg",
+                "trial15Left": "fireworks_left_600x600.jpg",
+                "trial16Left": "bassethound_600x600.jpg",
+                "trial17Left": "sparrow_600x600.jpg",
+                "trial18Left": "bluegill_600x600.jpg",
+                "trial19Left": "oriental_600x600.jpg",
+                "trial1Right": "sergeantmajor_600x600.jpg",
+                "trial2Right": "cedarwaxwing_600x600.jpg",
+                "trial3Right": "lionfish_600x600.jpg",
+                "trial4Right": "kingfisher_600x600.jpg",
+                "trial5Right": "balloons_right_600x600.jpg",
+                "trial6Right": "afghanhound_600x600.jpg",
+                "trial7Right": "cornishrex_600x600.jpg",
+                "trial8Right": "beagle_600x600.jpg",
+                "trial9Right": "tabby_600x600.jpg",
+                "trial10Right": "beach_right_600x600.jpg",
+                "trial11Right": "sergeantmajor_600x600.jpg",
+                "trial12Right": "cedarwaxwing_600x600.jpg",
+                "trial13Right": "cornishrex_600x600.jpg",
+                "trial14Right": "afghanhound_600x600.jpg",
+                "trial15Right": "fireworks_right_600x600.jpg",
+                "trial16Right": "kingfisher_600x600.jpg",
+                "trial17Right": "beagle_600x600.jpg",
+                "trial18Right": "tabby_600x600.jpg",
+                "trial19Right": "lionfish_600x600.jpg"
+              },
+                {
+                "trial1Audio": "find_1_silence_the_fish_4",
+                "trial2Audio": "look_1_silence_the_dog_1",
+                "trial3Audio": "see_1_silence_the_cat_see_3",
+                "trial4Audio": "where_1_silence_the_bird_1",
+                "trial5Audio": "acrossTheUniverse000",
+                "trial6Audio": "look_1_silence_the_bird_1",
+                "trial7Audio": "find_1_silence_the_cat_1",
+                "trial8Audio": "where_1_silence_the_dog_1",
+                "trial9Audio": "see_1_silence_the_fish_see_2",
+                "trial10Audio": "yellow001",
+                "trial11Audio": "where_1_silence_the_cat_1",
+                "trial12Audio": "find_1_silence_the_bird_1",
+                "trial13Audio": "look_1_silence_the_fish_4",
+                "trial14Audio": "see_1_silence_the_dog_see_1",
+                "trial15Audio": "acrossTheUniverse016",
+                "trial16Audio": "find_1_silence_the_dog_1",
+                "trial17Audio": "see_1_silence_the_bird_see_1",
+                "trial18Audio": "look_1_silence_the_cat_1",
+                "trial19Audio": "where_1_silence_the_fish_4",
+                "trial1Left": "shorthair_calico_600x600.jpg",
+                "trial2Left": "germanshepherd_600x600.jpg",
+                "trial3Left": "cornishrex_600x600.jpg",
+                "trial4Left": "afghanhound_600x600.jpg",
+                "trial5Left": "balloons_left_600x600.jpg",
+                "trial6Left": "kookaburra_600x600.jpg",
+                "trial7Left": "betafish_600x600.jpg",
+                "trial8Left": "cedarwaxwing_600x600.jpg",
+                "trial9Left": "sergeantmajor_600x600.jpg",
+                "trial10Left": "beach_left_600x600.jpg",
+                "trial11Left": "shorthair_calico_600x600.jpg",
+                "trial12Left": "germanshepherd_600x600.jpg",
+                "trial13Left": "betafish_600x600.jpg",
+                "trial14Left": "kookaburra_600x600.jpg",
+                "trial15Left": "fireworks_left_600x600.jpg",
+                "trial16Left": "afghanhound_600x600.jpg",
+                "trial17Left": "cedarwaxwing_600x600.jpg",
+                "trial18Left": "sergeantmajor_600x600.jpg",
+                "trial19Left": "cornishrex_600x600.jpg",
+                "trial1Right": "bluegill_600x600.jpg",
+                "trial2Right": "sparrow_600x600.jpg",
+                "trial3Right": "lionfish_600x600.jpg",
+                "trial4Right": "kingfisher_600x600.jpg",
+                "trial5Right": "balloons_right_600x600.jpg",
+                "trial6Right": "bassethound_600x600.jpg",
+                "trial7Right": "oriental_600x600.jpg",
+                "trial8Right": "beagle_600x600.jpg",
+                "trial9Right": "tabby_600x600.jpg",
+                "trial10Right": "beach_right_600x600.jpg",
+                "trial11Right": "bluegill_600x600.jpg",
+                "trial12Right": "sparrow_600x600.jpg",
+                "trial13Right": "oriental_600x600.jpg",
+                "trial14Right": "bassethound_600x600.jpg",
+                "trial15Right": "fireworks_right_600x600.jpg",
+                "trial16Right": "kingfisher_600x600.jpg",
+                "trial17Right": "beagle_600x600.jpg",
+                "trial18Right": "tabby_600x600.jpg",
+                "trial19Right": "lionfish_600x600.jpg"
+              },
+                {
+                "trial1Audio": "see_1_silence_the_cat_see_3",
+                "trial2Audio": "where_1_silence_the_bird_1",
+                "trial3Audio": "find_1_silence_the_fish_4",
+                "trial4Audio": "look_1_silence_the_dog_1",
+                "trial5Audio": "acrossTheUniverse000",
+                "trial6Audio": "where_1_silence_the_dog_1",
+                "trial7Audio": "see_1_silence_the_fish_see_2",
+                "trial8Audio": "look_1_silence_the_bird_1",
+                "trial9Audio": "find_1_silence_the_cat_1",
+                "trial10Audio": "yellow001",
+                "trial11Audio": "look_1_silence_the_fish_4",
+                "trial12Audio": "see_1_silence_the_dog_see_1",
+                "trial13Audio": "where_1_silence_the_cat_1",
+                "trial14Audio": "find_1_silence_the_bird_1",
+                "trial15Audio": "acrossTheUniverse016",
+                "trial16Audio": "see_1_silence_the_bird_see_1",
+                "trial17Audio": "find_1_silence_the_dog_1",
+                "trial18Audio": "where_1_silence_the_fish_4",
+                "trial19Audio": "look_1_silence_the_cat_1",
+                "trial1Left": "shorthair_calico_600x600.jpg",
+                "trial2Left": "germanshepherd_600x600.jpg",
+                "trial3Left": "cornishrex_600x600.jpg",
+                "trial4Left": "afghanhound_600x600.jpg",
+                "trial5Left": "balloons_left_600x600.jpg",
+                "trial6Left": "kookaburra_600x600.jpg",
+                "trial7Left": "betafish_600x600.jpg",
+                "trial8Left": "cedarwaxwing_600x600.jpg",
+                "trial9Left": "sergeantmajor_600x600.jpg",
+                "trial10Left": "beach_left_600x600.jpg",
+                "trial11Left": "shorthair_calico_600x600.jpg",
+                "trial12Left": "germanshepherd_600x600.jpg",
+                "trial13Left": "betafish_600x600.jpg",
+                "trial14Left": "kookaburra_600x600.jpg",
+                "trial15Left": "fireworks_left_600x600.jpg",
+                "trial16Left": "afghanhound_600x600.jpg",
+                "trial17Left": "cedarwaxwing_600x600.jpg",
+                "trial18Left": "sergeantmajor_600x600.jpg",
+                "trial19Left": "cornishrex_600x600.jpg",
+                "trial1Right": "bluegill_600x600.jpg",
+                "trial2Right": "sparrow_600x600.jpg",
+                "trial3Right": "lionfish_600x600.jpg",
+                "trial4Right": "kingfisher_600x600.jpg",
+                "trial5Right": "balloons_right_600x600.jpg",
+                "trial6Right": "bassethound_600x600.jpg",
+                "trial7Right": "oriental_600x600.jpg",
+                "trial8Right": "beagle_600x600.jpg",
+                "trial9Right": "tabby_600x600.jpg",
+                "trial10Right": "beach_right_600x600.jpg",
+                "trial11Right": "bluegill_600x600.jpg",
+                "trial12Right": "sparrow_600x600.jpg",
+                "trial13Right": "oriental_600x600.jpg",
+                "trial14Right": "bassethound_600x600.jpg",
+                "trial15Right": "fireworks_right_600x600.jpg",
+                "trial16Right": "kingfisher_600x600.jpg",
+                "trial17Right": "beagle_600x600.jpg",
+                "trial18Right": "tabby_600x600.jpg",
+                "trial19Right": "lionfish_600x600.jpg"
+              }
+            ],
+            "commonFrameProperties": {
+                "kind": "exp-lookit-images-audio",
+                "baseDir": "https://raw.githubusercontent.com/mzettersten/lwl_typ_animals/master/lookit_experiments/",
+                "pageColor": "black",
+                "maximizesDisplay": true,
+                "durationSeconds": 7.2,
+                "doRecording": true,
+                "showWaitForRecordingMessage": true,
+                "showWaitForUploadingMessage": true,
+                "waitForRecordingMessage": " ",
+                "waitForUploadMessage": " ",
+                "waitForRecordingMessageColor": "black",
+                "waitForUploadMessageColor": "black",
+                "maxUploadSeconds": 10,
+                "audioTypes": [
+                    "mp3",
+                    "ogg"
+                ],
+                "videoTypes": [
+                    "mp4",
+                    "webm"
+                ],
+                "autoProceed": true,
+                "backgroundColor": "black",
+                "calibrationAudio": [
+                    {
+                        "src": "https://raw.githubusercontent.com/mzettersten/lwl_typ_animals/master/lookit_experiments/mp3/pinwheel.mp3",
+                        "type": "audio/mp3"
+                    }
+                ],
+                "calibrationImage": "calib_duck.png",
+                "calibrationLength": 0,
+                "announcementLength": 0,
+                "calibrationPositions": [
+                    "left",
+                    "right",
+                    "center"
+                ],
+                "calibrationImageAnimation": "bounce"
+            }
+        },
+        "study-preview": {
+            "kind": "exp-lookit-stimuli-preview",
+            "blocks": [
+                {
+                    "text": "During this study, your child will see two images of animals on the screen at the same time and hear sentences that label one of the animals. We will record where they look. Your child will also see some fun pictures with music to keep them interested in the study."
+                },
+                {
+                    "text": "The study is completely voluntary and you can stop participating at any point by pressing F1 or the control-X. These keys will open a prompt where you can click exit to end the study."
+                },
+                {
+                    "text": "If you would like to see the kinds of animals your child will see during the study, click 'preview the pictures' button below. You should preview these pictures <strong>without your child so that the images will still be new and interesting to them."
+                }
+            ],
+            "baseDir": "https://raw.githubusercontent.com/mzettersten/lwl_typ_animals/master/lookit_experiments/",
+            "stimuli": [
+                {
+                    "image": "calib_duck.png",
+                    "caption": "At the begin of the study, we will display the duck below in a few different locations (left, right, center) on the screen."
+                },
+                {
+                    "image": "greyhound_600x600.jpg",
+                    "caption": "At the start of each trial, we will display two images side by side that show two different animals. This is an example of the kinds of dogs we will use in the study."
+                },
+                {
+                    "image": "bluetang.png",
+                    "caption": "This is an example of the kinds of fish we will use in the study"
+                },
+                {
+                    "image": "robin.png",
+                    "caption": "This is an example of the kinds of birds we will use in the study"
+                },
+                {
+                    "image": "siamese.png",
+                    "caption": "This is an example of the kinds of cats we will use in the study"
+                },
+                {
+                    "image": "mountain_left_600x600.jpg",
+                    "caption": "Between trials your child may see images like this to keep her/his attention to the screen"
+                },
+                {
+                    "audio": "wow_that",
+                    "caption": "During each trial, we will also play audio like this to direct your child's attention to one of the images on the screen."
+                }
+            ],
+            "audioTypes": [
+                "mp3",
+                "ogg"
+            ],
+            "videoTypes": [
+                "webm",
+                "mp4"
+            ],
+            "skipButtonText": "Skip preview",
+            "previewButtonText": "I'd like to preview the pictures",
+            "showPreviousButton": true
+        },
+        "video-consent": {
+            "gdpr": false,
+            "kind": "exp-lookit-video-consent",
+            "PIName": "Jenny Saffran",
+            "datause": "If the researchers do not receive a consent recording (the video you'll make to the right) for this session and cannot verify that you agreed to participate, no other video from your session will be analyzed or retained by the UW-Madison study team. As per the Lookit terms of use agreement, Lookit may retain the videos for their own purposes but will not analyze the video data.",
+            "payment": "You will receive a $5 Amazon gift card for participating in this study. If you or your child do not complete the study, you will still receive this compensation.",
+            "purpose": "The purpose of this study is to understand how infants and young children learn about language.",
+            "template": "consent_002",
+            "PIContact": "Infant Learning Lab at (608) 263-5876",
+            "procedures": "Your child will listen to words and view images on a screen. You may also be asked to respond to questions about your child’s language development, as well as other aspects of your child’s experience (e.g., non-English language exposure). There are no known risks involved in this procedure, particularly since the sounds are presented to the child at a loudness level typical of normal conversation. To facilitate the research process, please try to minimize distractions to your child during the study. If someone other than your child or yourself appears on the video screen during the recording, the researchers will attempt to edit their faces or other identifiable information out of the video. Only video data from your child will be analyzed.",
+            "institution": "University of Wisconsin - Madison",
+            "prompt_all_adults": true,
+            "research_rights_statement": "You have been informed of the testing procedures that will be used, and have had the opportunity to ask further questions if necessary to clarify these procedures.  Your participation in this study is voluntary.  You will receive a gift card as a thank-you for your child’s participation, and will also learn more about how infants learn about auditory events in their environment.  Other than this knowledge, the experiment will be of no direct benefit to you or to your child.  If you have questions about my rights as a participant, or the rights of your child, you can contact the University of Wisconsin – Madison Social and Behavioral Sciences Institutional Review Board at 608-263-2320. If the researchers see or suspect child abuse or neglect when they view your webcam videos, they are required by state law to report it. Confidentiality would be broken in this case."
+        },
+        "preload-stimuli": {
+            "kind": "exp-lookit-change-detection",
+            "border": "thick solid black",
+            "baseDir": "https://raw.githubusercontent.com/mzettersten/lwl_typ_animals/master/lookit_experiments/",
+            "blankMs": 0,
+            "displayMs": 0,
+            "doRecording": false,
+            "attnLength": 0,
+            "audioTypes": [
+                "mp3",
+                "ogg"
+            ],
+            "startWithA": true,
+            "videoTypes": [
+                "mp4",
+                "webm"
+            ],
+            "leftImagesA": [
+                "afghanhound_600x600.jpg",
+                "balloons_left_600x600.jpg",
+                "balloons_right_600x600.jpg",
+                "bassethound_600x600.jpg",
+                "beach_left_600x600.jpg",
+                "beach_right_600x600.jpg",
+                "beagle_600x600.jpg",
+                "betafish_600x600.jpg",
+                "bluegill_600x600.jpg",
+                "bluetang.png",
+                "cedarwaxwing_600x600.jpg",
+                "cornishrex_600x600.jpg",
+                "fireworks_left_600x600.jpg",
+                "fireworks_right_600x600.jpg",
+                "germanshepherd_600x600.jpg",
+                "greyhound_600x600.jpg",
+                "kingfisher_600x600.jpg",
+                "kookaburra_600x600.jpg",
+                "lionfish_600x600.jpg",
+                "mountain_left_600x600.jpg",
+                "mountain_right_600x600.jpg",
+                "oriental_600x600.jpg",
+                "robin.png",
+                "sergeantmajor_600x600.jpg",
+                "shorthair_calico_600x600.jpg",
+                "siamese.png",
+                "sparrow_600x600.jpg",
+                "tabby_600x600.jpg"
+            ],
+            "leftImagesB": [],
+            "trialLength": 0,
+            "rightImagesA": [],
+            "rightImagesB": [],
+            "videoSources": "LoadingStim",
+            "containerColor": "black",
+            "backgroundColor": "black",
+            "randomizeImageOrder": true
+        },
+        "parent-exit-survey": {
+            "kind": "exp-lookit-exit-survey",
+            "debriefing": {
+                "text": "In this study, we are interested in how babies learn that words, such as <i>dog</i>, not only refer to common animals like Labradors, but also refer to categories of animals that include less familiar dogs like Chihuahuas. Your baby saw some pictures of animals that they are more likely to have seen before (i.e., a golden retriever), while others were more unusual (i.e., a basset hound). We wonder if babies will recognize the atypical animals as quickly as the typical animals.</br></br>Babies know more about words than they are able to say, so we look at what babies <i>understand</i> about words by seeing what they look at during the study. There are many reasons why your baby might look to one kind of animal over another, and your baby likely looked at pictures differently than another child based on their unique experiences with these animals. For example, your baby may not know the word <i>fish</i> or maybe you have a golden retriever at home that looks like the one in our study. That’s totally okay! We average across many babies and many different trials to understand how babies, on average, learn that words refer to categories of things.</br></br>Once we have checked that your consent video meets our eligibility criteria, we will send you a $5 gift card as a thank you! You can expect to receive the gift card within about a week of participating.</br></br>You can learn more about our research <a href='https://infantlearning.waisman.wisc.edu/' target='_blank' rel='noopener'>on the Infant Learning Lab website</a> or by checking us out in the First Words episode of <a href='https://www.netflix.com/title/80117833' target='_blank' rel='noopener'>Netflix’s Babies docuseries</a>. If you know other families who may want to do our study, please share this study on Facebook below.</br></br>Thank you!",
+                "image": {
+                    "alt": "thank you",
+                    "src": "https://raw.githubusercontent.com/mzettersten/lwl_typ_animals/master/lookit_experiments/img/exit_survey_image.png"
+                },
+                "title": "Thank you!"
+            }
+        },
+        "audio-quality-check": {
+            "kind": "exp-lookit-instructions",
+            "blocks": [
+                {
+                    "text": "This study requires that your child listens to some sentences labeling animals.</br></br>Please listen to the sample audio on this page and adjust your volume level so that it resembles a person's voice in the room. Once you think the level is comfortable for you and your baby you can click next.",
+                    "title": "Audio Test",
+                    "mediaBlock": {
+                        "text": "You should hear 'Ready to go?'",
+                        "isVideo": false,
+                        "sources": [
+                            {
+                                "src": "https://raw.githubusercontent.com/mzettersten/lwl_typ_animals/master/lookit_experiments/mp3/ready.mp3",
+                                "type": "audio/mp3"
+                            },
+                            {
+                                "src": "https://raw.githubusercontent.com/mzettersten/lwl_typ_animals/master/lookit_experiments/ogg/ready.ogg",
+                                "type": "audio/ogg"
+                            }
+                        ],
+                        "mustPlay": true,
+                        "warningText": "Please try playing the sample audio."
+                    }
+                }
+            ],
+            "showWebcam": false,
+            "nextButtonText": "Next"
+        },
+        "setup-quality-check": {
+            "kind": "exp-video-config-quality",
+            "title": "Webcam setup for CATegories",
+            "introText": "We are interested in where your child is looking during the videos. Please check each of the following to ensure that we are able to use your video:",
+            "showRecordMenu": false,
+            "requireTestVideo": false,
+            "completedItemText": "Done!",
+            "instructionBlocks": [
+                {
+                    "text": "<strong>Make sure the webcam you're using is roughly centered</strong> relative to this monitor. This makes it much easier for us to tell whether your child is looking to the left or right!",
+                    "image": {
+                        "alt": "Example images of using centered external webcam on monitor or built-in webcam on laptop.",
+                        "src": "https://s3.amazonaws.com/lookitcontents/website/centering.png"
+                    }
+                },
+                {
+                    "text": "<strong>Turn off any other monitors</strong> connected to your computer, besides the one with the centered webcam. (If there's just one monitor, you're all set!)",
+                    "image": {
+                        "alt": "Example images showing laptop screen turned off if using external monitor and webcam, or external monitor turned off if using built-in webcam and laptop screen.",
+                        "src": "https://s3.amazonaws.com/lookitcontents/website/monitors.png"
+                    }
+                },
+                {
+                    "text": "Check the lighting by making sure you can <strong>clearly see your own eyes</strong> on the webcam view to the right. You may need to either turn on a light or reduce light coming from behind you.",
+                    "image": {
+                        "alt": "Example images showing good lighting, room too dark, and backlit scene where eyes are not visible.",
+                        "src": "https://s3.amazonaws.com/lookitcontents/website/lighting.png"
+                    }
+                },
+                {
+                    "text": "If it's practical, <strong>minimize exciting things</strong> that are visible behind or to the side of the screen--for instance, by facing a wall instead of the kitchen. (If this isn't practical for you, don't worry about it--just check the box!)",
+                    "image": {
+                        "alt": "Example images showing a child and puppy next to the computer, versus a computer just on its own.",
+                        "src": "https://s3.amazonaws.com/lookitcontents/website/distractions.png"
+                    }
+                }
+            ],
+            "requireItemConfirmation": true,
+            "recordingInstructionText": "You can check how your setup compares to the pictures here!",
+            "nextButtonText": "Next"
+        },
+        "video-quality-check": {
+            "kind": "exp-video-config-quality",
+            "title": "Holding your child",
+            "introText": "<strong>We are almost ready to begin the study! Below are instructions on how to position yourself and your baby.</strong></br></br>We ask that you try your best to avoid looking at the screen during the study. Your child is learning from you all the time, and may pick up on very small cues about what you think. You should expect to look away from the computer for about about 3 minutes, and we will let you know when it is okay to look at the screen again. You can also track the progression of the study by listening for the music. When you hear music for the fourth time, you can expect the study to end in about 30 seconds.</br></br><strong>For this next part, you will need your child so that you can test out your setup.</strong></br></br>There are two ways you can hold your child during this study.</br></br>1. You can sit forward with your eyes closed and hold your child on your lap. </br></br>2. You can sit facing away from the monitor and hold your child over your shoulder. </br></br>Below you will find instructions for each of these positions.",
+            "showRecordMenu": true,
+            "requireTestVideo": true,
+            "completedItemText": "Done!",
+            "instructionBlocks": [
+                {
+                    "text": "Please sit facing the monitor, holding your child on your lap, like this. Your child can sit or stand as long as <strong> the webcam is angled up or down so that both you and your child's eyes are visible</strong>. If you're not sure if both you and your child's eyes will be visible, you can make a short recording to check!",
+                    "image": {
+                        "alt": "Example image showing a mom holding his child on lap.",
+                        "src": "https://raw.githubusercontent.com/mzettersten/lwl_typ_animals/master/lookit_experiments/img/placeholder_lap_image.jpg"
+                    },
+                    "title": "Child on lap"
+                },
+                {
+                    "text": "Please sit facing away from the monitor, holding your child over your shoulder, like this. <strong>Make sure the webcam is angled up or down enough that your child's eyes are visible in this position</strong>. If you're not sure if your child's eyes will be visible, you can make a short recording to check!",
+                    "image": {
+                        "alt": "Example image showing a dad holding his child looking over his shoulder.",
+                        "src": "https://s3.amazonaws.com/lookitcontents/website/over_shoulder.jpg"
+                    },
+                    "title": "Child over shoulder"
+                }
+            ],
+            "requireItemConfirmation": false,
+            "recordingInstructionText": "You should be able to see your camera view above. Please create and view a short recording to see how your setup looks. </br></br><strong>When you feel comfortable with your setup, press the next button to begin the study (you'll have a moment to close your eyes or turn around)!</strong></br></br>As a reminder, you can stop the study at any point by pressing F1 or control-X."
+        }
+    },
+    "sequence": [
+        "video-config",
+        "study-intro",
+        "video-consent",
+        "preload-stimuli",
+        "study-preview",
+        "setup-quality-check",
+        "audio-quality-check",
+        "video-quality-check",
+        "exp-procedure",
+        "parent-exit-survey"
+    ]
+}
