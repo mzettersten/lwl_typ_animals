@@ -1,4 +1,3 @@
 # General
 .DS_Store
-data_analysis/analysis_scripts/.Rhistory
-data_analysis/power_simulation/.Rhistory
+.Rhistory
