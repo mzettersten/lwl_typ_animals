@@ -1,0 +1,387 @@
+---
+title: "Preliminary Descriptive Analysis CATegories Pilot"
+author: "Anonymized"
+date: "6/30/2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+## Load packages
+
+```{r setup, message=FALSE}
+library(tidyverse)
+library(janitor)
+library(cowplot)
+library(here)
+library(readxl)
+library(peekds)
+theme_set(theme_cowplot())
+
+knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
+```
+
+## Load data
+
+```{r}
+data_file_path <- here::here("..","data","CATegories_exp1_pilot_processed_data.csv")
+
+d <- read_csv(data_file_path)
+
+```
+
+## summarize subj info
+
+```{r}
+#summarize subj info
+subj_info <- d %>%
+  group_by(sub_num, age,months,age_mo, sex, trial_order) %>%
+  summarize()
+```
+
+## Useable trial summary
+
+```{r}
+analysis_window=c(300,2800)
+
+summarize_subj_useable_trials <- d %>%
+  filter(corrected_time_centered>=analysis_window[1]&corrected_time_centered<=analysis_window[2]) %>%
+  group_by(sub_num, months,age_mo, sex, trial_order,trial_number,target_image,target_typicality_z) %>%
+  summarize(
+    length_window=n(),
+    useable_frames_window=sum(!is.na(accuracy_transformed)),
+    percent_useable_window=useable_frames_window/length_window,
+    useable_window=ifelse(percent_useable_window>=0.5,1,0), #useable if at least 50% looking
+    mean_accuracy=mean(accuracy_transformed,na.rm=TRUE)
+  )
+
+#overall percent useable trials
+mean(summarize_subj_useable_trials$useable_window)
+
+#distribution of percent useable frames within a window
+hist(summarize_subj_useable_trials$percent_useable_window)
+
+#overall useable trials
+summarize_useable_trials <- summarize_subj_useable_trials %>%
+  group_by(sub_num, months, sex, trial_order) %>%
+  summarize(
+    num_useable_trials_window=sum(useable_window),
+    exclude_participant=ifelse(num_useable_trials_window<8,1,0) # must contribute at least half of the total trials (n=16 in pilot)
+  )
+
+#average trials contributed
+mean(summarize_useable_trials$num_useable_trials_window)
+
+#participants to exclude based on data contribution
+sum(summarize_useable_trials$exclude_participant)
+
+#join with main data frame
+d <- d %>%
+  left_join(summarize_subj_useable_trials) %>%
+  left_join(summarize_useable_trials) 
+```
+
+## Summarize subject-level accuracy
+
+```{r}
+avg_accuracy <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  filter(corrected_time_centered>=300&corrected_time_centered<=2800) %>%
+  group_by(sub_num, months,age_mo,age_group, sex, trial_order,trial_number,target_image,target_typicality_z) %>%
+  summarize(mean_accuracy=mean(accuracy_transformed,na.rm=TRUE)) %>%
+  ungroup() %>%
+  group_by(sub_num, age_mo,age_group, sex, trial_order) %>%
+  summarize(N=n(),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(mean_accuracy,na.rm=T)/sqrt(N),
+            lower_ci=accuracy-ci,
+            upper_ci=accuracy+ci)
+```
+
+
+## Simple exploratory t-tests investigating accuracy compared to chance
+
+Infants below 14 months (crude cutoff) are at chance, infants above 14 months are reliably identifying targets.
+
+```{r}
+#significant looking
+t.test(avg_accuracy$accuracy,mu=0.5)
+
+#by age
+t.test(filter(avg_accuracy,age_group=="older than 14 months")$accuracy,mu=0.5)
+
+#infants below 14 months at chance
+t.test(filter(avg_accuracy,age_group=="younger than 14 months")$accuracy,mu=0.5)
+
+#older infants do better than infants below 14 months of age
+t.test(filter(avg_accuracy,age_group=="younger than 14 months")$accuracy,filter(avg_accuracy,age_group=="older than 14 months")$accuracy,var.equal=T)
+```
+
+## Accuracy across age
+
+```{r}
+ggplot(avg_accuracy,aes(age_mo,accuracy))+
+  geom_pointrange(aes(ymin=lower_ci,ymax=upper_ci), 
+                  position=position_jitter(width=0.1),
+                  width=0,
+                  size=1.5) +
+  geom_hline(yintercept=0.5,linetype="dashed")+
+  geom_smooth(method="lm")+
+  xlab("Age (in months)")+
+  ylab("Proportion Target Looking")+
+  ylim(0,1)+
+  scale_x_continuous(breaks=seq(12,18,1))
+ggsave(here::here("..","figures","age_relationship_accuracy.png"),width=7,height=6)
+```
+
+## Timecourse plot
+
+First smooth/ resample time.
+
+This is necessary when plotting the timecourses given the variable sampling rate in the data (otherwise the mean observations "jumps around" due to varying contributing data composition at different time points).
+
+```{r}
+target_ms_per_frame=1000/30
+#adapted from: https://github.com/langcog/peekds/blob/master/R/generate_aoi.R
+resample_trial <- function(df_trial) {
+  t_origin <- df_trial$corrected_time_centered
+  data_origin <- df_trial$accuracy_transformed
+
+  # create the new timestamps for resampling
+  t_start <- min(t_origin) - (min(t_origin) %% target_ms_per_frame)
+  t_resampled <- seq(from = t_start, to = max(t_origin),
+                     by = target_ms_per_frame)
+
+  # exchange strings values with integers for resampling
+  # this step critical for interpolating missing vals quickly and correctly
+  aoi_num <- data_origin %>%
+    recode(.missing = 2) #recode NA as 2
+    
+  # start resampling with approx
+  aoi_resampled <- stats::approx(x = t_origin, y = aoi_num, xout = t_resampled,
+                                 method = "constant", rule = 2,
+                                 ties = "ordered")$y
+  aoi_resampled_recoded <- aoi_resampled %>%
+    dplyr::recode("0"="0","1"="1","2" = "missing") %>%
+    as.numeric()
+
+  # adding back the columns to match schema
+  dplyr::tibble(corrected_time_centered = t_resampled,
+                accuracy_transformed = aoi_resampled_recoded,
+                trial_number = df_trial$trial_number[1],
+                sub_num = df_trial$sub_num[1])
+}
+
+d_resampled <- d %>%
+  dplyr::mutate(sub_num_trial_number = paste(.data$sub_num,
+                                           .data$trial_number, sep = "_")) %>%
+      split(.$sub_num_trial_number) %>%
+      purrr::map_df(resample_trial) %>%
+      dplyr::arrange(.data$sub_num, .data$trial_number)
+
+d_info <- d %>%
+  select(-corrected_time_centered,-accuracy_transformed) %>%
+  distinct(sub_num, exclude_participant, useable_window, months,age_mo, age_group,sex, trial_order, condition, trial_order,trial_number,target_image,target_typicality_z)
+
+d_resampled <- d_resampled %>%
+  left_join(d_info) %>%
+  mutate(corrected_time_centered =round(corrected_time_centered,0))
+```
+
+
+
+```{r}
+summarize_subj <- d_resampled %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  group_by(sub_num, months,age_mo, sex, trial_order, corrected_time_centered) %>%
+  summarize(N=n(),
+            non_na_n = sum(!is.na(accuracy_transformed)), 
+            mean_accuracy=mean(accuracy_transformed,na.rm=TRUE),
+            ci=qt(0.975, non_na_n-1)*sd(accuracy_transformed,na.rm=T)/sqrt(non_na_n),
+            lower_ci=mean_accuracy-ci,
+            upper_ci=mean_accuracy+ci) %>%
+  ungroup()
+
+summarize_across_subj <- summarize_subj %>%
+  group_by(corrected_time_centered) %>%
+  dplyr::summarize(n=n(),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
+            se_accuracy=sd_accuracy/sqrt(n))
+
+ggplot(summarize_across_subj,aes(corrected_time_centered,accuracy))+
+  xlim(-1000,4000)+
+  geom_smooth(method="gam")+
+  geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
+  geom_point()+
+  geom_vline(xintercept=0,size=1.5)+
+  geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
+  geom_vline(xintercept=300,linetype="dotted")
+ggsave(here::here("..","figures","overall_accuracy.png"))
+
+```
+
+### Timecourse by age
+
+```{r}
+summarize_across_subj_by_age <- summarize_subj %>%
+  mutate(age_group=ifelse(age_mo>14,"older than 14 months","younger than 14 months")) %>%
+  group_by(age_group,corrected_time_centered) %>%
+  dplyr::summarize(n=n(),
+                   accuracy=mean(mean_accuracy,na.rm=TRUE),
+                   sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
+                   se_accuracy=sd_accuracy/sqrt(n))
+ggplot(summarize_across_subj_by_age,aes(corrected_time_centered,accuracy))+
+  xlim(-1000,4000)+
+  geom_smooth(method="gam")+
+  geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
+  geom_point()+
+  geom_vline(xintercept=0,size=1.5)+
+  geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
+  geom_vline(xintercept=300,linetype="dotted")+
+  facet_wrap(~age_group)
+ggsave(here::here("..","figures","overall_accuracy_by_age.png"),width=12, height=9)
+```
+
+### Timecourse by condition and age
+
+```{r}
+summarize_subj_condition <- d_resampled %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  group_by(sub_num, months,age_mo,age_group, sex, condition, trial_order, corrected_time_centered) %>%
+  summarize(mean_accuracy=mean(accuracy_transformed,na.rm=TRUE))
+
+summarize_across_subj_cond_by_age <- summarize_subj_condition %>%
+  group_by(age_group,condition,corrected_time_centered) %>%
+  summarize(n=n(),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
+            se_accuracy=sd_accuracy/sqrt(n))
+
+num_subjects <- summarize_across_subj_cond_by_age%>%
+  group_by(age_group)%>%
+  summarize(max_subnum=max(n))
+
+summarize_across_subj_cond<- summarize_subj_condition %>%
+  group_by(condition,corrected_time_centered) %>%
+  summarize(n=n(),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
+            se_accuracy=sd_accuracy/sqrt(n))
+
+pA <- ggplot(summarize_across_subj_cond,aes(corrected_time_centered,accuracy,color=condition))+
+  xlim(-1000,4000)+
+  geom_rect(data = data.frame(xmin = 300,
+                              xmax = 2800,
+                              ymin = -Inf,
+                              ymax = Inf),
+            aes(x=NULL, y=NULL,xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,color=NULL),
+            fill = "grey", alpha = 0.2)+
+  geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
+  geom_point(alpha=0.5)+
+  geom_smooth(data=summarize_subj_condition,aes(y=mean_accuracy),method="gam")+
+  geom_vline(xintercept=0,size=1.5)+
+  geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
+  geom_vline(xintercept=300,linetype="dotted")+
+  geom_vline(xintercept=2800,linetype="dotted")+
+  theme(legend.position = c(0.75,0.15))+
+  annotate("text",label="Critical Window",x=1550,y=0.9)+
+  ylim(0,1)+
+  ylab("Proportion Target Looking")+
+  xlab("Time (centered on target word onset, in ms)")
+ggsave(here::here("..","figures","typicality_accuracy.png"),width=10,height=6)
+
+pB <- ggplot(filter(summarize_across_subj_cond_by_age,age_group=="older than 14 months"),aes(corrected_time_centered,accuracy,color=condition))+
+  xlim(-1000,4000)+
+  geom_rect(data = data.frame(xmin = 300,
+                              xmax = 2800,
+                              ymin = -Inf,
+                              ymax = Inf),
+            aes(x=NULL, y=NULL,xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,color=NULL),
+            fill = "grey", alpha = 0.2)+
+  geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
+  geom_point(alpha=0.5)+
+  geom_smooth(data=filter(summarize_subj_condition,age_group=="older than 14 months"),aes(y=mean_accuracy),method="gam")+
+  geom_vline(xintercept=0,size=1.5)+
+  geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
+  geom_vline(xintercept=300,linetype="dotted")+
+  geom_vline(xintercept=2800,linetype="dotted")+
+  theme(legend.position = c(0.75,0.15))+
+  annotate("text",label="Critical Window",x=1550,y=0.9)+
+  ylim(0,1)+
+  ylab("Proportion Target Looking")+
+  xlab("Time (centered on target word onset, in ms)")
+ggsave(here::here("..","figures","typicality_accuracy_only14orolder.png"),width=10,height=6)
+
+plot_grid(pA,pB,ncol=2,label_size=18,labels=c("A","B"))
+ggsave(here::here("..","figures","typicality_accuracy_paper.png"),width=12,height=6)
+```
+
+## Summarize baseline
+
+### Overall baseline
+
+```{r}
+avg_baseline <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  filter(corrected_time_centered>=-2000&corrected_time_centered<=0) %>%
+  group_by(sub_num, months,age_mo,age_group, sex, trial_order,trial_number,target_image,target_typicality_z) %>%
+  summarize(mean_accuracy=mean(accuracy_transformed,na.rm=TRUE)) %>%
+  ungroup() %>%
+  group_by(sub_num, age_mo,age_group, sex, trial_order) %>%
+  summarize(N=n(),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(mean_accuracy,na.rm=T)/sqrt(N),
+            lower_ci=accuracy-ci,
+            upper_ci=accuracy+ci)
+
+#significant looking
+t.test(avg_baseline$accuracy,mu=0.5)
+
+#by age
+#above 14 months
+t.test(filter(avg_baseline,age_group=="older than 14 months")$accuracy,mu=0.5)
+
+#infants below 14 months at chance
+t.test(filter(avg_baseline,age_group=="younger than 14 months")$accuracy,mu=0.5)
+```
+
+### Baseline by condition
+
+```{r}
+avg_baseline_by_condition <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  filter(corrected_time_centered>=-2000&corrected_time_centered<=0) %>%
+  group_by(sub_num, months,age_mo,age_group, sex, trial_order,trial_number,target_image,condition) %>%
+  summarize(mean_accuracy=mean(accuracy_transformed,na.rm=TRUE)) %>%
+  ungroup() %>%
+  group_by(sub_num, age_mo,age_group, sex, trial_order,condition) %>%
+  summarize(N=n(),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(mean_accuracy,na.rm=T)/sqrt(N),
+            lower_ci=accuracy-ci,
+            upper_ci=accuracy+ci)
+
+#Typical condition
+t.test(avg_baseline_by_condition$accuracy[avg_baseline_by_condition$condition=="typical"],mu=0.5)
+#Atypical condition
+t.test(avg_baseline_by_condition$accuracy[avg_baseline_by_condition$condition=="atypical"],mu=0.5)
+#Difference
+t.test(avg_baseline_by_condition$accuracy[avg_baseline_by_condition$condition=="typical"],avg_baseline_by_condition$accuracy[avg_baseline_by_condition$condition=="atypical"],paired=TRUE)
+
+#### 14 months and up only
+#Typical condition
+t.test(filter(avg_baseline_by_condition,age_group=="older than 14 months")$accuracy[filter(avg_baseline_by_condition,age_group=="older than 14 months")$condition=="typical"],mu=0.5)
+#Atypical condition
+t.test(filter(avg_baseline_by_condition,age_group=="older than 14 months")$accuracy[filter(avg_baseline_by_condition,age_group=="older than 14 months")$condition=="atypical"],mu=0.5)
+#Difference
+t.test(filter(avg_baseline_by_condition,age_group=="older than 14 months")$accuracy[filter(avg_baseline_by_condition,age_group=="older than 14 months")$condition=="typical"],filter(avg_baseline_by_condition,age_group=="older than 14 months")$accuracy[filter(avg_baseline_by_condition,age_group=="older than 14 months")$condition=="atypical"],paired=TRUE)
+```
+
