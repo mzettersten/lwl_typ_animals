@@ -1,8 +1,12 @@
 ---
-title: "Analysis CATegories Pilot"
-author: "Martin Zettersten"
+title: "Preliminary Descriptive Analysis CATegories Pilot"
+author: "Anonymized"
 date: "6/30/2021"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
 ---
 
 ## Load packages
@@ -13,15 +17,16 @@ library(janitor)
 library(cowplot)
 library(here)
 library(readxl)
+library(peekds)
 theme_set(theme_cowplot())
 
-#knitr::opts_chunk$set(cache = TRUE, warn = FALSE,warning=FALSE, message = FALSE)
+knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
 ```
 
 ## Load data
 
 ```{r}
-data_file_path <- here::here("..","..","data","submission2","processed_data","CATegories_exp1_pilot_processed_data.csv")
+data_file_path <- here::here("..","data","CATegories_exp1_pilot_processed_data.csv")
 
 d <- read_csv(data_file_path)
 
@@ -52,6 +57,9 @@ summarize_subj_useable_trials <- d %>%
     mean_accuracy=mean(accuracy_transformed,na.rm=TRUE)
   )
 
+#overall percent useable trials
+mean(summarize_subj_useable_trials$useable_window)
+
 #distribution of percent useable frames within a window
 hist(summarize_subj_useable_trials$percent_useable_window)
 
@@ -62,6 +70,9 @@ summarize_useable_trials <- summarize_subj_useable_trials %>%
     num_useable_trials_window=sum(useable_window),
     exclude_participant=ifelse(num_useable_trials_window<8,1,0) # must contribute at least half of the total trials (n=16 in pilot)
   )
+
+#average trials contributed
+mean(summarize_useable_trials$num_useable_trials_window)
 
 #participants to exclude based on data contribution
 sum(summarize_useable_trials$exclude_participant)
@@ -123,31 +134,70 @@ ggplot(avg_accuracy,aes(age_mo,accuracy))+
   ylab("Proportion Target Looking")+
   ylim(0,1)+
   scale_x_continuous(breaks=seq(12,18,1))
-ggsave("figures/age_relationship_accuracy.png",width=7,height=6)
+ggsave(here::here("..","figures","age_relationship_accuracy.png"),width=7,height=6)
 ```
 
 ## Timecourse plot
 
-First smooth/ resample time
+First smooth/ resample time.
+
+This is necessary when plotting the timecourses given the variable sampling rate in the data (otherwise the mean observations "jumps around" due to varying contributing data composition at different time points).
 
 ```{r}
 target_ms_per_frame=1000/30
-d <- d %>%
-  mutate(target_ms_per_frame=target_ms_per_frame) %>%
-  mutate(
-         corrected_time_rounded=round(corrected_time/target_ms_per_frame,0),
-         corrected_time_centered_rounded=round(corrected_time_centered/target_ms_per_frame,0),
-         corrected_time_smoothed=corrected_time_rounded*target_ms_per_frame,
-         corrected_time_centered_smoothed=corrected_time_centered_rounded*target_ms_per_frame
-  )
+#adapted from: https://github.com/langcog/peekds/blob/master/R/generate_aoi.R
+resample_trial <- function(df_trial) {
+  t_origin <- df_trial$corrected_time_centered
+  data_origin <- df_trial$accuracy_transformed
+
+  # create the new timestamps for resampling
+  t_start <- min(t_origin) - (min(t_origin) %% target_ms_per_frame)
+  t_resampled <- seq(from = t_start, to = max(t_origin),
+                     by = target_ms_per_frame)
+
+  # exchange strings values with integers for resampling
+  # this step critical for interpolating missing vals quickly and correctly
+  aoi_num <- data_origin %>%
+    recode(.missing = 2) #recode NA as 2
+    
+  # start resampling with approx
+  aoi_resampled <- stats::approx(x = t_origin, y = aoi_num, xout = t_resampled,
+                                 method = "constant", rule = 2,
+                                 ties = "ordered")$y
+  aoi_resampled_recoded <- aoi_resampled %>%
+    dplyr::recode("0"="0","1"="1","2" = "missing") %>%
+    as.numeric()
+
+  # adding back the columns to match schema
+  dplyr::tibble(corrected_time_centered = t_resampled,
+                accuracy_transformed = aoi_resampled_recoded,
+                trial_number = df_trial$trial_number[1],
+                sub_num = df_trial$sub_num[1])
+}
+
+d_resampled <- d %>%
+  dplyr::mutate(sub_num_trial_number = paste(.data$sub_num,
+                                           .data$trial_number, sep = "_")) %>%
+      split(.$sub_num_trial_number) %>%
+      purrr::map_df(resample_trial) %>%
+      dplyr::arrange(.data$sub_num, .data$trial_number)
+
+d_info <- d %>%
+  select(-corrected_time_centered,-accuracy_transformed) %>%
+  distinct(sub_num, exclude_participant, useable_window, months,age_mo, age_group,sex, trial_order, condition, trial_order,trial_number,target_image,target_typicality_z)
+
+d_resampled <- d_resampled %>%
+  left_join(d_info) %>%
+  mutate(corrected_time_centered =round(corrected_time_centered,0))
 ```
 
 
+
 ```{r}
-summarize_subj <- d %>%
+summarize_subj <- d_resampled %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  group_by(sub_num, months,age_mo, sex, trial_order, corrected_time_centered_smoothed) %>%
+  group_by(sub_num, months,age_mo, sex, trial_order, corrected_time_centered) %>%
   summarize(N=n(),
             non_na_n = sum(!is.na(accuracy_transformed)), 
             mean_accuracy=mean(accuracy_transformed,na.rm=TRUE),
@@ -157,13 +207,13 @@ summarize_subj <- d %>%
   ungroup()
 
 summarize_across_subj <- summarize_subj %>%
-  group_by(corrected_time_centered_smoothed) %>%
+  group_by(corrected_time_centered) %>%
   dplyr::summarize(n=n(),
             accuracy=mean(mean_accuracy,na.rm=TRUE),
             sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
             se_accuracy=sd_accuracy/sqrt(n))
 
-ggplot(summarize_across_subj,aes(corrected_time_centered_smoothed,accuracy))+
+ggplot(summarize_across_subj,aes(corrected_time_centered,accuracy))+
   xlim(-1000,4000)+
   geom_smooth(method="gam")+
   geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
@@ -171,7 +221,7 @@ ggplot(summarize_across_subj,aes(corrected_time_centered_smoothed,accuracy))+
   geom_vline(xintercept=0,size=1.5)+
   geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
   geom_vline(xintercept=300,linetype="dotted")
-ggsave("figures/overall_accuracy.png")
+ggsave(here::here("..","figures","overall_accuracy.png"))
 
 ```
 
@@ -180,12 +230,12 @@ ggsave("figures/overall_accuracy.png")
 ```{r}
 summarize_across_subj_by_age <- summarize_subj %>%
   mutate(age_group=ifelse(age_mo>14,"older than 14 months","younger than 14 months")) %>%
-  group_by(age_group,corrected_time_centered_smoothed) %>%
+  group_by(age_group,corrected_time_centered) %>%
   dplyr::summarize(n=n(),
                    accuracy=mean(mean_accuracy,na.rm=TRUE),
                    sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
                    se_accuracy=sd_accuracy/sqrt(n))
-ggplot(summarize_across_subj_by_age,aes(corrected_time_centered_smoothed,accuracy))+
+ggplot(summarize_across_subj_by_age,aes(corrected_time_centered,accuracy))+
   xlim(-1000,4000)+
   geom_smooth(method="gam")+
   geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
@@ -194,20 +244,20 @@ ggplot(summarize_across_subj_by_age,aes(corrected_time_centered_smoothed,accurac
   geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
   geom_vline(xintercept=300,linetype="dotted")+
   facet_wrap(~age_group)
-ggsave("figures/overall_accuracy_by_age.png",width=12, height=9)
+ggsave(here::here("..","figures","overall_accuracy_by_age.png"),width=12, height=9)
 ```
 
 ### Timecourse by condition and age
 
 ```{r}
-summarize_subj_condition <- d %>%
+summarize_subj_condition <- d_resampled %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  group_by(sub_num, months,age_mo,age_group, sex, condition, trial_order, corrected_time_centered_smoothed) %>%
+  group_by(sub_num, months,age_mo,age_group, sex, condition, trial_order, corrected_time_centered) %>%
   summarize(mean_accuracy=mean(accuracy_transformed,na.rm=TRUE))
 
 summarize_across_subj_cond_by_age <- summarize_subj_condition %>%
-  group_by(age_group,condition,corrected_time_centered_smoothed) %>%
+  group_by(age_group,condition,corrected_time_centered) %>%
   summarize(n=n(),
             accuracy=mean(mean_accuracy,na.rm=TRUE),
             sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
@@ -218,13 +268,13 @@ num_subjects <- summarize_across_subj_cond_by_age%>%
   summarize(max_subnum=max(n))
 
 summarize_across_subj_cond<- summarize_subj_condition %>%
-  group_by(condition,corrected_time_centered_smoothed) %>%
+  group_by(condition,corrected_time_centered) %>%
   summarize(n=n(),
             accuracy=mean(mean_accuracy,na.rm=TRUE),
             sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
             se_accuracy=sd_accuracy/sqrt(n))
 
-pA <- ggplot(summarize_across_subj_cond,aes(corrected_time_centered_smoothed,accuracy,color=condition))+
+pA <- ggplot(summarize_across_subj_cond,aes(corrected_time_centered,accuracy,color=condition))+
   xlim(-1000,4000)+
   geom_rect(data = data.frame(xmin = 300,
                               xmax = 2800,
@@ -244,9 +294,9 @@ pA <- ggplot(summarize_across_subj_cond,aes(corrected_time_centered_smoothed,acc
   ylim(0,1)+
   ylab("Proportion Target Looking")+
   xlab("Time (centered on target word onset, in ms)")
-ggsave("figures/typicality_accuracy.png",width=10,height=6)
+ggsave(here::here("..","figures","typicality_accuracy.png"),width=10,height=6)
 
-pB <- ggplot(filter(summarize_across_subj_cond_by_age,age_group=="older than 14 months"),aes(corrected_time_centered_smoothed,accuracy,color=condition))+
+pB <- ggplot(filter(summarize_across_subj_cond_by_age,age_group=="older than 14 months"),aes(corrected_time_centered,accuracy,color=condition))+
   xlim(-1000,4000)+
   geom_rect(data = data.frame(xmin = 300,
                               xmax = 2800,
@@ -266,10 +316,10 @@ pB <- ggplot(filter(summarize_across_subj_cond_by_age,age_group=="older than 14 
   ylim(0,1)+
   ylab("Proportion Target Looking")+
   xlab("Time (centered on target word onset, in ms)")
-ggsave("figures/typicality_accuracy_only14.png",width=10,height=6)
+ggsave(here::here("..","figures","typicality_accuracy_only14orolder.png"),width=10,height=6)
 
 plot_grid(pA,pB,ncol=2,label_size=18,labels=c("A","B"))
-ggsave("figures/typicality_accuracy_paper.png",width=12,height=6)
+ggsave(here::here("..","figures","typicality_accuracy_paper.png"),width=12,height=6)
 ```
 
 ## Summarize baseline
