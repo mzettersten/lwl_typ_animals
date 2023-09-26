@@ -30,23 +30,23 @@ knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE
 ## Load data
 
 ```{r}
-data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data.csv")
+data_file_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_processed_data_anonymized.csv")
 
 d <- read_csv(data_file_path)
 
 ## add general category properties from typicality dataset
 ## typicality
-animal_rating_names <- read.csv(here::here("..","..","data","processed_data","animal_ratings_stimuli_full.csv"))
+animal_rating_names <- read.csv(here::here("data_analysis","registered_report","data","processed_data","animal_ratings_stimuli_full.csv"))
 animal_stims <- unique(c(unique(d$left_image),unique(d$right_image)))
-typicality <- read.csv(here::here("..","..","data","processed_data","typicality_animals_summarized.csv")) %>%
+typicality <- read.csv(here::here("data_analysis","registered_report","data","processed_data","typicality_animals_summarized.csv")) %>%
   mutate(item_name=str_remove(animal_name,pattern=" ")) %>%
   left_join(animal_rating_names) %>%
   mutate(image_name_resized = str_replace(image_experiment_name,".jpg","")) %>%
   filter(image_name_resized %in% animal_stims)
 d <- d %>%
   left_join(typicality %>% select(image_name_resized,category,typicality_subjective),by=c("target_image" = "image_name_resized")) %>%
-  rename(typicality_condition=typicality_subjective)
-
+  rename(typicality_condition=typicality_subjective)%>%
+  filter(400<age & age<600) #filter out childs outside of the age bounds
 ```
 
 ## Summarize participant information
@@ -164,7 +164,7 @@ summarize_useable_trials_wide <- summarize_useable_trials %>%
   )
 
 #write out useable trial summary
-write_csv(summarize_useable_trials_wide,here::here("..","..","data","processed_data","CATegories_exp2_useable_trial_summary.csv"))
+write_csv(summarize_useable_trials_wide,here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_useable_trial_summary.csv"))
 ```
 
 Overall, among the trials contributed by the `r length(unique(summarize_useable_trials$sub_num))` participants, `r round(mean(summarize_subj_useable_trials$useable_window),3)*100`% of trials contained sufficient looking to meet our trial-level inclusion criteria (at least 50% looking during both the baseline window and the critical window). `r sum(summarize_subj_trials$exclude_participant==0)` of the `r length(unique(summarize_useable_trials$sub_num))` participants contributed sufficient looking data  on at least half of the experimental trials (overall M = `r round(mean(summarize_subj_trials$total_trials),1)`)
@@ -670,7 +670,7 @@ ggsave(here::here("figures","age_relationship_critical_window_accuracy.png"),wid
 ### Baseline-corrected proportion target looking
 
 ```{r}
-ggplot(avg_corrected_target_looking,aes(mean_age,average_corrected_target_looking))+
+ggplot(avg_corrected_target_looking,aes(age,average_corrected_target_looking))+
   geom_pointrange(aes(ymin=lower_ci,ymax=upper_ci), 
                   position=position_jitter(width=0.1),
                   width=0,
@@ -732,6 +732,7 @@ avg_target_looking_by_item %>%
 ```{r}
 #summarize average corrected target looking across subject
 avg_target_looking_by_item_by_age <- avg_subj_target_looking_by_item %>%
+  mutate(age_group=ifelse(age_mo>16,"older than 16 months","younger than 16 months")) %>%
   group_by(age_group,category) %>%
   summarize(N=n(),
             critical_accuracy=mean(mean_critical_accuracy,na.rm=TRUE),
@@ -755,8 +756,9 @@ Next, we investigate item-level variation in word recognition as measured by bas
 avg_subj_corrected_target_looking_by_item <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num, months,age_mo,age_group, sex, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, age_mo,age_group, sex, trial_order,category) %>%
+  mutate(age_group=ifelse(age_mo>16,"older than 16 months","younger than 16 months")) %>%
+  distinct(sub_num, months,age_mo,age_group, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
+  group_by(sub_num, age_mo,age_group, child_gender, trial_order,category) %>%
   summarize(N=n(),
             average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
             ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
@@ -790,4 +792,129 @@ avg_corrected_target_looking_by_item_by_age %>%
   knitr::kable()
 ```
 
-##
+### Aim 3
+
+To test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
+
+#### 3.1
+```{r}
+#zscore parent report of typicality within participants
+parent_typicality_z <- d %>%
+  group_by(sub_num) %>%
+  mutate(target_parent_typicality_z = ((target_parent_typicality_rating - mean(target_parent_typicality_rating))/sd(target_parent_typicality_rating)),
+         distractor_parent_typicality_z = ((distractor_parent_typicality_rating - mean(distractor_parent_typicality_rating))/sd(distractor_parent_typicality_rating)))
+  
+parent_typicality <- parent_typicality_z %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num,months,age_mo,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
+  group_by(sub_num,age_mo,target_image, category,target_parent_typicality_z,target_parent_typicality_rating) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
+  na.omit(target_parent_typicality_rating)
+
+#subject details for aim 3 analysis (how many participants have survey data)
+aim3_subject_info <- parent_typicality %>%
+  ungroup()%>%
+  summarize(
+    N = length(unique(sub_num)),
+    mean_age = mean(age_mo),
+    sd_age = sd(age_mo)
+  )
+
+aim3_subject_info%>%
+  knitr::kable()
+
+#model
+m_3_1 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z+age_mo+ (target_parent_typicality_z|sub_num) + (1|category), parent_typicality)
+
+summary(m_3_1)#singular fit
+
+confint(m_3_1,method="Wald")
+
+```
+
+#### Quick Visualization
+
+```{r}
+#by category
+ggplot(parent_typicality,aes(target_parent_typicality_z,average_corrected_target_looking))+
+  geom_point(alpha=0.1)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~category)
+
+#by subject
+ggplot(parent_typicality,aes(target_parent_typicality_z,average_corrected_target_looking))+
+  geom_point(alpha=0.1)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~sub_num)
+
+hist(parent_typicality$target_parent_typicality_z)
+```
+
+### Aim 4
+
+We will conduct a series of analyses to determine whether our results hold across a variety of different analytic decisions
+
+#### 4.1. Window
+
+```{r}
+
+```
+
+#### 4.2 excluding unknown words
+
+We registered using CDI responses as a way to remove unknown words; however we did not administer the CDI. Thus, we are not including this analysis since it would require an arbitrary cutoff for word recognition as a proxy for understanding a word (i.e., what is the difference between 50% accuracy and 50.01% accuracy)
+
+#### 4.3 Reaction time as the dependent measure
+
+We will fit models analogous to those in 1.1 and 1.2 using reaction time as our primary dependent measure rather than accuracy
+
+```{r}
+get_rt <- function (d, SAMPLING_RATE = 33) {
+  # end if no data
+  if (is.null(d$response) | is.null(rle_data$lengths)) {
+    return(tibble(rt = NA, 
+                  shift_type = NA))
+  }
+  
+  onset_aoi <- rle_data$values[1] # zero point AOI
+  
+  # end if missing for start
+  if (!(onset_aoi %in% c("target","distractor"))) {
+    return(tibble(rt = NA, 
+                  shift_type = "other"))
+  }
+
+  first_landing <- rle_data$values[rle_data$values != onset_aoi &
+                                    rle_data$values %in% c("target","distractor")][1]
+
+  # end if no shift
+  if (is.na(first_landing)) {
+    return(tibble(rt = NA, 
+                  shift_type = "no shift"))
+  }
+  
+  shift_type <- case_when(onset_aoi == "distractor" &
+                           first_landing == "target" ~ "D-T",
+                         onset_aoi == "target" &
+                           first_landing == "distractor" ~ "T-D",
+                         TRUE ~ "other")
+
+  first_landing_idx <- which(rle_data$values == first_landing)[1]
+  
+  values_before_first_landing <- rle_data$lengths[1:(first_landing_idx-1)]
+
+  # rt is the number of samples happening before arrival + 1 
+  # (first sample of arrival)
+  # times the length of a sample
+  rt <- (sum(values_before_first_landing) + 1) * (1000/SAMPLING_RATE)
+
+  return(tibble(rt = rt, 
+                shift_type = shift_type))
+}
+```
+
+
+
+
