@@ -916,5 +916,3 @@ get_rt <- function (d, SAMPLING_RATE = 33) {
 ```
 
 
-
-
