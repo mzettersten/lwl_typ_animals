@@ -1,7 +1,7 @@
 library(tidyverse)
 library(here)
-source(here::here("rt_helper.R"))
-data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_anonymized.csv")
+source("rt_helper.R")
+data_file_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_processed_data_anonymized.csv")
 d <- read_csv(data_file_path)
 
 #convert to rle data
@@ -25,6 +25,10 @@ d_rt <- rle_data %>%
   nest() %>%
   mutate(data = lapply(data, get_rt)) %>%
   unnest(cols = c(data))
+
+# write RT data frame
+write_csv(d_rt,here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_RT_by_trial.csv"))
+
 
 #quick plot of distribution
 hist(filter(d_rt, shift_type=="D-T")$shift_start_rt)

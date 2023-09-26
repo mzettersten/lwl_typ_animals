@@ -46,7 +46,7 @@ typicality <- read.csv(here::here("data_analysis","registered_report","data","pr
 d <- d %>%
   left_join(typicality %>% select(image_name_resized,category,typicality_subjective),by=c("target_image" = "image_name_resized")) %>%
   rename(typicality_condition=typicality_subjective)%>%
-  filter(400<age & age<600) #filter out childs outside of the age bounds
+  filter(400<age & age<600) #filter out children outside of the age bounds
 ```
 
 ## Summarize participant information
@@ -866,53 +866,138 @@ We will conduct a series of analyses to determine whether our results hold acros
 
 We registered using CDI responses as a way to remove unknown words; however we did not administer the CDI. Thus, we are not including this analysis since it would require an arbitrary cutoff for word recognition as a proxy for understanding a word (i.e., what is the difference between 50% accuracy and 50.01% accuracy)
 
+#### Calculate CIs per word & per child
+
+```{r}
+
+```
+
+
+#### Remove any words where CIs overlap with childs CI around chance
+
+```{r}
+
+```
+
+#### Model 
+Is there a typicality effect when we remove unknown words?
+
 #### 4.3 Reaction time as the dependent measure
 
 We will fit models analogous to those in 1.1 and 1.2 using reaction time as our primary dependent measure rather than accuracy
 
+### Load RT (computed using compute_RT.R & rt_helper.R)
 ```{r}
-get_rt <- function (d, SAMPLING_RATE = 33) {
-  # end if no data
-  if (is.null(d$response) | is.null(rle_data$lengths)) {
-    return(tibble(rt = NA, 
-                  shift_type = NA))
-  }
+rt_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_RT_by_trial.csv")
+d_rt <- read_csv(rt_path)
+d_rt <- d_rt %>%
+  rename(trial_order=trial_order_x)%>%
+  mutate(trial_order = str_replace(trial_order, "_", "-"))
+
+
+d_rt<- trial_corrected_accuracy %>%
+  left_join(d_rt)
+```
+
+### Visualization of RTs
+
+```{r}
+hist(filter(d_rt, shift_type=="D-T")$shift_start_rt)
+```
+
+The data are right skewed, which is common for RTs. We will use log transformations in the subsequent models to account for the distribution of the data.
+
+### Models
+
+#### 4.1 Subject-level RT
+```{r}
+avg_subj_RT <- d_rt %>%
+  filter(shift_type=="D-T")%>%
+  group_by(sub_num, child_gender,condition) %>%
+  summarize(N=n(),
+            average_RT=mean(rt,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(rt,na.rm=T)/sqrt(N),
+            lower_ci=average_RT-ci,
+            upper_ci=average_RT+ci)
   
-  onset_aoi <- rle_data$values[1] # zero point AOI
-  
-  # end if missing for start
-  if (!(onset_aoi %in% c("target","distractor"))) {
-    return(tibble(rt = NA, 
-                  shift_type = "other"))
-  }
 
-  first_landing <- rle_data$values[rle_data$values != onset_aoi &
-                                    rle_data$values %in% c("target","distractor")][1]
+avg_subj_RT <- avg_subj_RT %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
 
-  # end if no shift
-  if (is.na(first_landing)) {
-    return(tibble(rt = NA, 
-                  shift_type = "no shift"))
-  }
-  
-  shift_type <- case_when(onset_aoi == "distractor" &
-                           first_landing == "target" ~ "D-T",
-                         onset_aoi == "target" &
-                           first_landing == "distractor" ~ "T-D",
-                         TRUE ~ "other")
+m_4_1 <- lmer(log(average_RT) ~ 1 + typicality_condition_c + (1|sub_num),data=avg_subj_RT)
 
-  first_landing_idx <- which(rle_data$values == first_landing)[1]
-  
-  values_before_first_landing <- rle_data$lengths[1:(first_landing_idx-1)]
+summary(m_4_1)
+confint(m_4_1,method="Wald")
+```
 
-  # rt is the number of samples happening before arrival + 1 
-  # (first sample of arrival)
-  # times the length of a sample
-  rt <- (sum(values_before_first_landing) + 1) * (1000/SAMPLING_RATE)
+There is no significant typicality effect.
 
-  return(tibble(rt = rt, 
-                shift_type = shift_type))
-}
+#### 4.1.1 RT for typical
+
+```{r}
+m_4_1_1 <- lmer(log(average_RT) ~ 1 + typicality_condition_typ + (1|sub_num),data=avg_subj_RT)
+
+summary(m_4_1_1)
+confint(m_4_1_1,method="Wald")
+
+```
+
+#### RT for atypical
+
+```{r}
+m_4_1_2 <- lmer(log(average_RT) ~ 1 + typicality_condition_atyp + (1|sub_num),data=avg_subj_RT)
+
+summary(m_4_1_2)
+confint(m_4_1_2,method="Wald")
+
+```
+
+#### 4.2 Trial level RT
+
+```{r}
+trial_rt <- d_rt %>%
+  filter(shift_type=="D-T")%>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+
+m_4_2 <- lmer(log(rt) ~ 1 + typicality_condition_c + 
+            (1+typicality_condition_c|sub_num) +
+            (1|category),
+          data=trial_rt)
+
+summary(m_4_2)
+confint(m_4_1_2,method="Wald")
 ```
 
 
