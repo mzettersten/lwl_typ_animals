@@ -14,7 +14,7 @@ resampled_d <- d %>%
       is.na(accuracy_transformed) ~ "other"
     )
   ) %>%
-  mutate(t_norm=time_centered,
+  mutate(t_norm=corrected_time_centered,
          trial_id = trial_number,
          administration_id = paste(sub_num,session,sep="_")) %>%
   resample_times() #time resampling is set to 30 Hz
