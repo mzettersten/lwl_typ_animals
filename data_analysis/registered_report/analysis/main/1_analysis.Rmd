@@ -993,7 +993,7 @@ m_4_2 <- lmer(log(rt) ~ 1 + typicality_condition_c +
           data=trial_rt)
 
 summary(m_4_2)
-confint(m_4_1_2,method="Wald")
+confint(m_4_2,method="Wald")
 ```
 
 
