@@ -201,7 +201,7 @@ avg_critical_window_accuracy <- trial_critical_window_accuracy %>%
 trial_corrected_accuracy <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)
+  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)
 ## average
 avg_corrected_target_looking <- trial_corrected_accuracy  %>%
   group_by(sub_num, child_gender) %>%
@@ -670,18 +670,18 @@ ggsave(here::here("figures","age_relationship_critical_window_accuracy.png"),wid
 ### Baseline-corrected proportion target looking
 
 ```{r}
-ggplot(avg_corrected_target_looking,aes(age,average_corrected_target_looking))+
-  geom_pointrange(aes(ymin=lower_ci,ymax=upper_ci), 
-                  position=position_jitter(width=0.1),
-                  width=0,
-                  size=1.5) +
-  geom_hline(yintercept=0,linetype="dashed")+
-  geom_smooth(method="lm")+
-  xlab("Age (in months)")+
-  ylab("Baseline-Corrected Proportion Target Looking")+
-  ylim(-0.55,0.55)+
-  scale_x_continuous(breaks=seq(12,18,1))
-ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
+# ggplot(avg_corrected_target_looking,aes(age,average_corrected_target_looking))+
+#   geom_pointrange(aes(ymin=lower_ci,ymax=upper_ci), 
+#                   position=position_jitter(width=0.1),
+#                   width=0,
+#                   size=1.5) +
+#   geom_hline(yintercept=0,linetype="dashed")+
+#   geom_smooth(method="lm")+
+#   xlab("Age (in months)")+
+#   ylab("Baseline-Corrected Proportion Target Looking")+
+#   ylim(-0.55,0.55)+
+#   scale_x_continuous(breaks=seq(12,18,1))
+# ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
 ```
 
 
@@ -913,10 +913,6 @@ We will fit models analogous to those in 1.1 and 1.2 using reaction time as our 
 ```{r}
 rt_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_RT_by_trial.csv")
 d_rt <- read_csv(rt_path)
-d_rt <- d_rt %>%
-  rename(trial_order=trial_order_x)%>%
-  mutate(trial_order = str_replace(trial_order, "_", "-"))
-
 
 d_rt<- trial_corrected_accuracy %>%
   left_join(d_rt)
@@ -1020,7 +1016,7 @@ m_4_2 <- lmer(log(rt) ~ 1 + typicality_condition_c +
           data=trial_rt)
 
 summary(m_4_2)
-confint(m_4_1_2,method="Wald")
+confint(m_4_2,method="Wald")
 ```
 
 
