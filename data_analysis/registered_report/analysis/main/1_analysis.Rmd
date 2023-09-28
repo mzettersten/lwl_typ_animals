@@ -796,7 +796,7 @@ avg_corrected_target_looking_by_item_by_age %>%
 
 To test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
 
-#### 3.1
+#### 3.1 z-scored
 ```{r}
 #zscore parent report of typicality within participants
 parent_typicality_z <- d %>%
@@ -826,28 +826,51 @@ aim3_subject_info%>%
   knitr::kable()
 
 #model
-m_3_1 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z+age_mo+ (target_parent_typicality_z|sub_num) + (1|category), parent_typicality)
+m_3_1 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z+age_mo+ (target_parent_typicality_z||sub_num) + (1|category), parent_typicality)
 
-summary(m_3_1)#singular fit
+summary(m_3_1)
 
 confint(m_3_1,method="Wald")
 
+```
+#### Z-scored by category by participant experience ratings
+```{r}
+#zscore parent report of typicality within participants by 
+parent_typicality_category_z <- d %>%
+  group_by(sub_num,category) %>%
+  mutate(target_parent_typicality_category_z = ((target_parent_typicality_rating - mean(target_parent_typicality_rating))/sd(target_parent_typicality_rating)),
+         distractor_parent_typicality_category_z = ((distractor_parent_typicality_rating - mean(distractor_parent_typicality_rating))/sd(distractor_parent_typicality_rating)))
+  
+parent_typicality_category <- parent_typicality_category_z %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num,months,age_mo,child_gender, trial_order,trial_number,category,target_image,target_parent_typicality_category_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,distractor_parent_typicality_category_z,target_image) %>%
+  group_by(sub_num,age_mo,target_image, category,target_parent_typicality_category_z) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
+  na.omit(target_parent_typicality_rating)
+
+#model
+m_3_1_2 <- lmer(average_corrected_target_looking ~ target_parent_typicality_category_z+age_mo+ (target_parent_typicality_category_z||sub_num) + (1|category), parent_typicality_category)
+
+summary(m_3_1_2)
+
+confint(m_3_1_2,method="Wald")
 ```
 
 #### Quick Visualization
 
 ```{r}
-#by category
-ggplot(parent_typicality,aes(target_parent_typicality_z,average_corrected_target_looking))+
-  geom_point(alpha=0.1)+
-  geom_smooth(method = "lm")+
-  facet_wrap(~category)
-
 #by subject
 ggplot(parent_typicality,aes(target_parent_typicality_z,average_corrected_target_looking))+
   geom_point(alpha=0.1)+
+  geom_smooth(method = "lm")
+
+#by category
+ggplot(parent_typicality_category,aes(target_parent_typicality_category_z,average_corrected_target_looking))+
+  geom_point(alpha=0.1)+
   geom_smooth(method = "lm")+
-  facet_wrap(~sub_num)
+  facet_wrap(~category)
 
 hist(parent_typicality$target_parent_typicality_z)
 ```
