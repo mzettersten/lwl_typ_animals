@@ -796,7 +796,7 @@ avg_corrected_target_looking_by_item_by_age %>%
 
 To test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
 
-#### 3.1 z-scored
+#### 3.1 z-scored by participant
 ```{r}
 #zscore parent report of typicality within participants
 parent_typicality_z <- d %>%
@@ -807,8 +807,9 @@ parent_typicality_z <- d %>%
 parent_typicality <- parent_typicality_z %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num,months,age_mo,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
-  group_by(sub_num,age_mo,target_image, category,target_parent_typicality_z,target_parent_typicality_rating) %>%
+  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
+  mutate(age_c = age - mean(age,na.rm = T))%>%
+  group_by(sub_num,target_image, age_c, category,target_parent_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_z) %>%
   summarize(N=n(),
             average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
   na.omit(target_parent_typicality_rating)
@@ -818,22 +819,24 @@ aim3_subject_info <- parent_typicality %>%
   ungroup()%>%
   summarize(
     N = length(unique(sub_num)),
-    mean_age = mean(age_mo),
-    sd_age = sd(age_mo)
+    mean_age = mean(age_c),
+    sd_age = sd(age_c)
   )
 
 aim3_subject_info%>%
   knitr::kable()
 
 #model
-m_3_1 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z+age_mo+ (target_parent_typicality_z||sub_num) + (1|category), parent_typicality)
+m_3_1 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z+age_c+ (target_parent_typicality_z||sub_num) + (1|category), parent_typicality)
 
 summary(m_3_1)
 
 confint(m_3_1,method="Wald")
 
 ```
+
 #### Z-scored by category by participant experience ratings
+
 ```{r}
 #zscore parent report of typicality within participants by 
 parent_typicality_category_z <- d %>%
@@ -844,19 +847,35 @@ parent_typicality_category_z <- d %>%
 parent_typicality_category <- parent_typicality_category_z %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num,months,age_mo,child_gender, trial_order,trial_number,category,target_image,target_parent_typicality_category_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,distractor_parent_typicality_category_z,target_image) %>%
-  group_by(sub_num,age_mo,target_image, category,target_parent_typicality_category_z) %>%
+  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_parent_typicality_category_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,distractor_parent_typicality_category_z,target_image) %>%
+  mutate(age_c = age - mean(age,na.rm = T))%>%
+  group_by(sub_num,target_image, category,target_parent_typicality_category_z, age_c) %>%
   summarize(N=n(),
             average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
   na.omit(target_parent_typicality_rating)
 
 #model
-m_3_1_2 <- lmer(average_corrected_target_looking ~ target_parent_typicality_category_z+age_mo+ (target_parent_typicality_category_z||sub_num) + (1|category), parent_typicality_category)
+m_3_1_2 <- lmer(average_corrected_target_looking ~ target_parent_typicality_category_z+age_c+ (target_parent_typicality_category_z||sub_num) + (1|category), parent_typicality_category)
 
 summary(m_3_1_2)
 
 confint(m_3_1_2,method="Wald")
 ```
+
+#### Model accounting for distractor rating too
+
+The outcome variable, average_corrected_target_looking accounts for baseline preferences for different images. We have typicality information for both the targets and the distractor. Does accounting for the saliency/experience with the distractor predict accuracy?
+
+```{r}
+#model
+m_3_3 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z+distractor_parent_typicality_z+age_c+ (target_parent_typicality_z||sub_num) + (1|category), parent_typicality)
+
+summary(m_3_3)
+
+confint(m_3_3,method="Wald")
+```
+
+No, accounting for experience with the distractor does not explain infants' accuracy.
 
 #### Quick Visualization
 
@@ -874,6 +893,8 @@ ggplot(parent_typicality_category,aes(target_parent_typicality_category_z,averag
 
 hist(parent_typicality$target_parent_typicality_z)
 ```
+
+Parent's ratings of their infant's experience with each exemplar does not predict accuracy.
 
 ### Aim 4
 
@@ -1011,7 +1032,7 @@ trial_rt <- d_rt %>%
   )
 
 m_4_2 <- lmer(log(rt) ~ 1 + typicality_condition_c + 
-            (1+typicality_condition_c|sub_num) +
+            (1+ typicality_condition_c||sub_num) +
             (1|category),
           data=trial_rt)
 
@@ -1019,4 +1040,43 @@ summary(m_4_2)
 confint(m_4_2,method="Wald")
 ```
 
+#### 4.3 Aim 3 models with RT as the outcome
+
+Does experience with exemplars predict reaction time?
+
+```{r}
+parent_typicality_rt <- parent_typicality_z %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
+  mutate(age_c = age - mean(age,na.rm = T))%>%
+  group_by(sub_num,target_image, age_c, category,target_parent_typicality_z,target_parent_typicality_rating,trial_order,trial_number) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
+  na.omit(target_parent_typicality_rating) %>%
+  left_join(d_rt) %>%
+  filter(shift_type == "D-T")
+
+##subject details for aim 3 analysis with RT
+rt_survey_subject_info <- parent_typicality_rt %>%
+  ungroup()%>%
+  summarize(
+    N = length(unique(sub_num)),
+    mean_age = mean(age),
+    sd_age = sd(age)
+  )
+
+rt_survey_subject_info%>%
+  knitr::kable()
+
+#model
+m_4_3 <- lmer(log(rt) ~ target_parent_typicality_z+age_c+(target_parent_typicality_z||sub_num) + (1|category), parent_typicality_rt)
+
+summary(m_4_3)
+
+confint(m_4_3,method="Wald")
+
+```
+
+Parent report of typicality does not predict RT.
 
