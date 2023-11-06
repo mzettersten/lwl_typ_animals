@@ -45,43 +45,11 @@ typicality <- read.csv(here::here("data_analysis","registered_report","data","pr
   left_join(animal_rating_names) %>%
   mutate(image_name_resized = str_replace(image_experiment_name,".jpg","")) %>%
   filter(image_name_resized %in% animal_stims)
+demographics <- read.csv(here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_deidentified_demographics.csv"))
 d <- d %>%
   left_join(typicality %>% select(image_name_resized,category,typicality_subjective),by=c("target_image" = "image_name_resized")) %>%
   rename(typicality_condition=typicality_subjective)%>%
-  filter(400<age & age<600) #filter out children outside of the age bounds
-```
-
-## Summarize participant information
-
-```{r}
-#summarize subj info
-subj_info_multisession <- d %>%
-  distinct(sub_num, age,months,age_mo,child_gender,trial_order) %>%
-  mutate(
-    age_mo_c = age_mo - mean(age_mo),
-    age_c = age - mean(age)
-  )
-
-subj_info <- d %>%
-  distinct(sub_num,child_gender) %>%
-  summarize(
-    N = n(),
-    N_female = sum(child_gender=="f")
-  )
-
-overall_subj_info <- subj_info_multisession %>%
-  summarize(
-    N = length(unique(sub_num)),
-    sessions = n(),
-    mean_age = mean(age_mo),
-    min_age = min(age),
-    max_age = max(age),
-    sd_age = sd(age_mo)
-  ) %>%
-  left_join(subj_info)
-  
-overall_subj_info %>%
-  knitr::kable()
+  filter(395<age & age<577) #filter out children outside of the age bounds (older than 13 months and younger than 19 months)
 ```
 
 ## Useable trial summary
@@ -170,6 +138,74 @@ write_csv(summarize_useable_trials_wide,here::here("data_analysis","registered_r
 ```
 
 Overall, among the trials contributed by the `r length(unique(summarize_useable_trials$sub_num))` participants, `r round(mean(summarize_subj_useable_trials$useable_window),3)*100`% of trials contained sufficient looking to meet our trial-level inclusion criteria (at least 50% looking during both the baseline window and the critical window). `r sum(summarize_subj_trials$exclude_participant==0)` of the `r length(unique(summarize_useable_trials$sub_num))` participants contributed sufficient looking data  on at least half of the experimental trials (overall M = `r round(mean(summarize_subj_trials$total_trials),1)`)
+
+## Summarize participant information
+
+```{r}
+#summarize subj info
+subj_info_multisession <- d %>%
+  distinct(sub_num, age,months,age_mo,child_gender,trial_order) %>%
+  mutate(
+    age_mo_c = age_mo - mean(age_mo),
+    age_c = age - mean(age)
+  )
+
+subj_info <- d %>%
+  distinct(sub_num,child_gender) %>%
+  summarize(
+    N = n(),
+    N_female = sum(child_gender=="f")
+  )
+
+overall_subj_info <- subj_info_multisession %>%
+  summarize(
+    N = length(unique(sub_num)),
+    sessions = n(),
+    mean_age = mean(age_mo),
+    min_age = min(age),
+    max_age = max(age),
+    sd_age = sd(age_mo)
+  ) %>%
+  left_join(subj_info)
+  
+overall_subj_info %>%
+  knitr::kable()
+
+# subjects with usable trial data only
+
+subj_info_multisession_usable_trials <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num, age,months,age_mo,child_gender,trial_order) %>%
+  mutate(
+    age_mo_c = age_mo - mean(age_mo),
+    age_c = age - mean(age)
+  )
+
+subj_info_usable_trials <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num,child_gender) %>%
+  summarize(
+    N = n(),
+    N_female = sum(child_gender=="f")
+  )
+
+overall_subj_info_usable_trials <- subj_info_multisession_usable_trials %>%
+  summarize(
+    N = length(unique(sub_num)),
+    sessions = n(),
+    mean_age = mean(age_mo),
+    min_age = min(age),
+    max_age = max(age),
+    sd_age = sd(age_mo)
+  ) %>%
+  left_join(subj_info_usable_trials)
+  
+overall_subj_info_usable_trials %>%
+  knitr::kable()
+
+```
 
 ## Summarize subject-level accuracy
 
@@ -1018,29 +1054,172 @@ We will conduct a series of analyses to determine whether our results hold acros
 
 #### 4.1. Window
 
+##### Define alternative critical window
 ```{r}
 
+critical_window_alternative <- c(300,1800)
+
+summarize_subj_useable_trials_critical_window_alternative <- d %>%
+  filter(corrected_time_centered>=critical_window_alternative[1]&corrected_time_centered<=critical_window_alternative[2]) %>%
+  group_by(sub_num,age,age_mo, child_gender, session,trial_order,trial_number,target_image,target_typicality_z,condition) %>%
+  summarize(
+    length_critical_window_alternative=n(),
+    useable_frames_critical_window_alternative=sum(!is.na(accuracy_transformed)),
+    percent_useable_critical_window_alternative=useable_frames_critical_window_alternative/length_critical_window_alternative,
+    useable_critical_window_alternative=ifelse(percent_useable_critical_window_alternative>=0.5,1,0), #useable if at least 50% looking
+    mean_target_looking_critical_alternative=mean(accuracy_transformed,na.rm=TRUE)
+  )
+
+#overall useable trials
+summarize_subj_useable_trials_alternative <- summarize_subj_useable_trials_critical_window_alternative %>%
+  left_join(summarize_subj_useable_trials_baseline_window) %>%
+  mutate(
+    useable_window_alternative = ifelse(useable_baseline_window==1&useable_critical_window_alternative==1,1,0),
+    corrected_target_looking_alternative = mean_target_looking_critical_alternative - mean_target_looking_baseline
+  )
+  
+
+summarize_useable_trials_alternative <- summarize_subj_useable_trials_alternative %>%
+  group_by(sub_num, age, child_gender, session,trial_order) %>%
+  summarize(
+    num_useable_trials_alternative=sum(useable_window_alternative),
+    num_useable_trials_critical_window_alternative = sum(useable_critical_window_alternative)
+  )
+
+#total trials
+summarize_subj_trials_alternative <- summarize_useable_trials_alternative %>%
+  ungroup() %>%
+  group_by(sub_num) %>%
+  summarize(
+    session_num_alternative = n(),
+    total_trials_alternative = sum(num_useable_trials_alternative),
+    total_trials_critical_window_alternative = sum(num_useable_trials_critical_window_alternative),
+    exclude_participant_alternative = ifelse(total_trials_alternative<24,1,0),
+    exclude_participant_critical_alternative = ifelse(total_trials_critical_window_alternative<24,1,0)
+  )
+
+#average trials contributed
+mean(summarize_subj_trials_alternative$total_trials_alternative)
+
+#participants to exclude based on data contribution
+sum(summarize_subj_trials_alternative$exclude_participant_alternative)
+
+#join with main data frame
+summarize_useable_trials_alternative <- summarize_useable_trials_alternative %>%
+  left_join(summarize_subj_trials_alternative)
+d <- d %>%
+  left_join(summarize_useable_trials_alternative) %>%
+  left_join(summarize_subj_useable_trials_alternative)
+
+summarize_useable_trials_wide_alternative <- summarize_useable_trials_alternative %>%
+  ungroup() %>%
+  select(sub_num,session_num_alternative,total_trials_alternative,exclude_participant_alternative,session,num_useable_trials_alternative) %>%
+  group_by(sub_num,session_num_alternative,total_trials_alternative,exclude_participant_alternative) %>%
+  pivot_wider(
+    names_from = "session",
+    names_prefix = "num_trials_session_alternative",
+    values_from = "num_useable_trials_alternative"
+  )
 ```
+
+
+##### By Typicality Condition for alternative critical window
+
+Here, we summarize each participants' average accuracy during the alternative critical window and average baseline-corrected proportion target looking.
+
+```{r}
+# critical window only
+avg_critical_window_accuracy_by_typicality_alternative <- d %>%
+  filter(exclude_participant_critical_alternative==0) %>%
+  filter(useable_critical_window_alternative==1) %>%
+  filter(corrected_time_centered>=300&corrected_time_centered<=1800) %>%
+  group_by(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z,condition) %>%
+  summarize(mean_accuracy_alternative=mean(accuracy_transformed,na.rm=TRUE)) %>%
+  ungroup() %>%
+  group_by(sub_num, child_gender,condition) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            accuracy=mean(mean_accuracy_alternative,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(mean_accuracy_alternative,na.rm=T)/sqrt(N),
+            lower_ci=accuracy-ci,
+            upper_ci=accuracy+ci)
+
+#baseline-corrected target looking
+avg_corrected_target_looking_by_typicality_alternative <- d %>%
+  filter(exclude_participant_alternative==0) %>%
+  filter(useable_window_alternative==1) %>%
+  distinct(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z,condition,mean_target_looking_critical_alternative,mean_target_looking_baseline,corrected_target_looking_alternative) %>%
+  group_by(sub_num, child_gender,age,age_mo,condition) %>%
+  summarize(N=n(),
+            average_corrected_target_looking_alternative=mean(corrected_target_looking_alternative,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking_alternative,na.rm=T)/sqrt(N),
+            lower_ci_alternative=average_corrected_target_looking_alternative-ci,
+            upper_ci_alternative=average_corrected_target_looking_alternative+ci)
+
+#avg typicality baseline-corrected target looking
+avg_corrected_target_looking_category_alternative <- d %>%
+  filter(exclude_participant_alternative==0) %>%
+  filter(useable_window_alternative==1) %>%
+  distinct(sub_num, months,age_mo,child_gender, trial_order,typicality_condition,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical_alternative,mean_target_looking_baseline,corrected_target_looking_alternative) %>%
+  group_by(sub_num, age_mo,child_gender, trial_order,typicality_condition,category) %>%
+  summarize(N=n(),
+            average_corrected_target_looking_alternative=mean(corrected_target_looking_alternative,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking_alternative,na.rm=T)/sqrt(N),
+            lower_ci_alternative=average_corrected_target_looking_alternative-ci,
+            upper_ci_alternative=average_corrected_target_looking_alternative+ci)
+
+#avg typicality baseline-corrected target looking
+avg_corrected_target_looking_typicality_alternative <- d %>%
+  filter(exclude_participant_alternative==0) %>%
+  filter(useable_window_alternative==1) %>%
+  distinct(sub_num, months,age_mo,child_gender, trial_order,typicality_condition,trial_number,target_image,target_typicality_z,mean_target_looking_critical_alternative,mean_target_looking_baseline,corrected_target_looking_alternative) %>%
+  group_by(sub_num, age_mo,child_gender, trial_order,typicality_condition) %>%
+  summarize(N=n(),
+            average_corrected_target_looking_alternative=mean(corrected_target_looking_alternative,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking_alternative,na.rm=T)/sqrt(N),
+            se=sd(corrected_target_looking_alternative,na.rm=T)/sqrt(N),
+            lower_ci_alternative=average_corrected_target_looking_alternative-ci,
+            upper_ci_alternative=average_corrected_target_looking_alternative+ci,
+            lower_se_alternative=average_corrected_target_looking_alternative-se,
+            upper_se_alternative=average_corrected_target_looking_alternative+se)
+
+```
+
+
+##### 4.1.1.1
+Does typicality influence target looking? 
+
+```{r}
+avg_corrected_target_looking_by_typicality_alternative <- avg_corrected_target_looking_by_typicality_alternative %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+
+m_4_1_1_1 <- lmer(average_corrected_target_looking_alternative ~ 1 + typicality_condition_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_alternative)
+
+summary(m_4_1_1_1)
+confint(m_4_1_1_1,method="Wald")
+```
+
 
 #### 4.2 excluding unknown words
 
 We registered using CDI responses as a way to remove unknown words; however we did not administer the CDI. Thus, we are not including this analysis since it would require an arbitrary cutoff for word recognition as a proxy for understanding a word (i.e., what is the difference between 50% accuracy and 50.01% accuracy)
-
-#### Calculate CIs per word & per child
-
-```{r}
-
-```
-
-
-#### Remove any words where CIs overlap with childs CI around chance
-
-```{r}
-
-```
-
-#### Model 
-Is there a typicality effect when we remove unknown words?
 
 #### 4.3 Reaction time as the dependent measure
 
@@ -1065,7 +1244,7 @@ The data are right skewed, which is common for RTs. We will use log transformati
 
 ### Models
 
-#### 4.1 Subject-level RT
+#### 4.3.1 Subject-level RT
 ```{r}
 avg_subj_RT <- d_rt %>%
   filter(shift_type=="D-T")%>%
@@ -1104,7 +1283,7 @@ confint(m_4_1,method="Wald")
 
 There is no significant typicality effect.
 
-#### 4.1.1 RT for typical
+#### 4.3.1.1 RT for typical
 
 ```{r}
 m_4_1_1 <- lmer(log(average_RT) ~ 1 + typicality_condition_typ + (1|sub_num),data=avg_subj_RT)
@@ -1124,7 +1303,7 @@ confint(m_4_1_2,method="Wald")
 
 ```
 
-#### 4.2 Trial level RT
+#### 4.3.2 Trial level RT
 
 ```{r}
 trial_rt <- d_rt %>%
@@ -1156,43 +1335,6 @@ summary(m_4_2)
 confint(m_4_2,method="Wald")
 ```
 
-#### 4.3 Aim 3 models with RT as the outcome
+#### 4.4 Do effects interact with test session?
 
-Does experience with exemplars predict reaction time?
-
-```{r}
-parent_typicality_rt <- parent_typicality_z %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
-  mutate(age_c = age - mean(age,na.rm = T))%>%
-  group_by(sub_num,target_image, age_c, category,target_parent_typicality_z,target_parent_typicality_rating,trial_order,trial_number) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
-  na.omit(target_parent_typicality_rating) %>%
-  left_join(d_rt) %>%
-  filter(shift_type == "D-T")
-
-##subject details for aim 3 analysis with RT
-rt_survey_subject_info <- parent_typicality_rt %>%
-  ungroup()%>%
-  summarize(
-    N = length(unique(sub_num)),
-    mean_age = mean(age),
-    sd_age = sd(age)
-  )
-
-rt_survey_subject_info%>%
-  knitr::kable()
-
-#model
-m_4_3 <- lmer(log(rt) ~ target_parent_typicality_z+age_c+(target_parent_typicality_z||sub_num) + (1|category), parent_typicality_rt)
-
-summary(m_4_3)
-
-confint(m_4_3,method="Wald")
-
-```
-
-Parent report of typicality does not predict RT.
-
+We will fit models analogous to those in 1.1 and 1.2 including an interaction with test session
