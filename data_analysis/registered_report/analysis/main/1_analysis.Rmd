@@ -476,10 +476,12 @@ trial_corrected_accuracy <- trial_corrected_accuracy %>%
   )
 
 m_1_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c + 
-            (1 + typicality_condition_c|sub_num) +
+            (1 + typicality_condition_c||sub_num) +
             (1|category),
           data=trial_corrected_accuracy)
 summary(m_1_2)
+
+confint(m_1_2,method="Wald")
 ```
 
 #### 1.3 
