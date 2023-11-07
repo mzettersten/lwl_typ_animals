@@ -45,13 +45,10 @@ typicality <- read.csv(here::here("data_analysis","registered_report","data","pr
   left_join(animal_rating_names) %>%
   mutate(image_name_resized = str_replace(image_experiment_name,".jpg","")) %>%
   filter(image_name_resized %in% animal_stims)
-<<<<<<< Updated upstream
-demographics <- read.csv(here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_deidentified_demographics.csv"))
-=======
+
 #read in demographics
 demographics <- read.csv(here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_deidentified_demographics.csv"))
 
->>>>>>> Stashed changes
 d <- d %>%
   left_join(typicality %>% select(image_name_resized,category,typicality_subjective),by=c("target_image" = "image_name_resized")) %>%
   left_join(demographics)%>%
@@ -146,7 +143,7 @@ write_csv(summarize_useable_trials_wide,here::here("data_analysis","registered_r
 
 Overall, among the trials contributed by the `r length(unique(summarize_useable_trials$sub_num))` participants, `r round(mean(summarize_subj_useable_trials$useable_window),3)*100`% of trials contained sufficient looking to meet our trial-level inclusion criteria (at least 50% looking during both the baseline window and the critical window). `r sum(summarize_subj_trials$exclude_participant==0)` of the `r length(unique(summarize_useable_trials$sub_num))` participants contributed sufficient looking data  on at least half of the experimental trials (overall M = `r round(mean(summarize_subj_trials$total_trials),1)`)
 
-<<<<<<< Updated upstream
+
 ## Summarize participant information
 
 ```{r}
@@ -214,9 +211,7 @@ overall_subj_info_usable_trials %>%
   knitr::kable()
 
 ```
-
-=======
-
+=
 ## Demographics of final usable sample
 ```{r}
 demographics_summary <- d %>%
@@ -271,11 +266,6 @@ population_density <- demographics_summary %>%
   )
 
 ```
-
-The sample is 
-
->>>>>>> Stashed changes
-## Summarize subject-level accuracy
 
 ### Overall
 
@@ -385,9 +375,9 @@ avg_corrected_target_looking_typicality <- d %>%
 
 ## Models
 
-### Aim 1
+## Aim 1
 
-#### 1.1
+### 1.1
 
 ```{r}
 avg_corrected_target_looking_by_typicality <- avg_corrected_target_looking_by_typicality %>%
@@ -463,7 +453,7 @@ confint(m_1_1_3_atyp,method="Wald")
 
 Infants successfully recognize words in the atypical condition.
 
-#### 1.2
+### 1.2
 
 ```{r}
 trial_corrected_accuracy <- trial_corrected_accuracy %>%
@@ -494,11 +484,6 @@ summary(m_1_2)
 
 #### 1.3 
 
-
-
-
-
- 
 ##### Resampling
 
 In order to plot participants' average proportion looking to the target across the trial, we smooth/ resample time. This is necessary when plotting the timecourses given the variable sampling rate in the data (otherwise the mean observations "jump around" due to varying contributing data composition at different time points).
@@ -1012,7 +997,7 @@ ggsave(here::here("figures","age_category_typicality.png"),width=12,height=6)
 
 
 
-### Aim 3
+## Aim 3
 
 To test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
 
@@ -1116,11 +1101,11 @@ hist(parent_typicality$target_parent_typicality_z)
 
 Parent's ratings of their infant's experience with each exemplar does not predict accuracy.
 
-### Aim 4
+## Aim 4
 
 We will conduct a series of analyses to determine whether our results hold across a variety of different analytic decisions
 
-#### 4.1. Window
+### 4.1. Window
 
 ##### Define alternative critical window
 ```{r}
@@ -1252,6 +1237,21 @@ avg_corrected_target_looking_typicality_alternative <- d %>%
             lower_se_alternative=average_corrected_target_looking_alternative-se,
             upper_se_alternative=average_corrected_target_looking_alternative+se)
 
+#baseline-corrected target looking
+## trial-level
+trial_corrected_accuracy_alternative <- d %>%
+  filter(exclude_participant_alternative==0) %>%
+  filter(useable_window_alternative==1) %>%
+  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical_alternative,mean_target_looking_baseline,corrected_target_looking_alternative)
+## average
+avg_corrected_target_looking_alternative <- trial_corrected_accuracy_alternative  %>%
+  group_by(sub_num, child_gender) %>%
+  summarize(N=n(),
+            average_corrected_target_looking_alternative=mean(corrected_target_looking_alternative,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking_alternative,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking_alternative-ci,
+            upper_ci=average_corrected_target_looking_alternative+ci)
+
 ```
 
 
@@ -1284,12 +1284,263 @@ summary(m_4_1_1_1)
 confint(m_4_1_1_1,method="Wald")
 ```
 
+##### 4.1.1.1.2
 
-#### 4.2 excluding unknown words
+No significant effect of typicality
+
+Equivalence test - can't reject equivalence test
+
+```{r}
+overall_condition_summary_alternative <- avg_corrected_target_looking_by_typicality_alternative %>%
+  group_by(sub_num) %>%
+  summarize(
+    condition_diff_alternative = average_corrected_target_looking_alternative[condition=="typical"]-average_corrected_target_looking_alternative[condition=="atypical"]
+  ) %>%
+  ungroup() %>%
+  summarize(
+    N=n(),
+    diff = mean(condition_diff_alternative),
+    sd = sd(condition_diff_alternative)
+  )
+
+tsum_TOST(m1=overall_condition_summary_alternative$diff,sd1=overall_condition_summary_alternative$sd,n1=overall_condition_summary_alternative$N,eqb=0.25, eqbound_type = "SMD")
+```
+
+##### 4.1.1.1.3
+
+```{r}
+m_1_1_3_typ_alternative <- lmer(average_corrected_target_looking_alternative ~ 1 + typicality_condition_typ + (1|sub_num),data=avg_corrected_target_looking_by_typicality_alternative)
+
+summary(m_1_1_3_typ_alternative)
+
+confint(m_1_1_3_typ_alternative,method="Wald")
+```
+
+Infants successfully recognize words in the typical condition.
+
+```{r}
+m_1_1_3_atyp_alternative <- lmer(average_corrected_target_looking_alternative ~ 1 + typicality_condition_atyp + (1|sub_num),data=avg_corrected_target_looking_by_typicality_alternative)
+
+summary(m_1_1_3_atyp_alternative)
+
+confint(m_1_1_3_atyp_alternative,method="Wald")
+```
+
+Infants successfully recognize words in the atypical condition.
+
+#### 4.1.1.3 
+
+##### Resampling
+
+In order to plot participants' average proportion looking to the target across the trial, we smooth/ resample time. This is necessary when plotting the timecourses given the variable sampling rate in the data (otherwise the mean observations "jump around" due to varying contributing data composition at different time points).
+
+```{r}
+target_ms_per_frame=1000/30
+#adapted from: https://github.com/langcog/peekds/blob/master/R/generate_aoi.R
+resample_trial_alt <- function(df_trial_alt) {
+  t_origin_alt <- df_trial_alt$corrected_time_centered
+  data_origin_alt <- df_trial_alt$accuracy_transformed
+
+  # create the new timestamps for resampling
+  t_start_alt <- min(t_origin_alt) - (min(t_origin_alt) %% target_ms_per_frame)
+  t_resampled_alt <- seq(from = t_start_alt, to = max(t_origin_alt),
+                     by = target_ms_per_frame)
+
+  # exchange strings values with integers for resampling
+  # this step critical for interpolating missing vals quickly and correctly
+  aoi_num_alt <- data_origin_alt %>%
+    dplyr::recode(.missing = 2) #recode NA as 2
+    
+  # start resampling with approx
+  aoi_resampled_alt <- stats::approx(x = t_origin_alt, y = aoi_num_alt, xout = t_resampled_alt,
+                                 method = "constant", rule = 2,
+                                 ties = "ordered")$y
+  aoi_resampled_recoded_alt <- aoi_resampled_alt %>%
+    dplyr::recode("0"="0","1"="1","2" = "missing") %>%
+    as.numeric()
+
+  # adding back the columns to match schema
+  dplyr::tibble(corrected_time_centered = t_resampled_alt,
+                accuracy_transformed = aoi_resampled_recoded_alt,
+                trial_number = df_trial_alt$trial_number[1],
+                sub_num = df_trial_alt$sub_num[1])
+}
+
+d_resampled_alt <- d %>%
+  dplyr::mutate(sub_num_trial_number = paste(.data$sub_num,
+                                           .data$trial_number, sep = "_")) %>%
+      split(.$sub_num_trial_number) %>%
+      purrr::map_df(resample_trial_alt) %>%
+      dplyr::arrange(.data$sub_num, .data$trial_number)
+
+d_info_alt <- d %>%
+  select(-corrected_time_centered,-accuracy_transformed) %>%
+  distinct(sub_num, exclude_participant_alternative, useable_window_alternative, age,age_mo, child_gender, trial_order, condition, trial_order,trial_number,target_image,target_typicality_z)
+
+d_resampled_alt <- d_resampled_alt %>%
+  left_join(d_info_alt) %>%
+  mutate(corrected_time_centered =round(corrected_time_centered,0))
+```
+
+##### Timecourse analysis - cluster-based permutation analysis
+
+Next, we prepare the data for use with the eyetrackingR package
+
+```{r}
+d_eyetrackingr_alt <- d_resampled_alt %>%
+  filter(exclude_participant_alternative==0) %>%
+  filter(useable_window_alternative==1) %>%
+  unite("unique_trial",trial_order,trial_number,sep="_",remove=FALSE) %>%
+  mutate(
+    target = case_when(
+      is.na(accuracy_transformed) ~ NA,
+      accuracy_transformed == 1 ~ TRUE,
+      accuracy_transformed == 0 ~ FALSE,
+    ),
+    distractor = case_when(
+      is.na(accuracy_transformed) ~ NA,
+      accuracy_transformed == 0 ~ TRUE,
+      accuracy_transformed == 1 ~ FALSE,
+    ),
+    trackloss = case_when(
+      is.na(accuracy_transformed) ~ TRUE,
+      TRUE ~ FALSE
+    )
+  ) %>%
+  make_eyetrackingr_data(
+    participant_column = "sub_num",
+    trial_column = "unique_trial",
+    time_column = "corrected_time_centered",
+    trackloss_column = "trackloss",
+    aoi_columns = c("target","distractor"),
+    treat_non_aoi_looks_as_missing = TRUE
+  )
+
+response_window_alt <- subset_by_window(
+  d_eyetrackingr_alt,
+  window_start_time = 300,
+  window_end_time = 1800,
+  rezero=FALSE
+)
+summary_data_loss_alt <- describe_data(response_window_alt, 'target', 'sub_num')
+
+response_time_alt <- make_time_sequence_data(response_window_alt,
+                                  time_bin_size = 100, 
+                                  predictor_columns = c("condition"),
+                                  aois = "target",
+                                  summarize_by = "sub_num" )
+
+# visualize timecourse
+plot(response_time_alt, predictor_column = "condition") + 
+  theme_light() +
+  coord_cartesian(ylim = c(0,1))
+
+#divergence analysis
+# tb_analysis <- analyze_time_bins(data = response_time, predictor_column = "condition", test= 'boot_splines', within_subj = TRUE, bs_samples = 1000, alpha = .05/num_time_bins)
+# plot(tb_analysis) + theme_light()
+# summary(tb_analysis)
+
+#bootstrapped cluster-based permutation analysis
+n_samples_alt <- 100
+threshold_t_alt <- 2
+df_timeclust_alt <- make_time_cluster_data(response_time_alt, 
+                                      test= "t.test", paired=TRUE,
+                                      predictor_column = "condition", 
+                                      threshold = threshold_t) 
+plot(df_timeclust_alt) +  ylab("T-Statistic") + theme_light()
+summary(df_timeclust_alt)
+clust_analysis_alt <- analyze_time_clusters(df_timeclust_alt, within_subj=TRUE, paired=TRUE,
+                                        samples=n_samples)
+plot(clust_analysis_alt) + theme_light()
+summary(clust_analysis_alt)
+```
+
+##### 4.1.2
+Aim 2 with alternative time window
+
+###### Change across age
+
+```{r}
+trial_corrected_accuracy_alternative <- trial_corrected_accuracy_alternative %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+trial_corrected_accuracy_alternative <- trial_corrected_accuracy_alternative %>%
+  left_join(subj_info_multisession)
+  
+
+m_4_1_2 <- lmer(corrected_target_looking_alternative ~ 1 + typicality_condition_c * age_mo_c + 
+            (1 + typicality_condition_c|sub_num) +
+            (1|category),
+          data=trial_corrected_accuracy_alternative)
+summary(m_4_1_2)
+```
+Age is still a significant predictor when we use a smaller critical window. There is no age by typicality condition interaction.
+
+##### 4.1.3 
+Aim 3: test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar using the alternative critical window
+
+###### 3.1 z-scored by participant
+```{r}
+#zscore parent report of typicality within participants
+parent_typicality_z_alt <- d %>%
+  group_by(sub_num) %>%
+  mutate(target_parent_typicality_z = ((target_parent_typicality_rating - mean(target_parent_typicality_rating))/sd(target_parent_typicality_rating)),
+         distractor_parent_typicality_z = ((distractor_parent_typicality_rating - mean(distractor_parent_typicality_rating))/sd(distractor_parent_typicality_rating)))
+  
+parent_typicality_alt <- parent_typicality_z_alt %>%
+  filter(exclude_participant_alternative==0) %>%
+  filter(useable_window_alternative==1) %>%
+  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical_alternative,mean_target_looking_baseline,corrected_target_looking_alternative,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
+  mutate(age_c = age - mean(age,na.rm = T))%>%
+  group_by(sub_num,target_image, age_c, category,target_parent_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_z) %>%
+  summarize(N=n(),
+            average_corrected_target_looking_alt=mean(corrected_target_looking_alternative,na.rm=TRUE)) %>%
+  na.omit(target_parent_typicality_rating)
+
+#subject details for aim 3 analysis (how many participants have survey data)
+aim3_subject_info_alt <- parent_typicality_alt %>%
+  ungroup()%>%
+  summarize(
+    N = length(unique(sub_num)),
+    mean_age = mean(age_c),
+    sd_age = sd(age_c)
+  )
+
+aim3_subject_info_alt%>%
+  knitr::kable()
+
+#model
+m_4_1_3_1 <- lmer(average_corrected_target_looking_alt ~ target_parent_typicality_z+age_c+ (target_parent_typicality_z||sub_num) + (1|category), parent_typicality_alt)
+
+summary(m_4_1_3_1)
+
+confint(m_4_1_3_1,method="Wald")
+
+```
+
+Parent ratings are not significantly related to baseline corrected target looking with the alternative critical window.
+
+
+### 4.2 excluding unknown words
 
 We registered using CDI responses as a way to remove unknown words; however we did not administer the CDI. Thus, we are not including this analysis since it would require an arbitrary cutoff for word recognition as a proxy for understanding a word (i.e., what is the difference between 50% accuracy and 50.01% accuracy)
 
-#### 4.3 Reaction time as the dependent measure
+### 4.3 Reaction time as the dependent measure
 
 We will fit models analogous to those in 1.1 and 1.2 using reaction time as our primary dependent measure rather than accuracy
 
@@ -1403,10 +1654,7 @@ summary(m_4_2)
 confint(m_4_2,method="Wald")
 ```
 
-<<<<<<< Updated upstream
-#### 4.4 Do effects interact with test session?
-=======
-#### 4.3 Aim 3 models with RT as the outcome
+### 4.3 Aim 3 models with RT as the outcome
 
 Does experience with exemplars predict reaction time?
 
@@ -1446,6 +1694,122 @@ confint(m_4_3,method="Wald")
 ```
 
 Parent report of typicality does not predict RT.
->>>>>>> Stashed changes
 
+### 4.4 Do effects interact with test session?
 We will fit models analogous to those in 1.1 and 1.2 including an interaction with test session
+
+#### 4.4.1.1
+
+```{r}
+
+#baseline-corrected target looking by session
+avg_corrected_target_looking_by_typicality_session <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z,condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,session_num) %>%
+  group_by(sub_num, child_gender,age,age_mo,condition, session_num) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci)
+
+
+avg_corrected_target_looking_by_typicality_session <- avg_corrected_target_looking_by_typicality_session %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),    
+    session_num_c = case_when(
+      session_num == "1" ~ -0.5,
+      session_num == "2" ~ 0.5,
+      TRUE ~ NA_real_
+    )
+  )
+
+m_4_4_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c*session_num_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
+
+summary(m_4_4_1_1)
+confint(m_4_4_1_1,method="Wald")
+```
+
+##### 4.4.1.1
+
+No significant interactions with test session
+
+##### 4.4.1.1.3
+
+```{r}
+m_4_4_1_1_3_typ <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_typ*session_num_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
+
+summary(m_4_4_1_1_3_typ)
+
+confint(m_4_4_1_1_3_typ,method="Wald")
+```
+
+Infants successfully recognize words in the typical condition.
+
+```{r}
+m_4_4_1_1_3_atyp <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_atyp*session_num_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
+
+summary(m_4_4_1_1_3_atyp)
+
+confint(m_4_4_1_1_3_atyp,method="Wald")
+```
+
+For an average session, infants recognition in the atypical condition is only marginally significantly above chance.
+
+#### 4.4.1.2
+
+```{r}
+#baseline-corrected target looking
+## trial-level
+trial_corrected_accuracy_session <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking, session_num)
+
+
+trial_corrected_accuracy_session <- trial_corrected_accuracy_session %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+    session_num_c = case_when(
+      session_num == "1" ~ -0.5,
+      session_num == "2" ~ 0.5,
+      TRUE ~ NA_real_
+    )
+  )
+
+
+m_4_4_1_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c*session_num_c + 
+            (1 + typicality_condition_c||sub_num) +
+            (1|category),
+          data=trial_corrected_accuracy_session)
+summary(m_4_4_1_2)
+```
