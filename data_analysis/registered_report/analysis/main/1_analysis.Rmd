@@ -1017,9 +1017,9 @@ parent_typicality_z <- d %>%
 parent_typicality <- parent_typicality_z %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
+  distinct(sub_num,months,age,child_gender,condition, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
   mutate(age_c = age - mean(age,na.rm = T))%>%
-  group_by(sub_num,target_image, age_c, category,target_parent_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_z) %>%
+  group_by(sub_num,target_image, age_c,age,condition, category,target_parent_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_z) %>%
   summarize(N=n(),
             average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
   na.omit(target_parent_typicality_rating)
@@ -1037,12 +1037,67 @@ aim3_subject_info%>%
   knitr::kable()
 
 #model
-m_3_1 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z+age_c+ (target_parent_typicality_z||sub_num) + (1|category), parent_typicality)
+m_3_1 <- lmer(average_corrected_target_looking ~ 1 + target_parent_typicality_z + age_c + (target_parent_typicality_z|sub_num) + (1|category), parent_typicality)
 
 summary(m_3_1)
 
 confint(m_3_1,method="Wald")
 
+```
+
+
+#### Exploratory model including age by parent report interaction
+```{r}
+
+#model
+m_3_1_1 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z*age_c+ (target_parent_typicality_z|sub_num) + (1|category), parent_typicality)
+
+summary(m_3_1_1)
+
+confint(m_3_1_1,method="Wald")
+
+```
+
+#### Exploratory analyses to see why age isn't a predictor in model 3
+```{r}
+#cor.test(parent_typicality$target_parent_typicality_z~parent_typicality$age_c)
+
+ggplot(parent_typicality, aes(target_parent_typicality_z,age)) +
+  geom_point()+
+  geom_smooth(method = "lm")
+
+ggplot(d, aes(condition,child_age_rounded))+
+  geom_point()+
+  stat_summary(fun = "mean")
+
+parent_typicality <- parent_typicality %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+m_3_1_2 <- lmer(target_parent_typicality_rating ~ typicality_condition_c + (typicality_condition_c|sub_num) + (1|category), parent_typicality)
+
+summary(m_3_1_2)
+
+confint(m_3_1_2,method="Wald")
+
+
+ggplot(parent_typicality, aes(condition,target_parent_typicality_rating))+
+  geom_point()#+facet_wrap(~category)
+  #geom_bar(stat = "identity")
 ```
 
 #### Z-scored by category by participant experience ratings
@@ -1101,7 +1156,9 @@ ggplot(parent_typicality_category,aes(target_parent_typicality_category_z,averag
   geom_smooth(method = "lm")+
   facet_wrap(~category)
 
-hist(parent_typicality$target_parent_typicality_z)
+ggplot(parent_typicality, aes(target_parent_typicality_z))+
+  geom_histogram()+ facet_wrap(~condition)#+
+  #facet_wrap(~parent_typicality$category)
 ```
 
 Parent's ratings of their infant's experience with each exemplar does not predict accuracy.
