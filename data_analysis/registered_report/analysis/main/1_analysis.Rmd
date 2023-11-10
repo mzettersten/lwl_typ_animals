@@ -1656,8 +1656,27 @@ We will fit models analogous to those in 1.1 and 1.2 using reaction time as our 
 rt_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_RT_by_trial.csv")
 d_rt <- read_csv(rt_path)
 
-d_rt<- trial_corrected_accuracy %>%
+d_trial_level <- d %>%
+  distinct(sub_num,session, trial_number,condition, age, age_mo, target_image, child_gender, category)
+
+d_rt<- d_trial_level %>%
   left_join(d_rt)
+
+#d_rt<- trial_corrected_accuracy %>%
+ # left_join(d_rt)
+
+#participants must contribute 4 typical and 4 atypical trials to be included in analysis
+d_rt_subj_summary <- d_rt %>%
+  #filter(shift_type == "D-T")%>%
+  group_by(sub_num, condition,shift_type) %>%
+  summarize(
+    trials = n(),
+    useable_trials=ifelse(trials>=4,1,0)
+  )
+
+#add exclusionary criteria to DF
+d_rt <- d_rt %>%
+  left_join(d_rt_subj_summary)
 ```
 
 ### Visualization of RTs
@@ -1674,13 +1693,14 @@ The data are right skewed, which is common for RTs. We will use log transformati
 ```{r}
 avg_subj_RT <- d_rt %>%
   filter(shift_type=="D-T")%>%
+  filter(useable_trials=="1")%>%
   group_by(sub_num, child_gender,condition) %>%
   summarize(N=n(),
             average_RT=mean(rt,na.rm=TRUE),
             ci=qt(0.975, N-1)*sd(rt,na.rm=T)/sqrt(N),
             lower_ci=average_RT-ci,
             upper_ci=average_RT+ci)
-  
+
 
 avg_subj_RT <- avg_subj_RT %>%
   mutate(
@@ -1734,6 +1754,7 @@ confint(m_4_1_2,method="Wald")
 ```{r}
 trial_rt <- d_rt %>%
   filter(shift_type=="D-T")%>%
+  filter(useable_trials=="1") %>%
   mutate(
     typicality_condition_c = case_when(
       condition == "atypical" ~ -0.5,
@@ -1767,17 +1788,19 @@ Does experience with exemplars predict reaction time?
 
 ```{r}
 parent_typicality_rt <- parent_typicality_z %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
-  #group_by(sub_num,target_image, age_c, category,target_parent_typicality_z,target_parent_typicality_rating,trial_order,trial_number) %>%
-  #summarize(N=n(),
-       #     average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
-  #na.omit(target_parent_typicality_rating) %>%
-  merge(trial_rt)
+  #filter(exclude_participant==0) %>%
+  #filter(useable_window==1) %>%
+  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating)
 
-parent_typicality_rt <- parent_typicality_rt%>%
-  filter(shift_type == "D-T")
+trial_rt_parent <- left_join(trial_rt, parent_typicality_rt)  
+  
+trial_rt_parent <- trial_rt_parent%>%
+  filter(shift_type == "D-T") %>%
+  filter(useable_trials == "1")%>%
+  mutate(
+    age_mo_c = age_mo - mean(age_mo),
+    age_c = age - mean(age)
+  )
 
 ##subject details for aim 3 analysis with RT
 rt_survey_subject_info <- parent_typicality_rt %>%
@@ -1792,7 +1815,7 @@ rt_survey_subject_info%>%
   knitr::kable()
 
 #model
-m_4_3 <- lmer(log(rt) ~ target_parent_typicality_z+age_c+(target_parent_typicality_z||sub_num) + (1|category), parent_typicality_rt)
+m_4_3 <- lmer(log(rt) ~ target_parent_typicality_z+age_c+(target_parent_typicality_z|sub_num) + (1|category), trial_rt_parent)
 
 summary(m_4_3)
 
