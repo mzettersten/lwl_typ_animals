@@ -12,6 +12,7 @@ output:
 ## Load packages
 
 ```{r setup, message=FALSE}
+
 library(tidyverse)
 library(janitor)
 library(cowplot)
@@ -25,6 +26,9 @@ library(eyetrackingR)
 library(wesanderson)
 library(gghalves)
 library(car)
+library(multilevelTools)
+library(JWileymisc)
+
 theme_set(theme_cowplot())
 
 knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
@@ -299,6 +303,7 @@ trial_corrected_accuracy <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
   distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)
+
 ## average
 avg_corrected_target_looking <- trial_corrected_accuracy  %>%
   group_by(sub_num, child_gender) %>%
@@ -400,7 +405,7 @@ avg_corrected_target_looking_by_typicality <- avg_corrected_target_looking_by_ty
     ),
   )
 
-m_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality)
+m_1_1 <- lme4::lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality)
 
 summary(m_1_1)
 confint(m_1_1,method="Wald")
@@ -1942,4 +1947,167 @@ m_4_4_1_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c*session_
             (1|category),
           data=trial_corrected_accuracy_session)
 summary(m_4_4_1_2)
+```
+
+
+# Exploratory analyses:
+
+## Ex1. typicality as a likert scale
+We intentionally selected items at the end of a typicality scale from a set of adult-normed images. We categorized each image as typical or atypical based on adults ratings, however, we also have the origninal normed values. Does typicality influence accuracy when typicality is a continuum rather than a dichotomous variable.
+
+### By Continuous typicality
+
+Here, we summarize each participants' average accuracy during the critical window and average baseline-corrected proportion target looking.
+
+```{r}
+# critical window only
+avg_critical_window_accuracy_by_typicality_continuous <- d %>%
+  filter(exclude_participant_critical==0) %>%
+  filter(useable_critical_window==1) %>%
+  filter(corrected_time_centered>=300&corrected_time_centered<=2800) %>%
+  group_by(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z) %>%
+  summarize(mean_accuracy=mean(accuracy_transformed,na.rm=TRUE)) %>%
+  ungroup() %>%
+  group_by(sub_num, child_gender,target_typicality_z) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(mean_accuracy,na.rm=T)/sqrt(N),
+            lower_ci=accuracy-ci,
+            upper_ci=accuracy+ci)
+
+#baseline-corrected target looking
+avg_corrected_target_looking_by_typicality_continuous <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
+  group_by(sub_num, child_gender,age,age_mo,target_typicality_z) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci)
+
+#avg typicality baseline-corrected target looking
+avg_corrected_target_looking_category_continuous <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num, months,age_mo,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
+  group_by(sub_num, age_mo,child_gender, trial_order,target_typicality_z,category) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci)
+
+#avg typicality baseline-corrected target looking
+avg_corrected_target_looking_typicality_continuous <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num, months,age_mo,child_gender, trial_order,trial_number,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
+  group_by(sub_num, age_mo,child_gender, trial_order,target_typicality_z) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            se=sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci,
+            lower_se=average_corrected_target_looking-se,
+            upper_se=average_corrected_target_looking+se)
+
+```
+
+#Subject level
+```{r}
+m_Ex1_1 <- lmer(average_corrected_target_looking ~ 1 + target_typicality_z + (1|sub_num),data=avg_corrected_target_looking_by_typicality_continuous)
+
+summary(m_Ex1_1)
+confint(m_Ex1_1,method="Wald")
+
+```
+When we use the full scale, rather than a dichotomous scale, typicality is a significant predictor of word recognition (p=0.029)
+
+#Trial Level
+```{r}
+
+m_Ex1_2 <- lmer(corrected_target_looking ~ 1 + target_typicality_z + 
+            (1 + target_typicality_z||sub_num) +
+            (1|category),
+          data=trial_corrected_accuracy)
+summary(m_Ex1_2)
+
+confint(m_Ex1_2,method="Wald")
+
+```
+
+##Ex2. Does typicality interact with category? 
+Infants' processing for some categories may be better than other categories. Are infants better at processing typical category members for categories that are more accurate?
+
+```{r}
+
+#contrast coding:
+trial_corrected_accuracy <- trial_corrected_accuracy %>%
+  mutate(
+    category_c1 = case_when(
+      category == "bird" ~ 1,
+      category == "cat" ~ 0,
+      category == "dog" ~ 0,
+      category == "fish" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    category_c2 = case_when(
+      category == "bird" ~ 0,
+      category == "cat" ~ 1,
+      category == "dog" ~ 0,
+      category == "fish" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    category_c3 = case_when(
+      category == "bird" ~ 0,
+      category == "cat" ~ 0,
+      category == "dog" ~ 0,
+      category == "fish" ~ 1,
+      TRUE ~ NA_real_
+    )
+  )
+
+##linear contrasts=
+trial_corrected_accuracy <- trial_corrected_accuracy %>%
+  mutate(
+    category_ordered=factor(category,order=T,levels=c("dog","fish","bird","cat"))
+  )
+
+
+m_Ex2_1 <- lmer(corrected_target_looking ~ typicality_condition_c*category_ordered+
+            (typicality_condition_c*category_ordered|sub_num),control=lmerControl(optCtrl=list(maxfun=50000),optimizer = "bobyqa"),
+          data=trial_corrected_accuracy)
+
+m_Ex2_1_c <- lmer(corrected_target_looking ~ typicality_condition_c+category_ordered+
+            (typicality_condition_c+category_ordered||sub_num),control=lmerControl(optCtrl=list(maxfun=50000),optimizer = "bobyqa"),
+          data=trial_corrected_accuracy)
+
+anova(m_Ex2_1_c,m_Ex2_1)
+
+summary(m_Ex2_1)
+
+confint(m_Ex2_1,method="Wald")
+
+```
+The omnibus test was not significantly different from tjhe model without the interaction terms. Therefore, we did not follow up with 
+
+## Ex3. Does a typicality exert more of an effect on processing when the categories tested are more similar?
+
+There are some categories that are more visually/categorically similar than other categories (i.e., cats and dogs vs. dogs and fish). Is there an effect of typicality when there is more category similarity? 
+
+```{r}
+trial_corrected_accuracy_category <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,left_image,right_image,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)%>%
+  group_by(
+    category,
+    target_image
+  )
+
 ```
