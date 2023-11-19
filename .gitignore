@@ -2,3 +2,4 @@
 .DS_Store
 .Rhistory
 data_analysis/registered_report/data/processed_data/CATegories_exp2_processed_data_anonymized.csv
+.Rproj.user
