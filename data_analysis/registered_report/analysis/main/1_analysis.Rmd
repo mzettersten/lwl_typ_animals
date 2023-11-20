@@ -2105,9 +2105,47 @@ trial_corrected_accuracy_category <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
   distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,left_image,right_image,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)%>%
-  group_by(
-    category,
-    target_image
+  filter(category=="cat"|category=="dog")
+
+trial_corrected_accuracy_category <- trial_corrected_accuracy_category%>%
+  mutate(
+    distractor_image=ifelse(target_image==right_image,left_image,
+                           ifelse(target_image==left_image,right_image,NA))
+  )
+trial_corrected_accuracy_category <- trial_corrected_accuracy_category %>%
+  filter(distractor_image=="afghanhound_600x600"|
+           distractor_image=="arabianmau_600x600"|
+           distractor_image=="chartreux_600x600"|
+           distractor_image=="cornishrex_600x600"|
+           distractor_image=="germanshepherd_600x600"|
+           distractor_image=="goldenretriever_600x600"|
+           distractor_image=="sheepdog_600x600"|
+           distractor_image=="sphynx_600x600"
+           )%>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
   )
 
+m_Ex3_1 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c + 
+            (1 + typicality_condition_c|sub_num) +
+            (1|category),
+          data=trial_corrected_accuracy_category)
+
+summary(m_Ex3_1)
+
+confint(m_Ex3_1,method="Wald")
 ```
