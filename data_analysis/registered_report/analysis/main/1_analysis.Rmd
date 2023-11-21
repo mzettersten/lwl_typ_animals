@@ -28,6 +28,7 @@ library(gghalves)
 library(car)
 library(multilevelTools)
 library(JWileymisc)
+source("compute_iccs.R")
 
 theme_set(theme_cowplot())
 
@@ -37,22 +38,22 @@ knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE
 ## Load data
 
 ```{r}
-data_file_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_processed_data_anonymized.csv")
+data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_anonymized.csv")
 
 d <- read_csv(data_file_path)
 
 ## add general category properties from typicality dataset
 ## typicality
-animal_rating_names <- read.csv(here::here("data_analysis","registered_report","data","processed_data","animal_ratings_stimuli_full.csv"))
+animal_rating_names <- read.csv(here::here("..","..","data","processed_data","animal_ratings_stimuli_full.csv"))
 animal_stims <- unique(c(unique(d$left_image),unique(d$right_image)))
-typicality <- read.csv(here::here("data_analysis","registered_report","data","processed_data","typicality_animals_summarized.csv")) %>%
+typicality <- read.csv(here::here("..","..","data","processed_data","typicality_animals_summarized.csv")) %>%
   mutate(item_name=str_remove(animal_name,pattern=" ")) %>%
   left_join(animal_rating_names) %>%
   mutate(image_name_resized = str_replace(image_experiment_name,".jpg","")) %>%
   filter(image_name_resized %in% animal_stims)
 
 #read in demographics
-demographics <- read.csv(here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_deidentified_demographics.csv"))
+demographics <- read.csv(here::here("..","..","data","processed_data","CATegories_exp2_deidentified_demographics.csv"))
 
 d <- d %>%
   left_join(typicality %>% select(image_name_resized,category,typicality_subjective),by=c("target_image" = "image_name_resized")) %>%
@@ -143,7 +144,7 @@ summarize_useable_trials_wide <- summarize_useable_trials %>%
   )
 
 #write out useable trial summary
-write_csv(summarize_useable_trials_wide,here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_useable_trial_summary.csv"))
+write_csv(summarize_useable_trials_wide,here::here("..","..","data","processed_data","CATegories_exp2_useable_trial_summary.csv"))
 ```
 
 Overall, among the trials contributed by the `r length(unique(summarize_useable_trials$sub_num))` participants, `r round(mean(summarize_subj_useable_trials$useable_window),3)*100`% of trials contained sufficient looking to meet our trial-level inclusion criteria (at least 50% looking during both the baseline window and the critical window). `r sum(summarize_subj_trials$exclude_participant==0)` of the `r length(unique(summarize_useable_trials$sub_num))` participants contributed sufficient looking data  on at least half of the experimental trials (overall M = `r round(mean(summarize_subj_trials$total_trials),1)`)
@@ -314,6 +315,48 @@ avg_corrected_target_looking <- trial_corrected_accuracy  %>%
             upper_ci=average_corrected_target_looking+ci)
 
 ```
+
+#### Compute ICCs
+
+```{r}
+df_for_icc <- trial_corrected_accuracy %>%
+  #some light renaming to use Peekbank icc function
+  mutate(
+    administration_id = sub_num
+  ) %>%
+  unite("trial_id", administration_id, trial_number,remove=F) %>%
+  mutate(
+    target_label=target_image
+  )
+
+icc_participants <- df_for_icc %>%
+  get_icc(object = "administration",column="corrected_target_looking")
+icc_participants_typical <- df_for_icc %>%
+  filter(condition=="typical") %>%
+  get_icc(object = "administration",column="corrected_target_looking")
+icc_participants_atypical <- df_for_icc %>%
+  filter(condition=="atypical") %>%
+  get_icc(object = "administration",column="corrected_target_looking")
+icc_stimuli <- df_for_icc %>%
+  get_icc(object = "stimulus",column="corrected_target_looking")
+icc_stimuli_typical <- df_for_icc %>%
+  filter(condition=="typical") %>%
+  get_icc(object = "stimulus",column="corrected_target_looking")
+icc_stimuli_atypical <- df_for_icc %>%
+  filter(condition=="atypical") %>%
+  get_icc(object = "stimulus",column="corrected_target_looking")
+
+df_for_icc %>%
+  get_icc(object = "stimulus",column="mean_target_looking_baseline")
+df_for_icc %>%
+  get_icc(object = "stimulus",column="mean_target_looking_critical")
+df_for_icc %>%
+  get_icc(object = "administration",column="mean_target_looking_critical")
+df_for_icc %>%
+  filter(condition=="atypical") %>%
+  get_icc(object = "administration",column="mean_target_looking_critical")
+```
+
 
 ### By Typicality Condition
 
