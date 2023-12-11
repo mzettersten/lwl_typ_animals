@@ -649,6 +649,49 @@ d_eyetrackingr <- d_resampled %>%
     treat_non_aoi_looks_as_missing = TRUE
   )
 
+#note that we analyze the entire timecourse here!
+response_window <- subset_by_window(
+  d_eyetrackingr,
+  window_start_time = -2000,
+  window_end_time = 4000,
+  rezero=FALSE
+)
+summary_data_loss <- describe_data(response_window, 'target', 'sub_num')
+
+response_time <- make_time_sequence_data(response_window,
+                                  time_bin_size = 100, 
+                                  predictor_columns = c("condition"),
+                                  aois = "target",
+                                  summarize_by = "sub_num" )
+
+# visualize timecourse
+plot(response_time, predictor_column = "condition") + 
+  theme_light() +
+  coord_cartesian(ylim = c(0,1))
+
+#divergence analysis
+# tb_analysis <- analyze_time_bins(data = response_time, predictor_column = "condition", test= 'boot_splines', within_subj = TRUE, bs_samples = 1000, alpha = .05/num_time_bins)
+# plot(tb_analysis) + theme_light()
+# summary(tb_analysis)
+
+#bootstrapped cluster-based permutation analysis
+n_samples <- 1000
+threshold_t <- 2
+df_timeclust <- make_time_cluster_data(response_time, 
+                                      test= "t.test", paired=TRUE,
+                                      predictor_column = "condition", 
+                                      threshold = threshold_t) 
+plot(df_timeclust) +  ylab("T-Statistic") + theme_light()
+summary(df_timeclust)
+clust_analysis <- analyze_time_clusters(df_timeclust, within_subj=TRUE, paired=TRUE,
+                                        samples=n_samples)
+plot(clust_analysis) + theme_light()
+summary(clust_analysis)
+```
+
+What if we analyze just the critical window? (exploratory analysis)
+
+```{r}
 response_window <- subset_by_window(
   d_eyetrackingr,
   window_start_time = 300,
@@ -688,6 +731,7 @@ plot(clust_analysis) + theme_light()
 summary(clust_analysis)
 ```
 
+
 ##### Timecourse Plot
 
 Next, we plot the data. First we summarize the data in two steps: (1) summarize the data by subject for each time point, followed by (2) averaging looking for each time point across subjects.
@@ -697,8 +741,10 @@ Next, we plot the data. First we summarize the data in two steps: (1) summarize 
 summarize_subj <- d_resampled %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  group_by(sub_num, age,age_mo, child_gender, trial_order, corrected_time_centered) %>%
+  group_by(sub_num, child_gender, corrected_time_centered) %>%
   summarize(N=n(),
+            mean_age=mean(age),
+            mean_age_mo=mean(age_mo),
             non_na_n = sum(!is.na(accuracy_transformed)), 
             mean_accuracy=mean(accuracy_transformed,na.rm=TRUE),
             ci=qt(0.975, non_na_n-1)*sd(accuracy_transformed,na.rm=T)/sqrt(non_na_n),
@@ -723,7 +769,7 @@ ggplot(summarize_across_subj,aes(corrected_time_centered,accuracy))+
   geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
   geom_vline(xintercept=300,linetype="dotted")+
   ylim(0.35,0.65)
-ggsave(here::here("figures","overall_accuracy.png"))
+ggsave(here::here("..","figures","overall_accuracy.png"))
 
 ```
 
@@ -731,7 +777,7 @@ ggsave(here::here("figures","overall_accuracy.png"))
 
 ```{r}
 summarize_across_subj_by_age <- summarize_subj %>%
-  mutate(age_group=ifelse(age_mo>16,"older than 16 months","younger than 16 months")) %>%
+  mutate(age_group=ifelse(mean_age_mo>16,"older than 16 months","younger than 16 months")) %>%
   group_by(age_group,corrected_time_centered) %>%
   dplyr::summarize(n=n(),
                    accuracy=mean(mean_accuracy,na.rm=TRUE),
@@ -746,7 +792,7 @@ ggplot(summarize_across_subj_by_age,aes(corrected_time_centered,accuracy))+
   geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
   geom_vline(xintercept=300,linetype="dotted")+
   facet_wrap(~age_group)
-ggsave(here::here("figures","overall_accuracy_by_age.png"),width=12, height=9)
+ggsave(here::here("..","figures","overall_accuracy_by_age.png"),width=12, height=9)
 ```
 
 ### Timecourse by condition
@@ -755,8 +801,11 @@ ggsave(here::here("figures","overall_accuracy_by_age.png"),width=12, height=9)
 summarize_subj_condition <- d_resampled %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  group_by(sub_num, age,age_mo, child_gender, condition, trial_order, corrected_time_centered) %>%
-  summarize(mean_accuracy=mean(accuracy_transformed,na.rm=TRUE))
+  group_by(sub_num, child_gender, condition, corrected_time_centered) %>%
+  summarize(
+    mean_age=mean(age),
+    mean_age_mo=mean(age_mo),
+    mean_accuracy=mean(accuracy_transformed,na.rm=TRUE))
 
 summarize_across_subj_cond <- summarize_subj_condition %>%
   group_by(condition,corrected_time_centered) %>%
@@ -805,7 +854,7 @@ ggplot(summarize_across_subj_cond,aes(corrected_time_centered,accuracy,color=con
   ylim(0,1)+
   ylab("Proportion Target Looking")+
   xlab("Time (centered on target word onset, in ms)")
-ggsave(here::here("figures","typicality_accuracy.png"),width=10,height=6)
+ggsave(here::here("..","figures","typicality_accuracy.png"),width=10,height=6)
 ```
 
 ## Aim 2
