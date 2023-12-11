@@ -593,22 +593,24 @@ resample_trial <- function(df_trial) {
   # adding back the columns to match schema
   dplyr::tibble(corrected_time_centered = t_resampled,
                 accuracy_transformed = aoi_resampled_recoded,
-                trial_number = df_trial$trial_number[1],
+                sub_num_session_order_trial_number = df_trial$sub_num_session_order_trial_number[1],
                 sub_num = df_trial$sub_num[1])
 }
 
 d_resampled <- d %>%
-  dplyr::mutate(sub_num_trial_number = paste(.data$sub_num,
+  dplyr::mutate(sub_num_session_order_trial_number = paste(.data$sub_num,.data$session,.data$trial_order,
                                            .data$trial_number, sep = "_")) %>%
-      split(.$sub_num_trial_number) %>%
+      split(.$sub_num_session_order_trial_number) %>%
       purrr::map_df(resample_trial) %>%
-      dplyr::arrange(.data$sub_num, .data$trial_number)
+      dplyr::arrange(.data$sub_num, .data$sub_num_session_order_trial_number)
 
 d_info <- d %>%
   select(-corrected_time_centered,-accuracy_transformed) %>%
-  distinct(sub_num, exclude_participant, useable_window, age,age_mo, child_gender, trial_order, condition, trial_order,trial_number,target_image,target_typicality_z)
+  distinct(sub_num, exclude_participant, useable_window, age,age_mo, child_gender, trial_order, condition, session,trial_order,trial_number,target_image,target_typicality_z)
 
 d_resampled <- d_resampled %>%
+  separate(sub_num_session_order_trial_number,into=c("exp_name","sub_number","session","trial_order","trial_number"),sep="_",remove=F) %>%
+  mutate(session=as.numeric(session),trial_number=as.numeric(trial_number)) %>%
   left_join(d_info) %>%
   mutate(corrected_time_centered =round(corrected_time_centered,0))
 ```
