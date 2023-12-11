@@ -385,32 +385,10 @@ avg_corrected_target_looking_by_typicality <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
   distinct(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z,condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, child_gender,age,age_mo,condition) %>%
+  group_by(sub_num, child_gender,condition) %>%
   summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=average_corrected_target_looking-ci,
-            upper_ci=average_corrected_target_looking+ci)
-
-#avg typicality baseline-corrected target looking
-avg_corrected_target_looking_category <- d %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num, months,age_mo,child_gender, trial_order,typicality_condition,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, age_mo,child_gender, trial_order,typicality_condition,category) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=average_corrected_target_looking-ci,
-            upper_ci=average_corrected_target_looking+ci)
-
-#avg typicality baseline-corrected target looking
-avg_corrected_target_looking_typicality <- d %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num, months,age_mo,child_gender, trial_order,typicality_condition,trial_number,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, age_mo,child_gender, trial_order,typicality_condition) %>%
-  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
             average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
             ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
             se=sd(corrected_target_looking,na.rm=T)/sqrt(N),
@@ -418,6 +396,18 @@ avg_corrected_target_looking_typicality <- d %>%
             upper_ci=average_corrected_target_looking+ci,
             lower_se=average_corrected_target_looking-se,
             upper_se=average_corrected_target_looking+se)
+
+#avg typicality baseline-corrected target looking
+avg_corrected_target_looking_category <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num, months,age_mo,child_gender, trial_order,typicality_condition,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
+  group_by(sub_num, child_gender, typicality_condition,category) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci)
 
 ```
 
@@ -448,7 +438,7 @@ avg_corrected_target_looking_by_typicality <- avg_corrected_target_looking_by_ty
     ),
   )
 
-m_1_1 <- lme4::lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality)
+m_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality)
 
 summary(m_1_1)
 confint(m_1_1,method="Wald")
@@ -466,6 +456,7 @@ Equivalence test - can't reject equivalence test
 
 ```{r}
 overall_condition_summary <- avg_corrected_target_looking_by_typicality %>%
+  ungroup() %>%
   group_by(sub_num) %>%
   summarize(
     condition_diff = average_corrected_target_looking[condition=="typical"]-average_corrected_target_looking[condition=="atypical"]
@@ -479,6 +470,17 @@ overall_condition_summary <- avg_corrected_target_looking_by_typicality %>%
 
 tsum_TOST(m1=overall_condition_summary$diff,sd1=overall_condition_summary$sd,n1=overall_condition_summary$N,eqb=0.25, eqbound_type = "SMD")
 ```
+
+```{r}
+#quick sanity check
+#t-test in tost is equivalent to regular old paired t-test
+# AND equivalent to lmer estimate of typicality effect
+t.test(
+  avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"],
+  avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"], 
+  paired=T)
+```
+
 
 ##### 1.1.3
 
