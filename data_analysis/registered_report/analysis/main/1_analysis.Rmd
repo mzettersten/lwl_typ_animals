@@ -535,6 +535,30 @@ summary(m_1_2)
 confint(m_1_2,method="Wald")
 ```
 
+Centering on typical condition
+
+```{r}
+m_1_2_typ <- lmer(corrected_target_looking ~ 1 + typicality_condition_typ + 
+            (1 + typicality_condition_typ||sub_num) +
+            (1|category),
+          data=trial_corrected_accuracy)
+summary(m_1_2_typ)
+
+confint(m_1_2_typ,method="Wald")
+```
+
+Centering on atypical condition
+
+```{r}
+m_1_2_atyp <- lmer(corrected_target_looking ~ 1 + typicality_condition_atyp + 
+            (1 + typicality_condition_atyp||sub_num) +
+            (1|category),
+          data=trial_corrected_accuracy)
+summary(m_1_2_atyp)
+
+confint(m_1_2_atyp,method="Wald")
+```
+
 #### 1.3 
 
 ##### Resampling
@@ -542,7 +566,7 @@ confint(m_1_2,method="Wald")
 In order to plot participants' average proportion looking to the target across the trial, we smooth/ resample time. This is necessary when plotting the timecourses given the variable sampling rate in the data (otherwise the mean observations "jump around" due to varying contributing data composition at different time points).
 
 ```{r}
-target_ms_per_frame=1000/30
+target_ms_per_frame=1000/15
 #adapted from: https://github.com/langcog/peekds/blob/master/R/generate_aoi.R
 resample_trial <- function(df_trial) {
   t_origin <- df_trial$corrected_time_centered
