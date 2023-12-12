@@ -2,7 +2,7 @@ library(tidyverse)
 library(here)
 source("rt_helper.R")
 source("resampling_helper.R")
-data_file_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_processed_data_anonymized.csv")
+data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_anonymized.csv")
 d <- read_csv(data_file_path)
 
 #resample times
@@ -38,7 +38,7 @@ d_rt <- rle_data %>%
   unnest(cols = c(data))
 
 # write RT data frame
-write_csv(d_rt,here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_RT_by_trial.csv"))
+write_csv(d_rt,here::here("..","..","data","processed_data","CATegories_exp2_RT_by_trial.csv"))
 
 
 #quick plot of distribution

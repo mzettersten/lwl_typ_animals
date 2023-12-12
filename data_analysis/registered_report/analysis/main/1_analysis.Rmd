@@ -1336,11 +1336,11 @@ We will fit models analogous to those in 1.1 and 1.2 using reaction time as our 
 ### Load RT (computed using compute_RT.R & rt_helper.R)
 
 ```{r}
-rt_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_RT_by_trial.csv")
+rt_path <- here::here("..","..","data","processed_data","CATegories_exp2_RT_by_trial.csv")
 d_rt <- read_csv(rt_path)
 
 d_trial_level <- d %>%
-  distinct(sub_num,session, trial_number,condition, age, age_mo, target_image, child_gender, category)
+  distinct(sub_num,session, trial_number,condition, age, age_mo, target_image, child_gender,category)
 
 d_rt<- d_trial_level %>%
   left_join(d_rt)
@@ -1412,26 +1412,6 @@ confint(m_4_1,method="Wald")
 ```
 
 There is no significant typicality effect.
-
-#### 4.3.1.1 RT for typical
-
-```{r}
-m_4_1_1 <- lmer(log(average_RT) ~ 1 + typicality_condition_typ + (1|sub_num),data=avg_subj_RT)
-
-summary(m_4_1_1)
-confint(m_4_1_1,method="Wald")
-
-```
-
-#### RT for atypical
-
-```{r}
-m_4_1_2 <- lmer(log(average_RT) ~ 1 + typicality_condition_atyp + (1|sub_num),data=avg_subj_RT)
-
-summary(m_4_1_2)
-confint(m_4_1_2,method="Wald")
-
-```
 
 #### 4.3.2 Trial level RT
 
