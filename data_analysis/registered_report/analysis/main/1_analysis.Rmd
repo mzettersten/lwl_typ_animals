@@ -28,6 +28,8 @@ library(gghalves)
 library(car)
 library(multilevelTools)
 library(JWileymisc)
+library(broom.mixed)
+library(papaja)
 source("compute_iccs.R")
 
 theme_set(theme_cowplot())
@@ -147,8 +149,7 @@ summarize_useable_trials_wide <- summarize_useable_trials %>%
 write_csv(summarize_useable_trials_wide,here::here("..","..","data","processed_data","CATegories_exp2_useable_trial_summary.csv"))
 ```
 
-Overall, among the trials contributed by the `r length(unique(summarize_useable_trials$sub_num))` participants, `r round(mean(summarize_subj_useable_trials$useable_window),3)*100`% of trials contained sufficient looking to meet our trial-level inclusion criteria (at least 50% looking during both the baseline window and the critical window). `r sum(summarize_subj_trials$exclude_participant==0)` of the `r length(unique(summarize_useable_trials$sub_num))` participants contributed sufficient looking data  on at least half of the experimental trials (overall M = `r round(mean(summarize_subj_trials$total_trials),1)`)
-
+Overall, among the trials contributed by the `r length(unique(summarize_useable_trials$sub_num))` participants, `r round(mean(summarize_subj_useable_trials$useable_window),3)*100`% of trials contained sufficient looking to meet our trial-level inclusion criteria (at least 50% looking during both the baseline window and the critical window). `r sum(summarize_subj_trials$exclude_participant==0)` of the `r length(unique(summarize_useable_trials$sub_num))` participants contributed sufficient looking data on at least half of the experimental trials (overall M = `r round(mean(summarize_subj_trials$total_trials),1)`)
 
 ## Summarize participant information
 
@@ -217,8 +218,9 @@ overall_subj_info_usable_trials %>%
   knitr::kable()
 
 ```
-=
-## Demographics of final usable sample
+
+= \## Demographics of final usable sample
+
 ```{r}
 demographics_summary <- d %>%
   filter(exclude_participant == 0) %>%
@@ -357,7 +359,6 @@ df_for_icc %>%
   get_icc(object = "administration",column="mean_target_looking_critical")
 ```
 
-
 ### By Typicality Condition
 
 Here, we summarize each participants' average accuracy during the critical window and average baseline-corrected proportion target looking.
@@ -410,7 +411,6 @@ avg_corrected_target_looking_category <- d %>%
             upper_ci=average_corrected_target_looking+ci)
 
 ```
-
 
 ## Models
 
@@ -480,7 +480,6 @@ t.test(
   avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"], 
   paired=T)
 ```
-
 
 ##### 1.1.3
 
@@ -559,7 +558,7 @@ summary(m_1_2_atyp)
 confint(m_1_2_atyp,method="Wald")
 ```
 
-#### 1.3 
+#### 1.3
 
 ##### Resampling
 
@@ -731,7 +730,6 @@ plot(clust_analysis) + theme_light()
 summary(clust_analysis)
 ```
 
-
 ##### Timecourse Plot
 
 Next, we plot the data. First we summarize the data in two steps: (1) summarize the data by subject for each time point, followed by (2) averaging looking for each time point across subjects.
@@ -873,8 +871,12 @@ m_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c * age_mo_c +
 
 summary(m_2)
 
-confint(m_2,method="Wald")
+#save interim model object
+# m_2_tidy <- m_2 %>%
+#   summarize_mixed_effects_model()
 ```
+
+In the trial-level linear mixed-effects model including age, typicality condition, and their interaction, we found a significant effect of age (`r apa_print(m_2)$estimate$age_mo_c`, `r apa_print(m_2)$statistic$age_mo_c`), suggesting that word recognition accuracy increased with age overall. There was no significant interaction between age and typicality (`r apa_print(m_2)$estimate$typicality_condition_c_age_mo_c`, `r apa_print(m_2)$statistic$typicality_condition_c_age_mo_c`), meaning that we found no evidence that the effect of typicality changed with age.
 
 ### Quick Visualization
 
@@ -889,7 +891,6 @@ ggplot(trial_critical_window_accuracy,aes(age,mean_accuracy,color=condition))+
   geom_smooth()
 ```
 
-
 ```{r}
 m <- lmer(mean_target_looking_critical ~ 1 + typicality_condition_c * age_mo_c + mean_target_looking_baseline +
             (1 + typicality_condition_c|sub_num) +
@@ -897,7 +898,6 @@ m <- lmer(mean_target_looking_critical ~ 1 + typicality_condition_c * age_mo_c +
           data=trial_corrected_accuracy)
 summary(m)
 ```
-
 
 ## Accuracy across age
 
@@ -933,8 +933,6 @@ ggsave(here::here("figures","age_relationship_critical_window_accuracy.png"),wid
 #   scale_x_continuous(breaks=seq(12,18,1))
 # ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
 ```
-
-
 
 ## Target Looking By Item
 
@@ -1126,13 +1124,12 @@ plot_grid(p1,p2,nrow=1,ncol=2,labels=c("A","B"),size=24)
 ggsave(here::here("figures","age_category_typicality.png"),width=12,height=6)
 ```
 
-
-
 ## Aim 3
 
 To test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
 
 #### 3.1 z-scored by participant
+
 ```{r}
 #zscore parent report of typicality within participants
 parent_typicality_z <- d %>%
@@ -1174,8 +1171,8 @@ confint(m_3_1,method="Wald")
 
 ```
 
-
 #### Exploratory analyses to see why age isn't a predictor in model 3
+
 ```{r}
 #cor.test(parent_typicality$target_parent_typicality_z~parent_typicality$age_c)
 
@@ -1217,11 +1214,13 @@ ggplot(parent_typicality, aes(target_parent_typicality_z))+
 ```
 
 #### Check normality assumptions
+
 ```{r}
 qqPlot(parent_typicality$target_parent_typicality_z)
 ```
 
 #### Check distribution of participants between Aim 2 & Aim 3
+
 ```{r}
 aim2_compare_sub_nums <- trial_corrected_accuracy %>%
   distinct(sub_num,age,age_mo)
@@ -1234,7 +1233,6 @@ aim3_compare_sub_nums <- parent_typicality %>%
 
 diff <- anti_join(aim2_compare_sub_nums, aim3_compare_sub_nums, by = c("sub_num" = "sub_num"))
 ```
-
 
 #### Z-scored by category by participant experience ratings
 
@@ -1304,6 +1302,7 @@ We will conduct a series of analyses to determine whether our results hold acros
 ### 4.1. Window
 
 ##### Define alternative critical window
+
 ```{r}
 
 critical_window_alternative <- c(300,1800)
@@ -1370,7 +1369,6 @@ summarize_useable_trials_wide_alternative <- summarize_useable_trials_alternativ
     values_from = "num_useable_trials_alternative"
   )
 ```
-
 
 ##### By Typicality Condition for alternative critical window
 
@@ -1450,9 +1448,9 @@ avg_corrected_target_looking_alternative <- trial_corrected_accuracy_alternative
 
 ```
 
-
 ##### 4.1.1.1
-Does typicality influence target looking? 
+
+Does typicality influence target looking?
 
 ```{r}
 avg_corrected_target_looking_by_typicality_alternative <- avg_corrected_target_looking_by_typicality_alternative %>%
@@ -1524,7 +1522,7 @@ confint(m_1_1_3_atyp_alternative,method="Wald")
 
 Infants successfully recognize words in the atypical condition.
 
-#### 4.1.1.3 
+#### 4.1.1.3
 
 ##### Resampling
 
@@ -1651,9 +1649,8 @@ plot(clust_analysis_alt) + theme_light()
 summary(clust_analysis_alt)
 ```
 
-
-
 ### 4.1.1.2
+
 Trial level typicality effects
 
 ```{r}
@@ -1686,6 +1683,7 @@ confint(m_4_1_1_2,method="Wald")
 ```
 
 ##### 4.1.2
+
 Aim 2 with alternative time window
 
 ###### Change across age
@@ -1721,12 +1719,15 @@ summary(m_4_1_2)
 
 confint(m_4_1_2,method="Wald")
 ```
+
 Age is still a significant predictor when we use a smaller critical window. There is no age by typicality condition interaction.
 
-##### 4.1.3 
+##### 4.1.3
+
 Aim 3: test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar using the alternative critical window
 
 ###### 3.1 z-scored by participant
+
 ```{r}
 #zscore parent report of typicality within participants
 parent_typicality_z_alt <- d %>%
@@ -1767,7 +1768,6 @@ confint(m_4_1_3_1,method="Wald")
 
 Parent ratings are not significantly related to baseline corrected target looking with the alternative critical window.
 
-
 ### 4.2 excluding unknown words
 
 We registered using CDI responses as a way to remove unknown words; however we did not administer the CDI. Thus, we are not including this analysis since it would require an arbitrary cutoff for word recognition as a proxy for understanding a word (i.e., what is the difference between 50% accuracy and 50.01% accuracy)
@@ -1777,6 +1777,7 @@ We registered using CDI responses as a way to remove unknown words; however we d
 We will fit models analogous to those in 1.1 and 1.2 using reaction time as our primary dependent measure rather than accuracy
 
 ### Load RT (computed using compute_RT.R & rt_helper.R)
+
 ```{r}
 rt_path <- here::here("data_analysis","registered_report","data","processed_data","CATegories_exp2_RT_by_trial.csv")
 d_rt <- read_csv(rt_path)
@@ -1815,6 +1816,7 @@ The data are right skewed, which is common for RTs. We will use log transformati
 ### Models
 
 #### 4.3.1 Subject-level RT
+
 ```{r}
 avg_subj_RT <- d_rt %>%
   filter(shift_type=="D-T")%>%
@@ -1951,6 +1953,7 @@ confint(m_4_3,method="Wald")
 Parent report of typicality does not predict RT.
 
 ### 4.4 Do effects interact with test session?
+
 We will fit models analogous to those in 1.1 and 1.2 including an interaction with test session
 
 #### 4.4.1.1
@@ -2069,10 +2072,10 @@ m_4_4_1_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c*session_
 summary(m_4_4_1_2)
 ```
 
-
 # Exploratory analyses:
 
 ## Ex1. typicality as a likert scale
+
 We intentionally selected items at the end of a typicality scale from a set of adult-normed images. We categorized each image as typical or atypical based on adults ratings, however, we also have the origninal normed values. Does typicality influence accuracy when typicality is a continuum rather than a dichotomous variable.
 
 ### By Continuous typicality
@@ -2139,6 +2142,7 @@ avg_corrected_target_looking_typicality_continuous <- d %>%
 ```
 
 #Subject level
+
 ```{r}
 m_Ex1_1 <- lmer(average_corrected_target_looking ~ 1 + target_typicality_z + (1|sub_num),data=avg_corrected_target_looking_by_typicality_continuous)
 
@@ -2146,9 +2150,11 @@ summary(m_Ex1_1)
 confint(m_Ex1_1,method="Wald")
 
 ```
+
 When we use the full scale, rather than a dichotomous scale, typicality is a significant predictor of word recognition (p=0.029)
 
 #Trial Level
+
 ```{r}
 
 m_Ex1_2 <- lmer(corrected_target_looking ~ 1 + target_typicality_z + 
@@ -2161,8 +2167,7 @@ confint(m_Ex1_2,method="Wald")
 
 ```
 
-##Ex2. Does typicality interact with category? 
-Infants' processing for some categories may be better than other categories. Are infants better at processing typical category members for categories that are more accurate?
+##Ex2. Does typicality interact with category? Infants' processing for some categories may be better than other categories. Are infants better at processing typical category members for categories that are more accurate?
 
 ```{r}
 
@@ -2214,11 +2219,12 @@ summary(m_Ex2_1)
 confint(m_Ex2_1,method="Wald")
 
 ```
-The omnibus test was not significantly different from tjhe model without the interaction terms. Therefore, we did not follow up with 
+
+The omnibus test was not significantly different from tjhe model without the interaction terms. Therefore, we did not follow up with
 
 ## Ex3. Does a typicality exert more of an effect on processing when the categories tested are more similar?
 
-There are some categories that are more visually/categorically similar than other categories (i.e., cats and dogs vs. dogs and fish). Is there an effect of typicality when there is more category similarity? 
+There are some categories that are more visually/categorically similar than other categories (i.e., cats and dogs vs. dogs and fish). Is there an effect of typicality when there is more category similarity?
 
 ```{r}
 trial_corrected_accuracy_category <- d %>%
