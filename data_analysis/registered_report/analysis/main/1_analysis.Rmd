@@ -311,6 +311,8 @@ trial_corrected_accuracy <- d %>%
 avg_corrected_target_looking <- trial_corrected_accuracy  %>%
   group_by(sub_num, child_gender) %>%
   summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
             average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
             ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
             lower_ci=average_corrected_target_looking-ci,
@@ -878,20 +880,11 @@ summary(m_2)
 
 In the trial-level linear mixed-effects model including age, typicality condition, and their interaction, we found a significant effect of age (`r apa_print(m_2)$estimate$age_mo_c`, `r apa_print(m_2)$statistic$age_mo_c`), suggesting that word recognition accuracy increased with age overall. There was no significant interaction between age and typicality (`r apa_print(m_2)$estimate$typicality_condition_c_age_mo_c`, `r apa_print(m_2)$statistic$typicality_condition_c_age_mo_c`), meaning that we found no evidence that the effect of typicality changed with age.
 
-### Quick Visualization
+####
+
 
 ```{r}
-ggplot(avg_corrected_target_looking_by_typicality,aes(age,average_corrected_target_looking,color=condition))+
-  geom_point()+
-  geom_smooth(method="lm")+
-  geom_hline(yintercept=0,linetype="dashed")
-
-ggplot(trial_critical_window_accuracy,aes(age,mean_accuracy,color=condition))+
-  geom_point(alpha=0.1)+
-  geom_smooth()
-```
-
-```{r}
+#exploratory: controlling for baseline looking rather than modeling the difference
 m <- lmer(mean_target_looking_critical ~ 1 + typicality_condition_c * age_mo_c + mean_target_looking_baseline +
             (1 + typicality_condition_c|sub_num) +
             (1|category),
@@ -899,9 +892,11 @@ m <- lmer(mean_target_looking_critical ~ 1 + typicality_condition_c * age_mo_c +
 summary(m)
 ```
 
-## Accuracy across age
+### Visualizations
 
-### Critical Window Only
+#### Accuracy across age
+
+##### Critical Window Only
 
 ```{r}
 ggplot(filter(avg_critical_window_accuracy,mean_age<700),aes(mean_age,accuracy))+
@@ -917,211 +912,34 @@ ggplot(filter(avg_critical_window_accuracy,mean_age<700),aes(mean_age,accuracy))
 ggsave(here::here("figures","age_relationship_critical_window_accuracy.png"),width=7,height=6)
 ```
 
-### Baseline-corrected proportion target looking
+##### Baseline-corrected proportion target looking
 
 ```{r}
-# ggplot(avg_corrected_target_looking,aes(age,average_corrected_target_looking))+
-#   geom_pointrange(aes(ymin=lower_ci,ymax=upper_ci), 
-#                   position=position_jitter(width=0.1),
-#                   width=0,
-#                   size=1.5) +
-#   geom_hline(yintercept=0,linetype="dashed")+
-#   geom_smooth(method="lm")+
-#   xlab("Age (in months)")+
-#   ylab("Baseline-Corrected Proportion Target Looking")+
-#   ylim(-0.55,0.55)+
-#   scale_x_continuous(breaks=seq(12,18,1))
-# ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
-```
-
-## Target Looking By Item
-
-Next, we investigate item-level (target word) variation in proportion target looking.
-
-### Overall target looking during critical window and baseline window
-
-First, we inspect overall target looking in the critical window and in the baseline window. Note the baseline effects, such that dog and cat are more likely to be fixated during baseline than bird and fish.
-
-```{r}
-#average target looking during the baseline and critical window by item for each subject
-avg_subj_target_looking_by_item <- d %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num,  age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, age,age_mo, child_gender, trial_order,category) %>%
-  summarize(N=n(),
-            mean_critical_accuracy=mean(mean_target_looking_critical,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(mean_target_looking_critical,na.rm=T)/sqrt(N),
-            lower_ci=mean_critical_accuracy-ci,
-            upper_ci=mean_critical_accuracy+ci,
-            mean_baseline_accuracy=mean(mean_target_looking_baseline,na.rm=TRUE),
-            baseline_ci=qt(0.975, N-1)*sd(mean_target_looking_baseline,na.rm=T)/sqrt(N),
-            lower_baseline_ci=mean_baseline_accuracy-baseline_ci,
-            upper_baseline_ci=mean_baseline_accuracy+baseline_ci)
-
-#summarize average target looking across subjects
-avg_target_looking_by_item <- avg_subj_target_looking_by_item %>%
-  group_by(category) %>%
-  summarize(N=n(),
-            critical_accuracy=mean(mean_critical_accuracy,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(mean_critical_accuracy,na.rm=T)/sqrt(N),
-            lower_ci=critical_accuracy-ci,
-            upper_ci=critical_accuracy+ci,
-            baseline_accuracy=mean(mean_baseline_accuracy,na.rm=TRUE),
-            baseline_ci=qt(0.975, N-1)*sd(mean_baseline_accuracy,na.rm=T)/sqrt(N),
-            lower_baseline_ci=baseline_accuracy-baseline_ci,
-            upper_baseline_ci=baseline_accuracy+baseline_ci)
-avg_target_looking_by_item %>%
-  knitr::kable()
-```
-
-#### Target looking during the baseline and critical window split by age
-
-```{r}
-#summarize average corrected target looking across subject
-avg_target_looking_by_item_by_age <- avg_subj_target_looking_by_item %>%
-  mutate(age_group=ifelse(age_mo>16,"older than 16 months","younger than 16 months")) %>%
-  group_by(age_group,category) %>%
-  summarize(N=n(),
-            critical_accuracy=mean(mean_critical_accuracy,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(mean_critical_accuracy,na.rm=T)/sqrt(N),
-            lower_ci=critical_accuracy-ci,
-            upper_ci=critical_accuracy+ci,
-            baseline_accuracy=mean(mean_baseline_accuracy,na.rm=TRUE),
-            baseline_ci=qt(0.975, N-1)*sd(mean_baseline_accuracy,na.rm=T)/sqrt(N),
-            lower_baseline_ci=baseline_accuracy-baseline_ci,
-            upper_baseline_ci=baseline_accuracy+baseline_ci)
-avg_target_looking_by_item_by_age %>%
-  knitr::kable()
-```
-
-### Overall baseline-corrected proportion target looking
-
-Next, we investigate item-level variation in word recognition as measured by baseline-corrected proportion target looking (to help account for the baseline difference noted above).
-
-```{r}
-#average corrected target looking by item for each subject
-avg_subj_corrected_target_looking_by_item <- d %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  mutate(age_group=ifelse(age_mo>16,"older than 16 months","younger than 16 months")) %>%
-  distinct(sub_num, months,age_mo,age_group, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, age_mo,age_group, child_gender, trial_order,category) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=average_corrected_target_looking-ci,
-            upper_ci=average_corrected_target_looking+ci)
-
-#summarize average corrected target looking across subject
-avg_corrected_target_looking_by_item <- avg_subj_corrected_target_looking_by_item %>%
-  group_by(category) %>%
-  summarize(N=n(),
-            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=corrected_target_looking-ci,
-            upper_ci=corrected_target_looking+ci)
-avg_corrected_target_looking_by_item %>%
-  knitr::kable()
-```
-
-#### Baseline-corrected proportion target looking split by age
-
-```{r}
-#summarize average corrected target looking across subject
-avg_corrected_target_looking_by_item_by_age <- avg_subj_corrected_target_looking_by_item %>%
-  group_by(age_group,category) %>%
-  summarize(N=n(),
-            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=corrected_target_looking-ci,
-            upper_ci=corrected_target_looking+ci)
-avg_corrected_target_looking_by_item_by_age %>%
-  knitr::kable()
-```
-
-#### Baseline-corrected proportion target looking split by typicality
-
-```{r}
-#average corrected target looking by item by typicality for each subject
-avg_subj_corrected_target_looking_by_item_by_typicality <- d %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num, months,age_mo, trial_order,trial_number,typicality_condition,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, age_mo, trial_order,typicality_condition,category) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE))
-#summarize average corrected target looking across subject
-avg_corrected_target_looking_by_item_by_typicality <- avg_subj_corrected_target_looking_by_item_by_typicality %>%
-  group_by(typicality_condition,category) %>%
-  summarize(N=n(),
-            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=corrected_target_looking-ci,
-            upper_ci=corrected_target_looking+ci)
-avg_corrected_target_looking_by_item_by_typicality %>%
-  knitr::kable()
-```
-
-#### Baseline-corrected proportion target looking by category
-
-```{r}
-pal <- wes_palette("Rushmore1", n=5)
-set.seed(1)
-jitterer <- position_jitter(width = .05,seed=1)
-p2 <- ggplot(avg_corrected_target_looking_category,aes(x=typicality_condition,y=average_corrected_target_looking, fill=typicality_condition))+
-  geom_half_violin(data=filter(avg_corrected_target_looking_category, typicality_condition=="atypical"),position = position_nudge(x = -.1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="l")+
-  geom_half_violin(data=filter(avg_corrected_target_looking_category, typicality_condition=="typical"),position = position_nudge(x = .1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="r")+
-  geom_path(aes(group=sub_num),color="black",fill=NA,alpha=0.05,size=0.75,position=jitterer)+
-  geom_point(aes(color=typicality_condition,group=sub_num), size = 2.5, alpha=0.05,position=jitterer)+
-  geom_point(data=avg_corrected_target_looking_by_item_by_typicality,aes(y=corrected_target_looking),color="black",size=1.8)+
-  geom_line(data=avg_corrected_target_looking_by_item_by_typicality,aes(y=corrected_target_looking,group=1),color="black",size=1.5)+
-  geom_errorbar(data=avg_corrected_target_looking_by_item_by_typicality,aes(y=corrected_target_looking,ymin=lower_ci,ymax=upper_ci),width=0,color="black")+
-  #geom_boxplot(outlier.shape = NA, alpha = .5, width = .1, colour = "black")+
-  #scale_colour_brewer(palette = "Dark2")+
-  #scale_fill_brewer(palette = "Dark2")+
-  geom_hline(yintercept=0,linetype="dashed")+
-  scale_colour_manual(values=pal[c(3,4)])+
-  scale_fill_manual(values=pal[c(3,4)])+
-  facet_wrap(.~category)+
-  theme(legend.position="none")+
-  xlab("Typicality Condition")+
-  ylab("Baseline-Corrected\nProportion Target Looking")+
-  theme(axis.title.x = element_text(face="bold", size=20),
-        axis.text.x  = element_text(size=16),
-        axis.title.y = element_text(face="bold", size=20),
-        axis.text.y  = element_text(size=16),
-        strip.text.x = element_text(size = 16,face="bold"))
-
-
-ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy_category.png"),width=7,height=6)
-```
-
-```{r}
-pal <- wes_palette("Rushmore1", n=5)
-p1 <- ggplot(avg_corrected_target_looking_typicality,aes(age_mo,average_corrected_target_looking,color=typicality_condition,group=typicality_condition))+
-  geom_pointrange(aes(ymin=lower_se,ymax=upper_se), 
-                  position=position_jitter(width=0.2),
+ggplot(avg_corrected_target_looking,aes(mean_age,average_corrected_target_looking))+
+  geom_pointrange(aes(ymin=lower_ci,ymax=upper_ci),
+                  position=position_jitter(width=0.1),
                   width=0,
-                  size=1) +
+                  size=1.5) +
   geom_hline(yintercept=0,linetype="dashed")+
-  geom_smooth(method="lm",color="black",size=1.3)+
+  geom_smooth(method="lm")+
   xlab("Age (in months)")+
-  ylab("Baseline-Corrected\nProportion Target Looking")+
-  #ylim(-0.55,0.5)+
-  scale_colour_manual(values=pal[c(3,4)])+
-  scale_x_continuous(breaks=seq(12,18,1))+
-  facet_wrap(~typicality_condition)+
-  theme(
-    strip.background = element_rect(size=1, colour = "black"),
-    strip.text = element_text(size=16,face="bold"),
-    axis.title=element_text(size=20,face="bold"),
-    axis.text = element_text(size=14))+
-  theme(legend.position="none")
-ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy_typicality.png"),width=9,height=6)
+  ylab("Baseline-Corrected Proportion Target Looking")+
+  ylim(-0.55,0.55)+
+  scale_x_continuous(breaks=seq(12,18,1))
+ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
+```
 
-plot_grid(p1,p2,nrow=1,ncol=2,labels=c("A","B"),size=24)
-ggsave(here::here("figures","age_category_typicality.png"),width=12,height=6)
+#### Quick Visualization of the Typicalty Effect Across Age
+
+```{r}
+ggplot(avg_corrected_target_looking_by_typicality,aes(mean_age,average_corrected_target_looking,color=condition))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  geom_hline(yintercept=0,linetype="dashed")
+
+ggplot(trial_critical_window_accuracy,aes(age,mean_accuracy,color=condition))+
+  geom_point(alpha=0.1)+
+  geom_smooth()
 ```
 
 ## Aim 3
@@ -2274,4 +2092,194 @@ m_Ex3_1 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c +
 summary(m_Ex3_1)
 
 confint(m_Ex3_1,method="Wald")
+```
+
+## Target Looking By Item
+
+Next, we investigate item-level (target word) variation in proportion target looking.
+
+### Overall target looking during critical window and baseline window
+
+First, we inspect overall target looking in the critical window and in the baseline window. Note the baseline effects, such that dog and cat are more likely to be fixated during baseline than bird and fish.
+
+```{r}
+#average target looking during the baseline and critical window by item for each subject
+avg_subj_target_looking_by_item <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num,  age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
+  group_by(sub_num, age,age_mo, child_gender, trial_order,category) %>%
+  summarize(N=n(),
+            mean_critical_accuracy=mean(mean_target_looking_critical,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(mean_target_looking_critical,na.rm=T)/sqrt(N),
+            lower_ci=mean_critical_accuracy-ci,
+            upper_ci=mean_critical_accuracy+ci,
+            mean_baseline_accuracy=mean(mean_target_looking_baseline,na.rm=TRUE),
+            baseline_ci=qt(0.975, N-1)*sd(mean_target_looking_baseline,na.rm=T)/sqrt(N),
+            lower_baseline_ci=mean_baseline_accuracy-baseline_ci,
+            upper_baseline_ci=mean_baseline_accuracy+baseline_ci)
+
+#summarize average target looking across subjects
+avg_target_looking_by_item <- avg_subj_target_looking_by_item %>%
+  group_by(category) %>%
+  summarize(N=n(),
+            critical_accuracy=mean(mean_critical_accuracy,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(mean_critical_accuracy,na.rm=T)/sqrt(N),
+            lower_ci=critical_accuracy-ci,
+            upper_ci=critical_accuracy+ci,
+            baseline_accuracy=mean(mean_baseline_accuracy,na.rm=TRUE),
+            baseline_ci=qt(0.975, N-1)*sd(mean_baseline_accuracy,na.rm=T)/sqrt(N),
+            lower_baseline_ci=baseline_accuracy-baseline_ci,
+            upper_baseline_ci=baseline_accuracy+baseline_ci)
+avg_target_looking_by_item %>%
+  knitr::kable()
+```
+
+#### Target looking during the baseline and critical window split by age
+
+```{r}
+#summarize average corrected target looking across subject
+avg_target_looking_by_item_by_age <- avg_subj_target_looking_by_item %>%
+  mutate(age_group=ifelse(age_mo>16,"older than 16 months","younger than 16 months")) %>%
+  group_by(age_group,category) %>%
+  summarize(N=n(),
+            critical_accuracy=mean(mean_critical_accuracy,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(mean_critical_accuracy,na.rm=T)/sqrt(N),
+            lower_ci=critical_accuracy-ci,
+            upper_ci=critical_accuracy+ci,
+            baseline_accuracy=mean(mean_baseline_accuracy,na.rm=TRUE),
+            baseline_ci=qt(0.975, N-1)*sd(mean_baseline_accuracy,na.rm=T)/sqrt(N),
+            lower_baseline_ci=baseline_accuracy-baseline_ci,
+            upper_baseline_ci=baseline_accuracy+baseline_ci)
+avg_target_looking_by_item_by_age %>%
+  knitr::kable()
+```
+
+### Overall baseline-corrected proportion target looking
+
+Next, we investigate item-level variation in word recognition as measured by baseline-corrected proportion target looking (to help account for the baseline difference noted above).
+
+```{r}
+#average corrected target looking by item for each subject
+avg_subj_corrected_target_looking_by_item <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  mutate(age_group=ifelse(age_mo>16,"older than 16 months","younger than 16 months")) %>%
+  distinct(sub_num, months,age_mo,age_group, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
+  group_by(sub_num, age_mo,age_group, child_gender, trial_order,category) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci)
+
+#summarize average corrected target looking across subject
+avg_corrected_target_looking_by_item <- avg_subj_corrected_target_looking_by_item %>%
+  group_by(category) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+avg_corrected_target_looking_by_item %>%
+  knitr::kable()
+```
+
+#### Baseline-corrected proportion target looking split by age
+
+```{r}
+#summarize average corrected target looking across subject
+avg_corrected_target_looking_by_item_by_age <- avg_subj_corrected_target_looking_by_item %>%
+  group_by(age_group,category) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+avg_corrected_target_looking_by_item_by_age %>%
+  knitr::kable()
+```
+
+#### Baseline-corrected proportion target looking split by typicality
+
+```{r}
+#average corrected target looking by item by typicality for each subject
+avg_subj_corrected_target_looking_by_item_by_typicality <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num, months,age_mo, trial_order,trial_number,typicality_condition,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
+  group_by(sub_num, age_mo, trial_order,typicality_condition,category) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE))
+#summarize average corrected target looking across subject
+avg_corrected_target_looking_by_item_by_typicality <- avg_subj_corrected_target_looking_by_item_by_typicality %>%
+  group_by(typicality_condition,category) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+avg_corrected_target_looking_by_item_by_typicality %>%
+  knitr::kable()
+```
+
+#### Baseline-corrected proportion target looking by category
+
+```{r}
+pal <- wes_palette("Rushmore1", n=5)
+set.seed(1)
+jitterer <- position_jitter(width = .05,seed=1)
+p2 <- ggplot(avg_corrected_target_looking_category,aes(x=typicality_condition,y=average_corrected_target_looking, fill=typicality_condition))+
+  geom_half_violin(data=filter(avg_corrected_target_looking_category, typicality_condition=="atypical"),position = position_nudge(x = -.1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="l")+
+  geom_half_violin(data=filter(avg_corrected_target_looking_category, typicality_condition=="typical"),position = position_nudge(x = .1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="r")+
+  geom_path(aes(group=sub_num),color="black",fill=NA,alpha=0.05,size=0.75,position=jitterer)+
+  geom_point(aes(color=typicality_condition,group=sub_num), size = 2.5, alpha=0.05,position=jitterer)+
+  geom_point(data=avg_corrected_target_looking_by_item_by_typicality,aes(y=corrected_target_looking),color="black",size=1.8)+
+  geom_line(data=avg_corrected_target_looking_by_item_by_typicality,aes(y=corrected_target_looking,group=1),color="black",size=1.5)+
+  geom_errorbar(data=avg_corrected_target_looking_by_item_by_typicality,aes(y=corrected_target_looking,ymin=lower_ci,ymax=upper_ci),width=0,color="black")+
+  #geom_boxplot(outlier.shape = NA, alpha = .5, width = .1, colour = "black")+
+  #scale_colour_brewer(palette = "Dark2")+
+  #scale_fill_brewer(palette = "Dark2")+
+  geom_hline(yintercept=0,linetype="dashed")+
+  scale_colour_manual(values=pal[c(3,4)])+
+  scale_fill_manual(values=pal[c(3,4)])+
+  facet_wrap(.~category)+
+  theme(legend.position="none")+
+  xlab("Typicality Condition")+
+  ylab("Baseline-Corrected\nProportion Target Looking")+
+  theme(axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        strip.text.x = element_text(size = 16,face="bold"))
+
+
+ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy_category.png"),width=7,height=6)
+```
+
+```{r}
+pal <- wes_palette("Rushmore1", n=5)
+p1 <- ggplot(avg_corrected_target_looking_typicality,aes(age_mo,average_corrected_target_looking,color=typicality_condition,group=typicality_condition))+
+  geom_pointrange(aes(ymin=lower_se,ymax=upper_se), 
+                  position=position_jitter(width=0.2),
+                  width=0,
+                  size=1) +
+  geom_hline(yintercept=0,linetype="dashed")+
+  geom_smooth(method="lm",color="black",size=1.3)+
+  xlab("Age (in months)")+
+  ylab("Baseline-Corrected\nProportion Target Looking")+
+  #ylim(-0.55,0.5)+
+  scale_colour_manual(values=pal[c(3,4)])+
+  scale_x_continuous(breaks=seq(12,18,1))+
+  facet_wrap(~typicality_condition)+
+  theme(
+    strip.background = element_rect(size=1, colour = "black"),
+    strip.text = element_text(size=16,face="bold"),
+    axis.title=element_text(size=20,face="bold"),
+    axis.text = element_text(size=14))+
+  theme(legend.position="none")
+ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy_typicality.png"),width=9,height=6)
+
+plot_grid(p1,p2,nrow=1,ncol=2,labels=c("A","B"),size=24)
+ggsave(here::here("figures","age_category_typicality.png"),width=12,height=6)
 ```
