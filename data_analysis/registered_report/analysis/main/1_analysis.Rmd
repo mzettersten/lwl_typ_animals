@@ -31,6 +31,7 @@ library(JWileymisc)
 library(broom.mixed)
 library(papaja)
 source("compute_iccs.R")
+source("common.R")
 
 theme_set(theme_cowplot())
 
@@ -305,7 +306,7 @@ avg_critical_window_accuracy <- trial_critical_window_accuracy %>%
 trial_corrected_accuracy <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,distractor_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_rating,target_parent_typicality_rating_z,distractor_parent_typicality_rating_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)
+  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,distractor_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_rating,target_parent_typicality_rating_z,distractor_parent_typicality_rating_z,target_parent_typicality_by_category_z,distractor_parent_typicality_by_category_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)
 
 ## average
 avg_corrected_target_looking <- trial_corrected_accuracy  %>%
@@ -971,88 +972,25 @@ m_3_tidy <- m_3 %>%
 
 Caregiver report of exemplar typicality did not significantly predict infants’ baseline-corrected word recognition accuracy (`r apa_print(m_3)$estimate$target_parent_typicality_rating_z`, `r apa_print(m_3)$statistic$target_parent_typicality_rating_z`).  After controlling for the effect of parental report of typicality, age remained a significant predictor of infants’ word recognition (`r apa_print(m_3)$estimate$age_mo_c`, `r apa_print(m_3)$statistic$age_mo_c`). 
 
-#### Exploratory analyses to see why age isn't a predictor in model 3
-
-```{r}
-#cor.test(parent_typicality$target_parent_typicality_z~parent_typicality$age_c)
-
-ggplot(parent_typicality, aes(target_parent_typicality_z,age)) +
-  geom_point()+
-  geom_smooth(method = "lm")
-
-ggplot(d, aes(condition,child_age_rounded))+
-  geom_point()+
-  stat_summary(fun = "mean")
-
-parent_typicality <- parent_typicality %>%
-  mutate(
-    typicality_condition_c = case_when(
-      condition == "atypical" ~ -0.5,
-      condition == "typical" ~ 0.5,
-      TRUE ~ NA_real_
-    ),
-    typicality_condition_typ = case_when(
-      condition == "atypical" ~ -1,
-      condition == "typical" ~ 0,
-      TRUE ~ NA_real_
-    ),
-    typicality_condition_atyp = case_when(
-      condition == "atypical" ~ 0,
-      condition == "typical" ~ 1,
-      TRUE ~ NA_real_
-    ),
-  )
-
-ggplot(parent_typicality, aes(condition,target_parent_typicality_rating))+
-  geom_point()#+facet_wrap(~category)
-  #geom_bar(stat = "identity")
-
-
-ggplot(parent_typicality, aes(target_parent_typicality_z))+
-  geom_histogram()+ facet_wrap(~condition)#+
-  #facet_wrap(~parent_typicality$category)
-```
-
-#### Check normality assumptions
-
-```{r}
-qqPlot(parent_typicality$target_parent_typicality_z)
-```
-
-#### Check distribution of participants between Aim 2 & Aim 3
-
-```{r}
-aim2_compare_sub_nums <- trial_corrected_accuracy %>%
-  distinct(sub_num,age,age_mo)
-
-range(aim2_compare_sub_nums$age_mo, na.rm = T)
-
-aim3_compare_sub_nums <- parent_typicality %>%
-  ungroup()%>%
-  distinct(sub_num,age,age_mo)
-
-diff <- anti_join(aim2_compare_sub_nums, aim3_compare_sub_nums, by = c("sub_num" = "sub_num"))
-```
-
-#### Z-scored by category by participant experience ratings
+#### Exploratory analysis: Z-scored by category by participant experience ratings
 
 ```{r}
 
 #model
-m_3_1_2 <- lmer(average_corrected_target_looking ~ target_parent_typicality_category_z+age_c+ (target_parent_typicality_category_z||sub_num) + (1|category), parent_typicality_category)
+m_3_1_2 <- lmer(corrected_target_looking ~ target_parent_typicality_by_category_z+age_mo_c+ (1|sub_num) + (1|category), trial_corrected_accuracy)
 
 summary(m_3_1_2)
 
 confint(m_3_1_2,method="Wald")
 ```
 
-#### Model accounting for distractor rating too
+#### Exploratory analysis: Model accounting for distractor rating too
 
 The outcome variable, average_corrected_target_looking accounts for baseline preferences for different images. We have typicality information for both the targets and the distractor. Does accounting for the saliency/experience with the distractor predict accuracy?
 
 ```{r}
 #model
-m_3_3 <- lmer(average_corrected_target_looking ~ target_parent_typicality_z+distractor_parent_typicality_z+age_c+ (target_parent_typicality_z||sub_num) + (1|category), parent_typicality)
+m_3_3 <- lmer(corrected_target_looking ~ target_parent_typicality_rating_z+distractor_parent_typicality_rating_z+age_mo_c+ (1|sub_num) + (1|category), trial_corrected_accuracy)
 
 summary(m_3_3)
 
@@ -1061,20 +999,29 @@ confint(m_3_3,method="Wald")
 
 No, accounting for experience with the distractor does not explain infants' accuracy.
 
-#### Quick Visualization
+#### Visualization
 
 ```{r}
 #by subject
-ggplot(parent_typicality,aes(target_parent_typicality_z,average_corrected_target_looking))+
+ggplot(trial_corrected_accuracy,aes(target_parent_typicality_rating_z,corrected_target_looking))+
+  geom_point(alpha=0.1)+
+  geom_smooth(method = "lm")
+
+ggplot(trial_corrected_accuracy,aes(target_parent_typicality_rating_z,corrected_target_looking))+
   geom_point(alpha=0.1)+
   geom_smooth(method = "lm")+
   facet_wrap(~condition)
 
 #by category
-ggplot(parent_typicality_category,aes(target_parent_typicality_category_z,average_corrected_target_looking))+
+ggplot(trial_corrected_accuracy,aes(target_parent_typicality_by_category_z,corrected_target_looking))+
   geom_point(alpha=0.1)+
   geom_smooth(method = "lm")+
   facet_wrap(~category)
+
+ggplot(trial_corrected_accuracy,aes(target_parent_typicality_by_category_z,corrected_target_looking))+
+  geom_point(alpha=0.1)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~category+condition)
 
 ```
 
@@ -1221,7 +1168,7 @@ avg_corrected_target_looking_typicality_alternative <- d %>%
 trial_corrected_accuracy_alternative <- d %>%
   filter(exclude_participant_alternative==0) %>%
   filter(useable_window_alternative==1) %>%
-  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical_alternative,mean_target_looking_baseline,corrected_target_looking_alternative)
+  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,distractor_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_rating,target_parent_typicality_rating_z,distractor_parent_typicality_rating_z,target_parent_typicality_by_category_z,distractor_parent_typicality_by_category_z, condition,mean_target_looking_critical_alternative,mean_target_looking_baseline,corrected_target_looking_alternative)
 ## average
 avg_corrected_target_looking_alternative <- trial_corrected_accuracy_alternative  %>%
   group_by(sub_num, child_gender) %>%
@@ -1307,133 +1254,6 @@ confint(m_1_1_3_atyp_alternative,method="Wald")
 
 Infants successfully recognize words in the atypical condition.
 
-#### 4.1.1.3
-
-##### Resampling
-
-In order to plot participants' average proportion looking to the target across the trial, we smooth/ resample time. This is necessary when plotting the timecourses given the variable sampling rate in the data (otherwise the mean observations "jump around" due to varying contributing data composition at different time points).
-
-```{r}
-target_ms_per_frame=1000/30
-#adapted from: https://github.com/langcog/peekds/blob/master/R/generate_aoi.R
-resample_trial_alt <- function(df_trial_alt) {
-  t_origin_alt <- df_trial_alt$corrected_time_centered
-  data_origin_alt <- df_trial_alt$accuracy_transformed
-
-  # create the new timestamps for resampling
-  t_start_alt <- min(t_origin_alt) - (min(t_origin_alt) %% target_ms_per_frame)
-  t_resampled_alt <- seq(from = t_start_alt, to = max(t_origin_alt),
-                     by = target_ms_per_frame)
-
-  # exchange strings values with integers for resampling
-  # this step critical for interpolating missing vals quickly and correctly
-  aoi_num_alt <- data_origin_alt %>%
-    dplyr::recode(.missing = 2) #recode NA as 2
-    
-  # start resampling with approx
-  aoi_resampled_alt <- stats::approx(x = t_origin_alt, y = aoi_num_alt, xout = t_resampled_alt,
-                                 method = "constant", rule = 2,
-                                 ties = "ordered")$y
-  aoi_resampled_recoded_alt <- aoi_resampled_alt %>%
-    dplyr::recode("0"="0","1"="1","2" = "missing") %>%
-    as.numeric()
-
-  # adding back the columns to match schema
-  dplyr::tibble(corrected_time_centered = t_resampled_alt,
-                accuracy_transformed = aoi_resampled_recoded_alt,
-                trial_number = df_trial_alt$trial_number[1],
-                sub_num = df_trial_alt$sub_num[1])
-}
-
-d_resampled_alt <- d %>%
-  dplyr::mutate(sub_num_trial_number = paste(.data$sub_num,
-                                           .data$trial_number, sep = "_")) %>%
-      split(.$sub_num_trial_number) %>%
-      purrr::map_df(resample_trial_alt) %>%
-      dplyr::arrange(.data$sub_num, .data$trial_number)
-
-d_info_alt <- d %>%
-  select(-corrected_time_centered,-accuracy_transformed) %>%
-  distinct(sub_num, exclude_participant_alternative, useable_window_alternative, age,age_mo, child_gender, trial_order, condition, trial_order,trial_number,target_image,target_typicality_z)
-
-d_resampled_alt <- d_resampled_alt %>%
-  left_join(d_info_alt) %>%
-  mutate(corrected_time_centered =round(corrected_time_centered,0))
-```
-
-##### Timecourse analysis - cluster-based permutation analysis
-
-Next, we prepare the data for use with the eyetrackingR package
-
-```{r}
-d_eyetrackingr_alt <- d_resampled_alt %>%
-  filter(exclude_participant_alternative==0) %>%
-  filter(useable_window_alternative==1) %>%
-  unite("unique_trial",trial_order,trial_number,sep="_",remove=FALSE) %>%
-  mutate(
-    target = case_when(
-      is.na(accuracy_transformed) ~ NA,
-      accuracy_transformed == 1 ~ TRUE,
-      accuracy_transformed == 0 ~ FALSE,
-    ),
-    distractor = case_when(
-      is.na(accuracy_transformed) ~ NA,
-      accuracy_transformed == 0 ~ TRUE,
-      accuracy_transformed == 1 ~ FALSE,
-    ),
-    trackloss = case_when(
-      is.na(accuracy_transformed) ~ TRUE,
-      TRUE ~ FALSE
-    )
-  ) %>%
-  make_eyetrackingr_data(
-    participant_column = "sub_num",
-    trial_column = "unique_trial",
-    time_column = "corrected_time_centered",
-    trackloss_column = "trackloss",
-    aoi_columns = c("target","distractor"),
-    treat_non_aoi_looks_as_missing = TRUE
-  )
-
-response_window_alt <- subset_by_window(
-  d_eyetrackingr_alt,
-  window_start_time = 300,
-  window_end_time = 1800,
-  rezero=FALSE
-)
-summary_data_loss_alt <- describe_data(response_window_alt, 'target', 'sub_num')
-
-response_time_alt <- make_time_sequence_data(response_window_alt,
-                                  time_bin_size = 100, 
-                                  predictor_columns = c("condition"),
-                                  aois = "target",
-                                  summarize_by = "sub_num" )
-
-# visualize timecourse
-plot(response_time_alt, predictor_column = "condition") + 
-  theme_light() +
-  coord_cartesian(ylim = c(0,1))
-
-#divergence analysis
-# tb_analysis <- analyze_time_bins(data = response_time, predictor_column = "condition", test= 'boot_splines', within_subj = TRUE, bs_samples = 1000, alpha = .05/num_time_bins)
-# plot(tb_analysis) + theme_light()
-# summary(tb_analysis)
-
-#bootstrapped cluster-based permutation analysis
-n_samples_alt <- 100
-threshold_t_alt <- 2
-df_timeclust_alt <- make_time_cluster_data(response_time_alt, 
-                                      test= "t.test", paired=TRUE,
-                                      predictor_column = "condition", 
-                                      threshold = threshold_t) 
-plot(df_timeclust_alt) +  ylab("T-Statistic") + theme_light()
-summary(df_timeclust_alt)
-clust_analysis_alt <- analyze_time_clusters(df_timeclust_alt, within_subj=TRUE, paired=TRUE,
-                                        samples=n_samples)
-plot(clust_analysis_alt) + theme_light()
-summary(clust_analysis_alt)
-```
-
 ### 4.1.1.2
 
 Trial level typicality effects
@@ -1475,24 +1295,6 @@ Aim 2 with alternative time window
 
 ```{r}
 trial_corrected_accuracy_alternative <- trial_corrected_accuracy_alternative %>%
-  mutate(
-    typicality_condition_c = case_when(
-      condition == "atypical" ~ -0.5,
-      condition == "typical" ~ 0.5,
-      TRUE ~ NA_real_
-    ),
-    typicality_condition_typ = case_when(
-      condition == "atypical" ~ -1,
-      condition == "typical" ~ 0,
-      TRUE ~ NA_real_
-    ),
-    typicality_condition_atyp = case_when(
-      condition == "atypical" ~ 0,
-      condition == "typical" ~ 1,
-      TRUE ~ NA_real_
-    ),
-  )
-trial_corrected_accuracy_alternative <- trial_corrected_accuracy_alternative %>%
   left_join(subj_info_multisession)
   
 
@@ -1511,47 +1313,17 @@ Age is still a significant predictor when we use a smaller critical window. Ther
 
 Aim 3: test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar using the alternative critical window
 
-###### 3.1 z-scored by participant
-
 ```{r}
-#zscore parent report of typicality within participants
-parent_typicality_z_alt <- d %>%
-  group_by(sub_num) %>%
-  mutate(target_parent_typicality_z = ((target_parent_typicality_rating - mean(target_parent_typicality_rating))/sd(target_parent_typicality_rating)),
-         distractor_parent_typicality_z = ((distractor_parent_typicality_rating - mean(distractor_parent_typicality_rating))/sd(distractor_parent_typicality_rating)))
-  
-parent_typicality_alt <- parent_typicality_z_alt %>%
-  filter(exclude_participant_alternative==0) %>%
-  filter(useable_window_alternative==1) %>%
-  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical_alternative,mean_target_looking_baseline,corrected_target_looking_alternative,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
-  mutate(age_c = age - mean(age,na.rm = T))%>%
-  group_by(sub_num,target_image, age_c, category,target_parent_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_z) %>%
-  summarize(N=n(),
-            average_corrected_target_looking_alt=mean(corrected_target_looking_alternative,na.rm=TRUE)) %>%
-  na.omit(target_parent_typicality_rating)
-
-#subject details for aim 3 analysis (how many participants have survey data)
-aim3_subject_info_alt <- parent_typicality_alt %>%
-  ungroup()%>%
-  summarize(
-    N = length(unique(sub_num)),
-    mean_age = mean(age_c),
-    sd_age = sd(age_c)
-  )
-
-aim3_subject_info_alt%>%
-  knitr::kable()
-
 #model
-m_4_1_3_1 <- lmer(average_corrected_target_looking_alt ~ target_parent_typicality_z+age_c+ (target_parent_typicality_z||sub_num) + (1|category), parent_typicality_alt)
+m_4_1_3 <- lmer(corrected_target_looking_alternative ~ 1 + target_parent_typicality_rating_z + age_mo_c + (1|sub_num) + (1|category), trial_corrected_accuracy_alternative)
 
-summary(m_4_1_3_1)
+summary(m_4_1_3)
 
-confint(m_4_1_3_1,method="Wald")
-
+m_4_1_3_tidy <- m_4_1_3 %>%
+  summarize_mixed_effects_model()
 ```
 
-Parent ratings are not significantly related to baseline corrected target looking with the alternative critical window.
+Caregiver report of exemplar typicality did not significantly predict infants’ baseline-corrected word recognition accuracy (`r apa_print(m_4_1_3)$estimate$target_parent_typicality_rating_z`, `r apa_print(m_4_1_3)$statistic$target_parent_typicality_rating_z`).  After controlling for the effect of parental report of typicality, age remained a significant predictor of infants’ word recognition (`r apa_print(m_4_1_3)$estimate$age_mo_c`, `r apa_print(m_4_1_3)$statistic$age_mo_c`). 
 
 ### 4.2 excluding unknown words
 
