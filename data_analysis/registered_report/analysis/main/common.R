@@ -2,7 +2,6 @@
 library(tidyverse)
 library(broom.mixed)
 
-summarize_mixed_effects_coef(model)
 
 summarize_mixed_effects_model <- function(model) {
   #compute Wald 95% CI

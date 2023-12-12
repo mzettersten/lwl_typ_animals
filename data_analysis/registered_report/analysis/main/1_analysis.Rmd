@@ -305,7 +305,7 @@ avg_critical_window_accuracy <- trial_critical_window_accuracy %>%
 trial_corrected_accuracy <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)
+  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z,distractor_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_rating,target_parent_typicality_rating_z,distractor_parent_typicality_rating_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)
 
 ## average
 avg_corrected_target_looking <- trial_corrected_accuracy  %>%
@@ -880,7 +880,7 @@ summary(m_2)
 
 In the trial-level linear mixed-effects model including age, typicality condition, and their interaction, we found a significant effect of age (`r apa_print(m_2)$estimate$age_mo_c`, `r apa_print(m_2)$statistic$age_mo_c`), suggesting that word recognition accuracy increased with age overall. There was no significant interaction between age and typicality (`r apa_print(m_2)$estimate$typicality_condition_c_age_mo_c`, `r apa_print(m_2)$statistic$typicality_condition_c_age_mo_c`), meaning that we found no evidence that the effect of typicality changed with age.
 
-####
+#### Exploratory Analysis: Controlling for Baseline rather than Baseline Correction in Aim 2
 
 
 ```{r}
@@ -909,7 +909,7 @@ ggplot(filter(avg_critical_window_accuracy,mean_age<700),aes(mean_age,accuracy))
   xlab("Age (in days)")+
   ylab("Proportion Target Looking\nduring the Critical Window")+
   ylim(0,1)
-ggsave(here::here("figures","age_relationship_critical_window_accuracy.png"),width=7,height=6)
+ggsave(here::here("..","figures","age_relationship_critical_window_accuracy.png"),width=7,height=6)
 ```
 
 ##### Baseline-corrected proportion target looking
@@ -926,7 +926,7 @@ ggplot(avg_corrected_target_looking,aes(mean_age,average_corrected_target_lookin
   ylab("Baseline-Corrected Proportion Target Looking")+
   ylim(-0.55,0.55)+
   scale_x_continuous(breaks=seq(12,18,1))
-ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
+ggsave(here::here("..","figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
 ```
 
 #### Quick Visualization of the Typicalty Effect Across Age
@@ -946,30 +946,10 @@ ggplot(trial_critical_window_accuracy,aes(age,mean_accuracy,color=condition))+
 
 To test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
 
-#### 3.1 z-scored by participant
-
 ```{r}
-#zscore parent report of typicality within participants
-parent_typicality_z <- d %>%
-  group_by(sub_num) %>%
-  mutate(target_parent_typicality_z = ((target_parent_typicality_rating - mean(target_parent_typicality_rating))/sd(target_parent_typicality_rating)),
-         distractor_parent_typicality_z = ((distractor_parent_typicality_rating - mean(distractor_parent_typicality_rating))/sd(distractor_parent_typicality_rating)))
-  
-parent_typicality <- parent_typicality_z %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num,age_mo,age,child_gender,condition, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,target_parent_typicality_z,distractor_parent_typicality_z,target_image,target_parent_typicality_rating,distractor_parent_typicality_rating) %>%
-  mutate(
-    age_mo_c = age_mo - mean(age_mo),
-    age_c = age - mean(age)
-  )%>%
-  group_by(sub_num,target_image, age_mo_c,age, age_c, age_mo, condition, category,target_parent_typicality_z,target_parent_typicality_rating,distractor_parent_typicality_z) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
-  na.omit(target_parent_typicality_rating)
-
 #subject details for aim 3 analysis (how many participants have survey data)
-aim3_subject_info <- parent_typicality %>%
+aim3_subject_info <- trial_corrected_accuracy %>%
+  filter(!is.na(target_parent_typicality_rating_z)) %>%
   ungroup()%>%
   summarize(
     N = length(unique(sub_num)),
@@ -981,13 +961,15 @@ aim3_subject_info%>%
   knitr::kable()
 
 #model
-m_3_1 <- lmer(average_corrected_target_looking ~ 1 + target_parent_typicality_z + age_mo_c + (target_parent_typicality_z||sub_num) + (1|category), parent_typicality)
+m_3 <- lmer(corrected_target_looking ~ 1 + target_parent_typicality_rating_z + age_mo_c + (1|sub_num) + (1|category), trial_corrected_accuracy)
 
-summary(m_3_1)
+summary(m_3)
 
-confint(m_3_1,method="Wald")
-
+m_3_tidy <- m_3 %>%
+  summarize_mixed_effects_model()
 ```
+
+Caregiver report of exemplar typicality did not significantly predict infants’ baseline-corrected word recognition accuracy (`r apa_print(m_3)$estimate$target_parent_typicality_rating_z`, `r apa_print(m_3)$statistic$target_parent_typicality_rating_z`).  After controlling for the effect of parental report of typicality, age remained a significant predictor of infants’ word recognition (`r apa_print(m_3)$estimate$age_mo_c`, `r apa_print(m_3)$statistic$age_mo_c`). 
 
 #### Exploratory analyses to see why age isn't a predictor in model 3
 
@@ -1055,21 +1037,6 @@ diff <- anti_join(aim2_compare_sub_nums, aim3_compare_sub_nums, by = c("sub_num"
 #### Z-scored by category by participant experience ratings
 
 ```{r}
-#zscore parent report of typicality within participants by 
-parent_typicality_category_z <- d %>%
-  group_by(sub_num,category) %>%
-  mutate(target_parent_typicality_category_z = ((target_parent_typicality_rating - mean(target_parent_typicality_rating))/sd(target_parent_typicality_rating)),
-         distractor_parent_typicality_category_z = ((distractor_parent_typicality_rating - mean(distractor_parent_typicality_rating))/sd(distractor_parent_typicality_rating)))
-  
-parent_typicality_category <- parent_typicality_category_z %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num,months,age,child_gender, trial_order,trial_number,category,target_image,target_parent_typicality_category_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,distractor_parent_typicality_category_z,target_image) %>%
-  mutate(age_c = age - mean(age,na.rm = T))%>%
-  group_by(sub_num,target_image, category,target_parent_typicality_category_z, age_c) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)) %>%
-  na.omit(target_parent_typicality_rating)
 
 #model
 m_3_1_2 <- lmer(average_corrected_target_looking ~ target_parent_typicality_category_z+age_c+ (target_parent_typicality_category_z||sub_num) + (1|category), parent_typicality_category)
