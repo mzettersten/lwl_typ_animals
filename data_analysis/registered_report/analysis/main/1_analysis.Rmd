@@ -1620,86 +1620,13 @@ We intentionally selected items at the end of a typicality scale from a set of a
 
 ### By Continuous typicality
 
-Here, we summarize each participants' average accuracy during the critical window and average baseline-corrected proportion target looking.
-
-```{r}
-# critical window only
-avg_critical_window_accuracy_by_typicality_continuous <- d %>%
-  filter(exclude_participant_critical==0) %>%
-  filter(useable_critical_window==1) %>%
-  filter(corrected_time_centered>=300&corrected_time_centered<=2800) %>%
-  group_by(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z) %>%
-  summarize(mean_accuracy=mean(accuracy_transformed,na.rm=TRUE)) %>%
-  ungroup() %>%
-  group_by(sub_num, child_gender,target_typicality_z) %>%
-  summarize(N=n(),
-            mean_age = mean(age),
-            mean_age_mo = mean(age_mo),
-            accuracy=mean(mean_accuracy,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(mean_accuracy,na.rm=T)/sqrt(N),
-            lower_ci=accuracy-ci,
-            upper_ci=accuracy+ci)
-
-#baseline-corrected target looking
-avg_corrected_target_looking_by_typicality_continuous <- d %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, child_gender,age,age_mo,target_typicality_z) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=average_corrected_target_looking-ci,
-            upper_ci=average_corrected_target_looking+ci)
-
-#avg typicality baseline-corrected target looking
-avg_corrected_target_looking_category_continuous <- d %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num, months,age_mo,child_gender, trial_order,trial_number,category,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, age_mo,child_gender, trial_order,target_typicality_z,category) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=average_corrected_target_looking-ci,
-            upper_ci=average_corrected_target_looking+ci)
-
-#avg typicality baseline-corrected target looking
-avg_corrected_target_looking_typicality_continuous <- d %>%
-  filter(exclude_participant==0) %>%
-  filter(useable_window==1) %>%
-  distinct(sub_num, months,age_mo,child_gender, trial_order,trial_number,target_image,target_typicality_z,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking) %>%
-  group_by(sub_num, age_mo,child_gender, trial_order,target_typicality_z) %>%
-  summarize(N=n(),
-            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
-            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
-            se=sd(corrected_target_looking,na.rm=T)/sqrt(N),
-            lower_ci=average_corrected_target_looking-ci,
-            upper_ci=average_corrected_target_looking+ci,
-            lower_se=average_corrected_target_looking-se,
-            upper_se=average_corrected_target_looking+se)
-
-```
-
-#Subject level
-
-```{r}
-m_Ex1_1 <- lmer(average_corrected_target_looking ~ 1 + target_typicality_z + (1|sub_num),data=avg_corrected_target_looking_by_typicality_continuous)
-
-summary(m_Ex1_1)
-confint(m_Ex1_1,method="Wald")
-
-```
-
-When we use the full scale, rather than a dichotomous scale, typicality is a significant predictor of word recognition (p=0.029)
-
-#Trial Level
+(only possible to fit model on trial level)
 
 ```{r}
 
 m_Ex1_2 <- lmer(corrected_target_looking ~ 1 + target_typicality_z + 
-            (1 + target_typicality_z||sub_num) +
-            (1|category),
+            (1 +target_typicality_z|sub_num)+
+              (1|category),
           data=trial_corrected_accuracy)
 summary(m_Ex1_2)
 
@@ -1707,10 +1634,25 @@ confint(m_Ex1_2,method="Wald")
 
 ```
 
+Quick plot
+
+```{r}
+ggplot(trial_corrected_accuracy,aes(target_typicality_z,corrected_target_looking))+
+  geom_point(aes(color=condition))+
+  geom_hline(yintercept=0, linetype="dashed")+
+  geom_smooth(method="lm")
+
+ggplot(trial_corrected_accuracy,aes(target_typicality_z,corrected_target_looking))+
+  geom_point(aes(color=condition))+
+  geom_hline(yintercept=0, linetype="dashed")+
+  geom_smooth(method="lm")+
+  facet_wrap(~category)
+```
+
+
 ##Ex2. Does typicality interact with category? Infants' processing for some categories may be better than other categories. Are infants better at processing typical category members for categories that are more accurate?
 
 ```{r}
-
 #contrast coding:
 trial_corrected_accuracy <- trial_corrected_accuracy %>%
   mutate(
