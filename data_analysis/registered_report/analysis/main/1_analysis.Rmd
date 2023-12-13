@@ -1512,8 +1512,8 @@ We will fit models analogous to those in 1.1 and 1.2 including an interaction wi
 avg_corrected_target_looking_by_typicality_session <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z,condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,session_num) %>%
-  group_by(sub_num, child_gender,age,age_mo,condition, session_num) %>%
+  distinct(sub_num, age,age_mo, child_gender, trial_order,trial_number,target_image,target_typicality_z,condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking,session) %>%
+  group_by(sub_num, child_gender,age,age_mo,condition, session) %>%
   summarize(N=n(),
             average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
             ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
@@ -1538,14 +1538,10 @@ avg_corrected_target_looking_by_typicality_session <- avg_corrected_target_looki
       condition == "typical" ~ 1,
       TRUE ~ NA_real_
     ),    
-    session_num_c = case_when(
-      session_num == "1" ~ -0.5,
-      session_num == "2" ~ 0.5,
-      TRUE ~ NA_real_
-    )
+    session_c = session - 1.5
   )
 
-m_4_4_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c*session_num_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
+m_4_4_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c*session_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
 
 summary(m_4_4_1_1)
 confint(m_4_4_1_1,method="Wald")
@@ -1558,7 +1554,7 @@ No significant interactions with test session
 ##### 4.4.1.1.3
 
 ```{r}
-m_4_4_1_1_3_typ <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_typ*session_num_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
+m_4_4_1_1_3_typ <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_typ*session_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
 
 summary(m_4_4_1_1_3_typ)
 
@@ -1568,7 +1564,7 @@ confint(m_4_4_1_1_3_typ,method="Wald")
 Infants successfully recognize words in the typical condition.
 
 ```{r}
-m_4_4_1_1_3_atyp <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_atyp*session_num_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
+m_4_4_1_1_3_atyp <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_atyp*session_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality_session)
 
 summary(m_4_4_1_1_3_atyp)
 
@@ -1585,7 +1581,7 @@ For an average session, infants recognition in the atypical condition is only ma
 trial_corrected_accuracy_session <- d %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>%
-  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking, session_num)
+  distinct(sub_num,session, age,age_mo, child_gender, trial_order,trial_number,category,target_image,target_typicality_z, condition,mean_target_looking_critical,mean_target_looking_baseline,corrected_target_looking)
 
 
 trial_corrected_accuracy_session <- trial_corrected_accuracy_session %>%
@@ -1605,15 +1601,11 @@ trial_corrected_accuracy_session <- trial_corrected_accuracy_session %>%
       condition == "typical" ~ 1,
       TRUE ~ NA_real_
     ),
-    session_num_c = case_when(
-      session_num == "1" ~ -0.5,
-      session_num == "2" ~ 0.5,
-      TRUE ~ NA_real_
-    )
+    session_c = session - 1.5
   )
 
 
-m_4_4_1_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c*session_num_c + 
+m_4_4_1_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c*session_c + 
             (1 + typicality_condition_c||sub_num) +
             (1|category),
           data=trial_corrected_accuracy_session)
