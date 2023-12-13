@@ -30,6 +30,7 @@ library(multilevelTools)
 library(JWileymisc)
 library(broom.mixed)
 library(papaja)
+library(effectsize)
 source("compute_iccs.R")
 source("common.R")
 
@@ -445,6 +446,7 @@ m_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1
 
 summary(m_1_1)
 confint(m_1_1,method="Wald")
+
 ```
 
 ##### 1.1.1.
@@ -482,6 +484,10 @@ t.test(
   avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"],
   avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"], 
   paired=T)
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"],
+         avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"],
+         paired=T)
 ```
 
 ##### 1.1.3
@@ -492,6 +498,8 @@ m_1_1_3_typ <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_
 summary(m_1_1_3_typ)
 
 confint(m_1_1_3_typ,method="Wald")
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"])
 ```
 
 Infants successfully recognize words in the typical condition.
@@ -502,6 +510,9 @@ m_1_1_3_atyp <- lmer(average_corrected_target_looking ~ 1 + typicality_condition
 summary(m_1_1_3_atyp)
 
 confint(m_1_1_3_atyp,method="Wald")
+
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"])
 ```
 
 Infants successfully recognize words in the atypical condition.
