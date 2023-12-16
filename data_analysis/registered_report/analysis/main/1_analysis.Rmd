@@ -402,6 +402,15 @@ avg_corrected_target_looking_by_typicality <- d %>%
             lower_se=average_corrected_target_looking-se,
             upper_se=average_corrected_target_looking+se)
 
+#baseline-corrected target looking summarized overall
+overall_corrected_target_looking_by_typicality <- avg_corrected_target_looking_by_typicality %>%
+  group_by(condition) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+
 #avg typicality baseline-corrected target looking
 avg_corrected_target_looking_category <- d %>%
   filter(exclude_participant==0) %>%
@@ -837,7 +846,9 @@ summarize_across_subj_cond<- summarize_subj_condition %>%
             sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
             se_accuracy=sd_accuracy/sqrt(n))
 
-ggplot(summarize_across_subj_cond,aes(corrected_time_centered,accuracy,color=condition))+
+#plot
+pal <- wes_palette("Rushmore1", n=5)
+timecourse_plot <- ggplot(summarize_across_subj_cond,aes(corrected_time_centered,accuracy,color=condition))+
   xlim(-2500,4000)+
   geom_rect(data = data.frame(xmin = 300,
                               xmax = 2800,
@@ -864,6 +875,8 @@ ggplot(summarize_across_subj_cond,aes(corrected_time_centered,accuracy,color=con
   annotate("text",label="Critical Window",x=1550,y=0.9)+
   annotate("text",label="Baseline Window",x=-1000,y=0.9)+
   ylim(0,1)+
+  xlim(-2000,4000)+
+  scale_colour_manual(values=pal[c(3,4)])+
   ylab("Proportion Target Looking")+
   xlab("Time (centered on target word onset, in ms)")
 ggsave(here::here("..","figures","typicality_accuracy.png"),width=10,height=6)
@@ -1887,6 +1900,39 @@ avg_corrected_target_looking_by_item_by_typicality %>%
   knitr::kable()
 ```
 
+#### Overall baseline-corrected proportion target looking by condition
+
+```{r}
+pal <- wes_palette("Rushmore1", n=5)
+set.seed(1)
+jitterer <- position_jitter(width = .05,seed=1)
+p0 <- ggplot(avg_corrected_target_looking_by_typicality,aes(x=condition,y=average_corrected_target_looking, fill=condition))+
+  geom_half_violin(data=filter(avg_corrected_target_looking_by_typicality, condition=="atypical"),position = position_nudge(x = -.1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="l")+
+  geom_half_violin(data=filter(avg_corrected_target_looking_by_typicality, condition=="typical"),position = position_nudge(x = .1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="r")+
+  geom_path(aes(group=sub_num),color="black",fill=NA,alpha=0.15,size=0.75,position=jitterer)+
+  geom_point(aes(color=condition,group=sub_num), size = 2.5, alpha=0.15,position=jitterer)+
+  geom_point(data=overall_corrected_target_looking_by_typicality,aes(y=corrected_target_looking),color="black",size=5)+
+  geom_line(data=overall_corrected_target_looking_by_typicality,aes(y=corrected_target_looking,group=1),color="black",size=3)+
+  geom_errorbar(data=overall_corrected_target_looking_by_typicality,aes(y=corrected_target_looking,ymin=lower_ci,ymax=upper_ci),width=0,size=1.2,color="black")+
+  #geom_boxplot(outlier.shape = NA, alpha = .5, width = .1, colour = "black")+
+  #scale_colour_brewer(palette = "Dark2")+
+  #scale_fill_brewer(palette = "Dark2")+
+  geom_hline(yintercept=0,linetype="dashed")+
+  scale_colour_manual(values=pal[c(3,4)])+
+  scale_fill_manual(values=pal[c(3,4)])+
+  theme(legend.position="none")+
+  xlab("Typicality Condition")+
+  ylab("Baseline-Corrected\nProportion Target Looking")+
+  theme(axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        strip.text.x = element_text(size = 16,face="bold"))
+
+
+ggsave(here::here("..","figures","baseline_corrected_accuracy_overall.png"),width=7,height=6)
+```
+
 #### Baseline-corrected proportion target looking by category
 
 ```{r}
@@ -1918,12 +1964,12 @@ p2 <- ggplot(avg_corrected_target_looking_category,aes(x=typicality_condition,y=
         strip.text.x = element_text(size = 16,face="bold"))
 
 
-ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy_category.png"),width=7,height=6)
+ggsave(here::here("..","figures","baseline_corrected_accuracy_by_category.png"),width=7,height=6)
 ```
 
 ```{r}
 pal <- wes_palette("Rushmore1", n=5)
-p1 <- ggplot(avg_corrected_target_looking_typicality,aes(age_mo,average_corrected_target_looking,color=typicality_condition,group=typicality_condition))+
+p1 <- ggplot(avg_corrected_target_looking_by_typicality,aes(mean_age_mo,average_corrected_target_looking,color=condition,group=condition))+
   geom_pointrange(aes(ymin=lower_se,ymax=upper_se), 
                   position=position_jitter(width=0.2),
                   width=0,
@@ -1935,7 +1981,7 @@ p1 <- ggplot(avg_corrected_target_looking_typicality,aes(age_mo,average_correcte
   #ylim(-0.55,0.5)+
   scale_colour_manual(values=pal[c(3,4)])+
   scale_x_continuous(breaks=seq(12,18,1))+
-  facet_wrap(~typicality_condition)+
+  facet_wrap(~condition)+
   theme(
     strip.background = element_rect(size=1, colour = "black"),
     strip.text = element_text(size=16,face="bold"),
@@ -1945,5 +1991,60 @@ p1 <- ggplot(avg_corrected_target_looking_typicality,aes(age_mo,average_correcte
 ggsave(here::here("figures","age_relationship_baseline_corrected_accuracy_typicality.png"),width=9,height=6)
 
 plot_grid(p1,p2,nrow=1,ncol=2,labels=c("A","B"),size=24)
-ggsave(here::here("figures","age_category_typicality.png"),width=12,height=6)
+ggsave(here::here("..","figures","age_category_typicality.png"),width=12,height=6)
 ```
+
+```{r}
+#timecourse plot
+pal <- wes_palette("Rushmore1", n=5)
+timecourse_plot <- ggplot(summarize_across_subj_cond,aes(corrected_time_centered,accuracy,color=condition))+
+  geom_rect(data = data.frame(xmin = 300,
+                              xmax = 2800,
+                              ymin = -Inf,
+                              ymax = Inf),
+            aes(x=NULL, y=NULL,xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,color=NULL),
+            fill = "grey", alpha = 0.2)+
+  geom_rect(data = data.frame(xmin = -2000,
+                              xmax = 0,
+                              ymin = -Inf,
+                              ymax = Inf),
+            aes(x=NULL, y=NULL,xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,color=NULL),
+            fill = "grey", alpha = 0.2)+
+  geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
+  geom_point(alpha=0.5)+
+  geom_smooth(data=summarize_subj_condition,aes(y=mean_accuracy),method="gam")+
+  geom_vline(xintercept=0,size=1.5)+
+  geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
+  geom_vline(xintercept=300,linetype="dotted")+
+  geom_vline(xintercept=2800,linetype="dotted")+
+  geom_vline(xintercept=-2000,linetype="dotted")+
+  geom_vline(xintercept=0,linetype="dotted")+
+  theme(legend.position = c(0.8,0.15))+
+  annotate("text",label="Critical Window",x=1550,y=0.9,size=6)+
+  annotate("text",label="Baseline Window",x=-1000,y=0.9,size=6)+
+  ylim(0,1)+
+  #xlim(-2000,4000)+
+  scale_x_continuous(breaks=seq(-2000,4000,1000),limits=c(-2000,4000))+
+  scale_colour_manual(values=pal[c(3,4)])+
+  ylab("Proportion Target Looking")+
+  xlab("Time (centered on target word onset, in ms)")+
+  theme(
+    strip.background = element_rect(size=1, colour = "black"),
+    strip.text = element_text(size=16,face="bold"),
+    axis.title=element_text(size=20,face="bold"),
+    axis.text = element_text(size=14),
+    legend.text=element_text(size=18),
+    legend.title=element_text(size=18))
+```
+
+
+```{r}
+library(patchwork)
+
+(p0 + p1) / timecourse_plot + 
+  plot_annotation(tag_levels = 'A')+
+  theme(plot.tag = element_text(size = 18))
+ggsave(here::here("..","figures","main_figure.png"),width=12,height=12)
+```
+
+
