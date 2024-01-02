@@ -1,0 +1,235 @@
+---
+title: "CATegories - cluster-based permutation analysis"
+author: "Anonymized"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+## Load packages
+
+```{r setup, message=FALSE}
+
+library(tidyverse)
+library(here)
+library(readxl)
+library(eyetrackingR)
+
+knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
+```
+
+## Load data
+
+```{r}
+#set paths
+#data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_with_exclusion_info.csv")
+#resampled_data_write_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_resampled.csv")
+data_file_path <- here::here("/Users/martincz/Documents/Madison/InfantLearningLab/CATegories/lookit_video_coding/exp2/analysis/manuscript","..","..","data","processed_data","CATegories_exp2_processed_data_with_exclusion_info.csv")
+resampled_data_write_path <- here::here("/Users/martincz/Documents/Madison/InfantLearningLab/CATegories/lookit_video_coding/exp2/analysis/manuscript","..","..","data","processed_data","CATegories_exp2_processed_data_resampled.csv")
+
+#load data
+d <- read_csv(data_file_path) 
+```
+
+In this script, we focus on the cluster-based permutation analysis.
+
+## 1.3
+
+### Resampling
+
+In order to plot participants' average proportion looking to the target across the trial, we smooth/ resample time. This is necessary when plotting the timecourses given the variable sampling rate in the data (otherwise the mean observations "jump around" due to varying contributing data composition at different time points).
+
+```{r}
+target_ms_per_frame=1000/15
+#adapted from: https://github.com/langcog/peekds/blob/master/R/generate_aoi.R
+resample_trial <- function(df_trial) {
+  t_origin <- df_trial$time_normalized_corrected
+  data_origin <- df_trial$accuracy_transformed
+
+  # create the new timestamps for resampling
+  t_start <- min(t_origin) - (min(t_origin) %% target_ms_per_frame)
+  t_resampled <- seq(from = t_start, to = max(t_origin),
+                     by = target_ms_per_frame)
+
+  # exchange strings values with integers for resampling
+  # this step critical for interpolating missing vals quickly and correctly
+  aoi_num <- data_origin %>%
+    dplyr::recode(.missing = 2) #recode NA as 2
+    
+  # start resampling with approx
+  aoi_resampled <- stats::approx(x = t_origin, y = aoi_num, xout = t_resampled,
+                                 method = "constant", rule = 2,
+                                 ties = "ordered")$y
+  aoi_resampled_recoded <- aoi_resampled %>%
+    dplyr::recode("0"="0","1"="1","2" = "missing") %>%
+    as.numeric()
+
+  # adding back the columns to match schema
+  dplyr::tibble(time_normalized_corrected = t_resampled,
+                accuracy_transformed = aoi_resampled_recoded,
+                sub_num_session_order_trial_number = df_trial$sub_num_session_order_trial_number[1],
+                sub_num = df_trial$sub_num[1])
+}
+
+d_resampled <- d %>%
+  dplyr::mutate(sub_num_session_order_trial_number = paste(.data$sub_num,.data$session,.data$trial_order,
+                                           .data$trial_number, sep = "_")) %>%
+      split(.$sub_num_session_order_trial_number) %>%
+      purrr::map_df(resample_trial) %>%
+      dplyr::arrange(.data$sub_num, .data$sub_num_session_order_trial_number)
+
+d_info <- d %>%
+  select(-time_normalized_corrected,-accuracy_transformed) %>%
+  distinct(sub_num, exclude_participant, trial_exclusion,trial_exclusion_reason,useable_window, age,age_mo, child_gender, condition, session,trial_order,trial_number,target_image,target_typicality_z)
+
+d_resampled <- d_resampled %>%
+  separate(sub_num_session_order_trial_number,into=c("exp_name","sub_number","session","trial_order","trial_number"),sep="_",remove=F) %>%
+  mutate(session=as.numeric(session),trial_number=as.numeric(trial_number)) %>%
+  left_join(d_info) %>%
+  mutate(time_normalized_corrected =round(time_normalized_corrected,0))
+
+write_csv(d_resampled,resampled_data_write_path)
+```
+
+### Timecourse analysis - cluster-based permutation analysis
+
+Next, we prepare the data for use with the eyetrackingR package
+
+```{r}
+d_eyetrackingr <- d_resampled %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>% # I think it would be safe to remove this
+  filter(trial_exclusion==0) %>%
+  unite("unique_trial",trial_order,trial_number,sep="_",remove=FALSE) %>%
+  mutate(
+    target = case_when(
+      is.na(accuracy_transformed) ~ NA,
+      accuracy_transformed == 1 ~ TRUE,
+      accuracy_transformed == 0 ~ FALSE,
+    ),
+    distractor = case_when(
+      is.na(accuracy_transformed) ~ NA,
+      accuracy_transformed == 0 ~ TRUE,
+      accuracy_transformed == 1 ~ FALSE,
+    ),
+    trackloss = case_when(
+      is.na(accuracy_transformed) ~ TRUE,
+      TRUE ~ FALSE
+    )
+  ) %>%
+  make_eyetrackingr_data(
+    participant_column = "sub_num",
+    trial_column = "unique_trial",
+    time_column = "time_normalized_corrected",
+    trackloss_column = "trackloss",
+    aoi_columns = c("target","distractor"),
+    treat_non_aoi_looks_as_missing = TRUE
+  )
+
+#note that we analyze the entire timecourse here!
+response_window <- subset_by_window(
+  d_eyetrackingr,
+  window_start_time = -2000,
+  window_end_time = 4000,
+  rezero=FALSE
+)
+summary_data_loss <- describe_data(response_window, 'target', 'sub_num')
+
+response_time <- make_time_sequence_data(response_window,
+                                  time_bin_size = 100, 
+                                  predictor_columns = c("condition"),
+                                  aois = "target",
+                                  summarize_by = "sub_num" )
+
+# visualize timecourse
+plot(response_time, predictor_column = "condition") + 
+  theme_light() +
+  coord_cartesian(ylim = c(0,1))
+
+#divergence analysis
+# tb_analysis <- analyze_time_bins(data = response_time, predictor_column = "condition", test= 'boot_splines', within_subj = TRUE, bs_samples = 1000, alpha = .05/num_time_bins)
+# plot(tb_analysis) + theme_light()
+# summary(tb_analysis)
+
+#bootstrapped cluster-based permutation analysis
+n_samples <- 1000
+threshold_t <- 2
+df_timeclust <- make_time_cluster_data(response_time, 
+                                      test= "t.test", paired=TRUE,
+                                      predictor_column = "condition", 
+                                      threshold = threshold_t) 
+plot(df_timeclust) +  ylab("T-Statistic") + theme_light()
+summary(df_timeclust)
+```
+
+Next, we run the clustering analysis. This next chunk may take a few minutes to run.
+
+```{r}
+#this next command may take a few minutes to execute
+clust_analysis <- analyze_time_clusters(df_timeclust, within_subj=TRUE, paired=TRUE,
+                                        samples=n_samples)
+plot(clust_analysis) + theme_light()
+summary(clust_analysis)
+```
+
+<!-- Test Type:	 t.test  -->
+<!-- Predictor:	 condition  -->
+<!-- Formula:	 Pair(Prop[condition == "atypical"], Prop[condition == "typical"]) ~      1  -->
+<!-- Null Distribution   ======  -->
+<!--  Mean:		 0.13  -->
+<!--  2.5%:		 -16.2735  -->
+<!-- 97.5%:		 16.8198  -->
+<!-- Summary of Clusters ====== -->
+<!--   Cluster Direction SumStatistic StartTime EndTime Probability -->
+<!-- 1       1  Negative    -7.068782         0     300        0.28 -->
+
+In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-300ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.27.
+
+### Exploratory Analysis: cluster-based permutation analysis with reduced window (300-2800 ms)
+
+Next, we conducted an exploratory analysis testing whether we would get similar results for the cluster-based permutation analysis if we reduced the critical window size to the main window considered in the other preregistered analyses (300-2800ms).
+
+```{r}
+response_window <- subset_by_window(
+  d_eyetrackingr,
+  window_start_time = 300,
+  window_end_time = 2800,
+  rezero=FALSE
+)
+summary_data_loss <- describe_data(response_window, 'target', 'sub_num')
+
+response_time <- make_time_sequence_data(response_window,
+                                  time_bin_size = 100, 
+                                  predictor_columns = c("condition"),
+                                  aois = "target",
+                                  summarize_by = "sub_num" )
+
+# visualize timecourse
+plot(response_time, predictor_column = "condition") + 
+  theme_light() +
+  coord_cartesian(ylim = c(0,1))
+
+#divergence analysis
+# tb_analysis <- analyze_time_bins(data = response_time, predictor_column = "condition", test= 'boot_splines', within_subj = TRUE, bs_samples = 1000, alpha = .05/num_time_bins)
+# plot(tb_analysis) + theme_light()
+# summary(tb_analysis)
+
+#bootstrapped cluster-based permutation analysis
+n_samples <- 1000
+threshold_t <- 2
+df_timeclust <- make_time_cluster_data(response_time, 
+                                      test= "t.test", paired=TRUE,
+                                      predictor_column = "condition", 
+                                      threshold = threshold_t) 
+plot(df_timeclust) +  ylab("T-Statistic") + theme_light()
+summary(df_timeclust)
+clust_analysis <- analyze_time_clusters(df_timeclust, within_subj=TRUE, paired=TRUE,
+                                        samples=n_samples)
+plot(clust_analysis) + theme_light()
+summary(clust_analysis)
+```
+
+No candidate clusters emerged for this smaller critical window.

@@ -1,0 +1,437 @@
+---
+title: "Process CATegories data"
+author: "Martin Zettersten"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+## Load packages
+
+```{r setup, message=FALSE}
+library(tidyverse)
+library(janitor)
+library(here)
+library(readxl)
+library(assertthat)
+library(tools)
+
+knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
+```
+
+```{r global_params}
+ms_per_frame <- 1000/30 #target frame rate
+skip_frames <- 0 # how many frames were skipped at the beginning of each video
+looking_data_path <- here::here("..","..","data","processed_data","CATegories_exp2_peyecoder_data_anonymized.csv")
+processed_subj_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_participant_data_anonymized.csv")
+frame_data_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_frame_data.csv")
+frame_rate_info_path <- here::here("..","..","data","processed_data","frame_rate_tables")
+survey_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_survey_data.csv")
+write_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data.csv")
+write_path_rds <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data.rds")
+```
+
+## Load coded looking data
+
+First, we load in the coded video data output from peyecoder (https://pypi.org/project/peyecoder/), pre-processed into a single data file in long format.
+
+```{r load_data}
+d <- read_csv(looking_data_path)
+```
+
+Additional clean-up: Here, we do any extra clean-up to file entries to facilitate later processing (e.g., unifying participant naming; ensuring that times are coded as numeric)
+
+```{r}
+d <- d %>%
+  #fix subject naming issue (now outdated)
+  # mutate(sub_num = case_when(
+  #    sub_num == "CAT-299" ~ "CAT_299",
+  #    TRUE ~ sub_num
+  #  )) %>%
+  #ensure time is numeric (should already be the case)
+  mutate(
+    time=as.numeric(time),
+    time_centered=as.numeric(time_centered)
+  ) %>%
+  #add frame count per trial
+  group_by(sub_num,session,trial_order,trial_number) %>%
+  # mutate(
+  #   frame_count=n()
+  # ) %>%
+  #ensure trial number is numeric
+  mutate(trial_number=as.numeric(trial_number)) %>%
+  #add frame counter
+  group_by(sub_num,session,trial_order,trial_number) %>%
+  #this is a key part, since we will later use frame counter to generate corrected time
+  #and to match up with the frame data generated during video concatenation
+  mutate(
+    #frame_counter_ns = seq(length(time)),
+    frame_counter = skip_frames+seq(length(time)),
+    total_frame_count = max(frame_counter)
+  )
+
+#slight renaming of order
+d <- d %>%
+  mutate(
+    trial_order=str_replace(trial_order,"_","-")
+  )
+```
+
+## Join in Subject information
+
+```{r}
+subj_all <- read_csv(processed_subj_path) 
+
+#filter sessions greater than 2
+subj <- subj_all %>%
+  filter(session<=2)
+
+#check unique subjects and looking data
+#all coded looking file subject numbers have corresponding subject numbers in subj
+setdiff(unique(d$sub_num),unique(subj$sub_num))
+setdiff(unique(subj$sub_num),unique(d$sub_num))
+#two participants in the subjects file don't have corresponding coded files
+# [1] "CAT_228" "CAT_264"
+# This makes sense:
+# CAT_228 - no useable trials
+# CAT_264 - did not code
+
+#Do we also have corresponding sessions for all participants?
+d_distinct_sessions <- d %>%
+  ungroup() %>%
+  distinct(sub_num,session,trial_order)
+
+subj_distinct_sessions <- subj %>%
+  ungroup() %>%
+  distinct(sub_num,session,trial_order)
+
+print(d_distinct_sessions %>% anti_join(subj_distinct_sessions))
+print(subj_distinct_sessions %>% anti_join(d_distinct_sessions))
+# Joining with `by = join_by(sub_num, session, trial_order)`
+# # A tibble: 7 × 3
+#   sub_num session trial_order         
+#   <chr>     <dbl> <chr>               
+# 1 CAT_218       1 order2B-locationflip
+# 2 CAT_228       1 order1B             
+# 3 CAT_242       1 order2A-locationflip
+# 4 CAT_264       1 order1A-locationflip
+# 5 CAT_264       2 order1B-locationflip
+# 6 CAT_279       1 order2A-locationflip
+# 7 CAT_332       1 order1B  
+
+#CAT_218 1 --> not coded, infant too fussy, at best one useable trial
+#CAT_228 1 --> no useable trials, stops very early
+#CAT_242 1 --> not coded, infant too fussy, stops early and almost no useable trials
+#CAT_264 1 --> did not code (parent interference)
+#CAT_264 2 --> did not code (parent interference)
+#CAT_279 1 --> did not code (not enough trials across sessions)
+#CAT_332 1 --> did not code (too few trials)
+
+d <- d %>%
+  left_join(subj,by=c("sub_num","session","trial_order"))
+
+#check join
+distinct <- d %>%
+  ungroup() %>%
+  distinct(sub_num,session,trial_order,response_uuid)
+```
+
+## Integrate frame rate information to correct times
+
+```{r}
+#trials to keep
+trials_to_keep <- c(11,12,13,14,16,17,18,19,21,22,23,24,26,27,28,29,31,32,33,34,36,37,38,39)
+#list frame rate tables
+fr_table_list <- list.files(path=frame_rate_info_path,pattern="txt")
+#load and combine frame rate tables
+fr_table <- map_df(fr_table_list,~mutate(read_delim(here::here(frame_rate_info_path,.),delim="\t"),file = str_replace(.,".txt",""))) %>%
+  mutate(response_id=str_replace_all(file,pattern="framerate_table_","")) %>%
+  #select only relevant trials
+  filter(Trial %in% trials_to_keep) %>%
+  #transform Trial to trial_num
+  mutate(trial_number = Trial-10) %>%
+  rename(response_uuid=response_id) 
+
+#integrate with data
+d <- d %>%
+  left_join(fr_table) %>%
+  clean_names() %>%
+  mutate(
+    frame_count_discrepancy = total_frame_count - framecount
+  )
+```
+
+Check for cases where frame counts differ
+
+```{r}
+#inspect cases of discrepancy
+hist(d$frame_count_discrepancy)
+table(d$frame_count_discrepancy)
+unusual_frame_count_trials <- d %>%
+  distinct(file_name,sub_num,session,trial_number,total_frame_count,framecount,frame_count_discrepancy) %>%
+  filter(abs(frame_count_discrepancy)>2)
+#almost all frame counts are aligned with just a frame or two discrepancy
+#remaining unusual frame counts confirmed as not an artifact
+```
+
+## Update times and accuracy coding
+
+```{r}
+d <- d %>%
+  mutate(
+    ms_per_frame = 1000/framerate,
+    corrected_time = frame_counter * ms_per_frame,
+    corrected_time_centered = corrected_time - 2650
+  ) %>%
+  mutate(accuracy_transformed = case_when(
+    accuracy=="." ~ NA_integer_,
+    TRUE ~ as.numeric(as.character(accuracy))))
+```
+
+## Incorporate timing info from Lookit
+
+```{r}
+#get frame data and extract trial number
+frame_data <- read_csv(frame_data_path) %>%
+  #exclude AG trials
+  filter(!(trial_number %in% c(5,10,15,20,25))) %>%
+  rename(trial_order=order_name,
+         left_image_frame_info=left_image,
+         right_image_frame_info=right_image)
+
+#check to make sure frame data and looking data match for joining in
+distinct_d_trials <- d %>%
+  distinct(file_name,sub_num,session,response_uuid,child_hashed_id,trial_order,trial_number)
+distinct_frame_data_trials <- frame_data %>%
+  distinct(response_uuid,child_hashed_id,trial_order,trial_number)
+#we should expect to have much fewer d trials (uncoded data)
+print(distinct_frame_data_trials %>% anti_join(distinct_d_trials))
+inspect_mismatches_frame_data <- distinct_frame_data_trials %>%
+  left_join(select(subj_all,sub_num,session,response_uuid,child_hashed_id,trial_order)) %>%
+  left_join(distinct_d_trials) %>%
+  filter(is.na(file_name))
+# all looks good - provides overview over not coded and/or prescreened trials
+#but all looking data should have corresponding frame data
+print(distinct_d_trials %>% anti_join(distinct_frame_data_trials))
+#missing data from three trials - unclear why, but has minimal influence given limited scale
+
+#join into data
+d <- d %>%
+  left_join(frame_data,by=c("response_uuid","child_hashed_id","trial_order","trial_number"))
+fr_table_lookit <- frame_data %>%
+  left_join(fr_table) %>%
+  #filter(!is.na(child_hashed_id)) %>%
+  mutate(
+    estimated_time_framecount = 1000/Framerate*Framecount/1000,
+    difference_video_trial_time=video_capture_time-estimated_time_framecount,
+  )
+
+#check join and order images
+check_trial_orders <- d %>%
+  ungroup() %>%
+  distinct(sub_num,response_uuid,session,trial_order,trial_number,left_image,right_image,left_image_frame_info,right_image_frame_info) %>%
+  mutate(
+    left_image_frame_info_name = tools::file_path_sans_ext(left_image_frame_info),
+    right_image_frame_info_name =tools::file_path_sans_ext(right_image_frame_info),
+    left_image_frame_info_name_inv = right_image_frame_info_name,
+    right_image_frame_info_name_inv =left_image_frame_info_name
+  ) %>%
+  mutate(
+    left_image_mismatch = case_when(
+      left_image!=left_image_frame_info_name_inv ~ 1,
+      left_image==left_image_frame_info_name_inv ~ 0),
+right_image_mismatch = case_when(
+      right_image!=right_image_frame_info_name_inv ~ 1,
+      right_image==right_image_frame_info_name_inv ~ 0),
+    )
+#all looks good!
+```
+
+We make a minor timing correction to account between lag between recording start and audio start, subtracting audio lag relative to video recording from our trial timer.
+
+```{r}
+d <- d %>%
+  mutate(
+    time_normalized_corrected = case_when(
+      is.na(audio_lag_vs_video_s) ~ corrected_time_centered,
+      TRUE ~ corrected_time_centered - audio_lag_vs_video_s*1000
+    )
+  )
+
+# restrict data range
+d <- d %>%
+  filter(-3000<=time_normalized_corrected) %>%
+  filter(7200>=time_normalized_corrected)
+```
+
+For reliability analysis: write out the frame ranges for relevant windows of analysis
+
+```{r}
+window_start <- -2000
+window_end <- 2800
+
+#relevant analysis window only
+d_window <- d %>%
+  filter(time_normalized_corrected>=window_start & time_normalized_corrected<=window_end)  
+frame_range_d <- d_window %>%
+  group_by(sub_num,session,trial_order,trial_number) %>%
+  summarize(
+    frame_count_start = min(frame_number),
+    frame_count_end = max(frame_number)
+  ) %>%
+  mutate(
+    filename = paste0(sub_num,"_session",session)
+  )
+write_csv(frame_range_d,here::here("..","..","data","processed_data","CATegories_analysis_window_frame_ranges.csv"))
+```
+
+
+## Join in typicality information
+
+```{r}
+## typicality
+animal_rating_names <- read.csv(here::here("..","..","typicality_data","animal_ratings_stimuli_full.csv"))
+animal_stims <- unique(c(unique(d$left_image),unique(d$right_image)))
+typicality <- read.csv(here::here("..","..","typicality_data","typicality_animals_summarized.csv")) %>%
+  mutate(item_name=str_remove(animal_name,pattern=" ")) %>%
+  left_join(animal_rating_names) %>%
+  mutate(image_name_resized = str_replace(image_experiment_name,".jpg","")) %>%
+  filter(image_name_resized %in% animal_stims) %>%
+  mutate(typicality_z=as.numeric(scale(mean_typicality))) %>%
+  group_by(category) %>%
+  mutate(typicality_within_category_z = as.numeric(scale(mean_typicality))) %>%
+  ungroup()
+#add typicality info
+d <- d %>%
+  left_join(typicality %>% select(image_name_resized,category,typicality_z,typicality_within_category_z),by=c("left_image" = "image_name_resized")) %>%
+  rename(
+    left_image_category=category,
+    left_image_typicality_z=typicality_z,
+    left_image_typicality_within_category_z=typicality_within_category_z) %>%
+  left_join(typicality %>% select(image_name_resized,category,typicality_z,typicality_within_category_z),by=c("right_image" = "image_name_resized")) %>%
+  rename(
+    right_image_category=category,
+    right_image_typicality_z=typicality_z,
+    right_image_typicality_within_category_z=typicality_within_category_z) %>%
+  mutate(
+    target_category=case_when(
+      target_side %in% c("right","R") ~ right_image_category,
+      target_side %in% c("left","L") ~ left_image_category
+    ),
+    distractor_category=case_when(
+      target_side %in% c("right","R") ~ left_image_category,
+      target_side %in% c("left","L") ~ right_image_category
+    ),
+    target_typicality_z=case_when(
+      target_side %in% c("right","R") ~ right_image_typicality_z,
+      target_side %in% c("left","L") ~ left_image_typicality_z
+    ),
+    distractor_typicality_z=case_when(
+      target_side %in% c("right","R") ~ left_image_typicality_z,
+      target_side %in% c("left","L") ~ right_image_typicality_z
+    ),
+    target_typicality_within_category_z=case_when(
+      target_side %in% c("right","R") ~ right_image_typicality_within_category_z,
+      target_side %in% c("left","L") ~ left_image_typicality_within_category_z
+    ),
+    distractor_typicality_within_category_z=case_when(
+      target_side %in% c("right","R") ~ left_image_typicality_within_category_z,
+      target_side %in% c("left","L") ~ right_image_typicality_within_category_z
+    ),
+    target_image=case_when(
+      target_side %in% c("right","R") ~ right_image,
+      target_side %in% c("left","L") ~ left_image
+    ),
+    distractor_image=case_when(
+      target_side %in% c("right","R") ~ left_image,
+      target_side %in% c("left","L") ~ right_image
+    )
+  )
+```
+
+## Load survey data
+
+```{r}
+survey_data_long <- read_csv(survey_path)
+```
+
+## Join in survey rating
+
+```{r}
+#check sub_num overlap
+setdiff(d$sub_num,survey_data_long$sub_num)
+setdiff(survey_data_long$sub_num,d$sub_num)
+d <- d %>%
+  ungroup() %>%
+  left_join(survey_data_long %>% select(sub_num,image_name,typical_num),by=c("sub_num","left_image" = "image_name")) %>%
+  rename(left_image_parent_typicality_rating=typical_num) %>%
+  left_join(survey_data_long %>% select(sub_num,image_name,typical_num),by=c("sub_num","right_image" = "image_name")) %>%
+  rename(right_image_parent_typicality_rating=typical_num) %>%
+  mutate(
+    target_parent_typicality_rating=case_when(
+      target_side %in% c("right","R") ~ right_image_parent_typicality_rating,
+      target_side %in% c("left","L") ~ left_image_parent_typicality_rating
+    ),
+    distractor_parent_typicality_rating=case_when(
+      target_side %in% c("right","R") ~ left_image_parent_typicality_rating,
+      target_side %in% c("left","L") ~ right_image_parent_typicality_rating
+    )
+  ) %>%
+  # add z-scored typicality
+  left_join(survey_data_long %>% select(sub_num,image_name,typical_num_z),by=c("sub_num","left_image" = "image_name")) %>%
+  rename(left_image_parent_typicality_rating_z=typical_num_z) %>%
+  left_join(survey_data_long %>% select(sub_num,image_name,typical_num_z),by=c("sub_num","right_image" = "image_name")) %>%
+  rename(right_image_parent_typicality_rating_z=typical_num_z) %>%
+  mutate(
+    target_parent_typicality_rating_z=case_when(
+      target_side %in% c("right","R") ~ right_image_parent_typicality_rating_z,
+      target_side %in% c("left","L") ~ left_image_parent_typicality_rating_z
+    ),
+    distractor_parent_typicality_rating_z=case_when(
+      target_side %in% c("right","R") ~ left_image_parent_typicality_rating_z,
+      target_side %in% c("left","L") ~ right_image_parent_typicality_rating_z
+    )
+  ) %>%
+  #add parent typicality z-scored by category
+  left_join(survey_data_long %>% select(sub_num,image_name,typical_by_category_z),by=c("sub_num","left_image" = "image_name")) %>%
+  rename(left_image_parent_typicality_by_category_z=typical_by_category_z) %>%
+  left_join(survey_data_long %>% select(sub_num,image_name,typical_by_category_z),by=c("sub_num","right_image" = "image_name")) %>%
+  rename(right_image_parent_typicality_by_category_z=typical_by_category_z) %>%
+  mutate(
+    target_parent_typicality_by_category_z=case_when(
+      target_side %in% c("right","R") ~ right_image_parent_typicality_by_category_z,
+      target_side %in% c("left","L") ~ left_image_parent_typicality_by_category_z
+    ),
+    distractor_parent_typicality_by_category_z=case_when(
+      target_side %in% c("right","R") ~ left_image_parent_typicality_by_category_z,
+      target_side %in% c("left","L") ~ right_image_parent_typicality_by_category_z
+    )
+  )
+```
+
+## Add some exclusion-relevant columnns
+
+Inspect information about child (based on child condition list column from Lookit) and update a "developmental concern" column accordingly.
+
+```{r}
+# inspect parent additional information
+additional_info <- d %>%
+  distinct(sub_num,child_condition_list) 
+
+#add a column for developmental concern (no relevant participants identified based on info provided)
+d <- d %>%
+  mutate(
+    dev_concern = case_when(
+      #sub_num == "XXX" ~ "yes",
+      TRUE ~ "no"
+    )
+  )
+```
+
+## Write the full dataset
+
+```{r}
+write_csv(d,write_path)
+#also save as RDS object due to size
+saveRDS(d,write_path_rds)
+```
+

@@ -1,0 +1,144 @@
+ILL_internal_id,exclude_participant,exclusion_reason,not_in_data,no_useable_data,notes,true_session_number,icoder_files
+CAT_201,N,,,,,2,2
+CAT_202,Y,insufficient trials,,,,2,2
+CAT_203,N,,,,,2,2
+CAT_204,Y,insufficient trials,,,,2,2
+CAT_205,Y,insufficient trials,,,,2,2
+CAT_206,N,,,,,2,2
+CAT_208,N,,,,,2,2
+CAT_209,N,,,,,2,2
+CAT_210,Y,insufficient trials,,,,2,2
+CAT_211,N,,,,,2,2
+CAT_212,Y,insufficient trials,,,,2,2
+CAT_213,N,,,,,2,2
+CAT_214,Y,insufficient trials,,,was too old during second session,2,2
+CAT_215,N,,,,,2,2
+CAT_216,Y,insufficient trials,,,,1,1
+CAT_217,Y,insufficient trials,,,,1,1
+CAT_218,Y,insufficient trials,,,no session 1 icoder file,2,1
+CAT_219,Y,insufficient trials,,,,1,1
+CAT_220,Y,insufficient trials,,,,2,2
+CAT_222,N,,,,,2,2
+CAT_223,N,,,,,2,2
+CAT_224,Y,insufficient trials,,,,2,2
+CAT_225,N,,,,,2,2
+CAT_226,N,,,,,2,2
+CAT_227,Y,insufficient trials,,,,1,1
+CAT_228,Y,insufficient trials,Y,,,1,1
+CAT_229,Y,insufficient trials,,,,1,1
+CAT_230,N,,,,,2,2
+CAT_231,N,,,,,2,2
+CAT_232,Y,insufficient trials,,Y,,1,1
+CAT_233,N,,,,,2,2
+CAT_234,N,,,,,2,2
+CAT_235,N,,,,,2,2
+CAT_236,N,,,,,2,2
+CAT_237,Y,insufficient trials,,,,2,2
+CAT_238,N,,,,,1,1
+CAT_239,N,,,,,2,2
+CAT_240,N,,,,,2,2
+CAT_241,Y,insufficient trials,,,,1,1
+CAT_242,Y,insufficient trials,,,no session 1 icoder file,2,1
+CAT_243,N,,,,,2,2
+CAT_244,N,,,,,2,2
+CAT_245,Y,insufficient trials,,,,2,2
+CAT_246,N,,,,,2,2
+CAT_247,Y,insufficient trials,,,,2,2
+CAT_248,N,,,,,2,2
+CAT_249,Y,insufficient trials,,,,1,1
+CAT_250,Y,insufficient trials,,,,1,1
+CAT_251,N,,,,,2,2
+CAT_252,N,,,,,2,2
+CAT_253,N,,,,,2,2
+CAT_254,N,,,,,1,1
+CAT_255,N,,,,,2,2
+CAT_256,N,,,,,2,2
+CAT_257,Y,insufficient trials,,,,2,2
+CAT_258,N,,,,,2,2
+CAT_259,Y,insufficient trials,,,,1,1
+CAT_260,N,,,,,2,2
+CAT_261,N,,,,,2,2
+CAT_262,N,,,,,2,2
+CAT_263,N,,,,,2,2
+CAT_264,Y,insufficient trials/ parental interference,Y,,,2,2
+CAT_265,N,,,,,2,2
+CAT_266,N,,,,,2,2
+CAT_267,N,,,,,2,2
+CAT_268,N,,,,,2,2
+CAT_269,N,,,,,2,2
+CAT_270,N,,,,,2,2
+CAT_271,N,,,,,2,2
+CAT_272,Y,insufficient trials,,,,2,2
+CAT_273,N,,,,,2,2
+CAT_274,N,,,,,2,2
+CAT_275,N,,,,,2,2
+CAT_276,Y,insufficient trials,,,,1,1
+CAT_277,N,,,,,2,2
+CAT_278,N,,,,,2,2
+CAT_279,Y,insufficient trials,,,check why only one session in data,2,2
+CAT_280,Y,insufficient trials,,Y,,1,1
+CAT_281,Y,insufficient trials,,,check why only one session in data,2,2
+CAT_282,N,,,,,2,2
+CAT_283,N,,,,,2,2
+CAT_284,N,,,,,2,2
+CAT_285,N,,,,,2,2
+CAT_286,Y,insufficient trials,,Y,,2,2
+CAT_287,Y,insufficient trials,,Y,,1,1
+CAT_288,Y,insufficient trials,,Y,,1,1
+CAT_289,N,,,,,1,1
+CAT_290,Y,insufficient trials,,,,1,1
+CAT_291,Y,insufficient trials,,,,1,1
+CAT_292,N,,,,,2,2
+CAT_293,Y,insufficient trials,,,,2,2
+CAT_294,Y,insufficient trials,,,,1,1
+CAT_295,Y,insufficient trials,,,,2,2
+CAT_296,Y,insufficient trials,,Y,,1,1
+CAT_297,N,,,,,2,2
+CAT_298,N,,,,,2,2
+CAT_299,N,,,,,2,2
+CAT_300,N,,,,,2,2
+CAT_301,Y,insufficient trials,,,,2,2
+CAT_302,N,,,,,2,2
+CAT_303,N,,,,,2,2
+CAT_304,N,,,,,2,2
+CAT_305,N,,,,,1,1
+CAT_306,N,,,,,2,2
+CAT_307,N,,,,,2,2
+CAT_308,Y,insufficient trials,,,,1,1
+CAT_309,N,,,,,2,2
+CAT_310,Y,insufficient trials,,,,1,1
+CAT_311,N,,,,,2,2
+CAT_312,Y,insufficient trials,,,,1,1
+CAT_313,Y,insufficient trials,,,,2,2
+CAT_314,N,,,,,2,2
+CAT_316,N,,,,,2,2
+CAT_317,N,,,,,2,2
+CAT_318,Y,insufficient trials,,,,2,2
+CAT_319,Y,insufficient trials,,,,1,1
+CAT_320,Y,insufficient trials,,,,2,2
+CAT_321,N,,,,,2,2
+CAT_322,Y,insufficient trials,,,,2,2
+CAT_323,Y,insufficient trials,,Y,,2,2
+CAT_324,N,,,,,2,2
+CAT_325,Y,insufficient trials,,,,1,1
+CAT_326,N,,,,,2,2
+CAT_327,Y,insufficient trials,,Y,,2,2
+CAT_328,N,,,,,2,2
+CAT_329,N,,,,,2,2
+CAT_330,N,,,,,2,2
+CAT_331,N,,,,,2,2
+CAT_332,Y,insufficient trials,,,,2,2
+CAT_333,Y,insufficient trials,,,,2,2
+CAT_334,N,,,,,2,2
+CAT_335,Y,insufficient trials,,,,1,1
+CAT_336,N,,,,,2,2
+CAT_337,Y,insufficient trials,,,,2,2
+CAT_338,Y,insufficient trials,,,,2,2
+CAT_339,N,,,,,2,2
+CAT_340,Y,insufficient trials,,,,1,1
+CAT_341,N,,,,,2,2
+CAT_342,Y,insufficient trials,,,,1,1
+CAT_343,N,,,,,2,2
+CAT_344,N,,,,,2,2
+CAT_345,N,,,,,2,2
+CAT_346,N,,,,,2,2

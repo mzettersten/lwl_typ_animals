@@ -1,0 +1,1786 @@
+---
+title: "Main Analysis CATegories"
+author: "Anonymized"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+## Load packages
+
+```{r setup, message=FALSE}
+
+library(tidyverse)
+library(janitor)
+library(cowplot)
+library(here)
+library(readxl)
+library(Matrix)
+library(lme4)
+library(lmerTest)
+library(TOSTER)
+library(wesanderson)
+library(gghalves)
+library(car)
+library(multilevelTools)
+library(JWileymisc)
+library(broom.mixed)
+library(papaja)
+library(effectsize)
+library(ggimage)
+library(sessioninfo)
+library(broom)
+source("compute_iccs.R")
+source("common.R")
+
+theme_set(theme_cowplot())
+
+knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
+```
+
+## Load data
+
+```{r}
+#set paths
+data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_with_exclusion_info.csv")
+useable_trial_summary_path <- here::here("..","..","data","processed_data","CATegories_exp2_useable_trial_summary.csv")
+summarize_subj_trials_path <- here::here("..","..","data","processed_data","CATegories_exp2_trial_summary_data.csv")
+participant_data_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_participant_data_anonymized.csv")
+resampled_data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_resampled.csv")
+#load data
+d <- read_csv(data_file_path) 
+participant_total_useable_trials <- read_csv(useable_trial_summary_path)
+summarize_subj_trials <- read_csv(summarize_subj_trials_path)
+participant_data <- read_csv(participant_data_path)
+d_resampled <- read_csv(resampled_data_file_path) #note that this file gets created in cluster_permutation_analysis.Rmd
+```
+
+## Useable trial summary
+
+In order for a trial to be included, participants must contribute at least 50% looking during the windows of interest when computing baseline-corrected proportion target looking: the critical window (300 ms - 2800 ms relative to target word onset) and the baseline window (-2000 ms - 0 ms relative to target word onset). See 2_process_exclusions.Rmd for detailed processing steps.
+
+Overall, among the trials contributed by `r length(unique(summarize_subj_trials$sub_num))` participants (excluding `r length(unique(participant_total_useable_trials$sub_num))-length(unique(summarize_subj_trials$sub_num))` participants whose data was filtered out earlier in the process, because they either did not provide any useable trials or due to parent interference throughout the session), `r round(mean(summarize_subj_trials$useable_window),3)*100`% of trials contained sufficient looking to meet our trial-level inclusion criteria (at least 50% looking during both the baseline window and the critical window). Overall, after additional trial-level exclusions (due technical errors or frame rate issues), `r round(mean(summarize_subj_trials$trial_exclusion==0),3)*100`% were retained. `r length(unique(filter(summarize_subj_trials,exclude_participant==0)$sub_num))` of the `r length(unique(summarize_subj_trials$sub_num))` participants contributed valid data on at least half of the experimental trials (for all participants: M = `r round(mean(participant_total_useable_trials$total_trials),1)`; only for included participants: M = `r round(mean(filter(participant_total_useable_trials,exclude_participant==0)$total_trials),1)`).
+
+## Summarize participant information {.tabset}
+
+### All participants contributing data
+
+```{r}
+participant_data_summarized <- participant_data %>%
+  summarize(
+    N=length(unique(sub_num)),
+    num_sessions = sum(session<3),
+    session_1_N = sum(session==1),
+    session_2_N = sum(session==2)
+  )
+
+participant_data_summarized %>%
+  knitr::kable()
+
+participant_data_summarized <- participant_data %>%
+  distinct(sub_num,session_1_data,session_2_data) %>%
+  left_join(participant_total_useable_trials)
+
+#participants without session 2 data who were subsequently excluded
+sum(filter(participant_data_summarized,session_2_data=="N")$exclude_participant)
+
+#participants with session 2 data who were subsequently excluded
+sum(filter(participant_data_summarized,session_2_data=="Y")$exclude_participant)
+```
+
+
+### All participants providing coded looking data
+
+```{r}
+#summarize subj info
+subj_info_multisession <- d %>%
+  distinct(sub_num, age,age_mo,child_gender,trial_order) %>%
+  mutate(
+    age_mo_c = age_mo - mean(age_mo),
+    age_c = age - mean(age)
+  )
+
+subj_info <- d %>%
+  distinct(sub_num,child_gender) %>%
+  summarize(
+    N = n(),
+    N_female = sum(child_gender=="f")
+  )
+
+overall_subj_info <- subj_info_multisession %>%
+  summarize(
+    N = length(unique(sub_num)),
+    sessions = n(),
+    mean_age = mean(age_mo),
+    min_age = min(age),
+    max_age = max(age),
+    sd_age = sd(age_mo)
+  ) %>%
+  left_join(subj_info)
+  
+overall_subj_info %>%
+  knitr::kable()
+```
+
+### All included participants
+
+```{r}
+# subjects with usable trial data only
+subj_info_multisession_usable_trials <- d %>%
+  filter(exclude_participant==0) %>%
+  distinct(sub_num, age,age_mo,child_gender,trial_order) %>%
+  mutate(
+    age_mo_c = age_mo - mean(age_mo),
+    age_c = age - mean(age)
+  )
+
+subj_info_usable_trials <- d %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  distinct(sub_num,child_gender) %>%
+  summarize(
+    N = n(),
+    N_female = sum(child_gender=="f")
+  )
+
+overall_subj_info_usable_trials <- subj_info_multisession_usable_trials %>%
+  summarize(
+    N = length(unique(sub_num)),
+    sessions = n(),
+    mean_age = mean(age_mo),
+    mean_age_days=mean(age),
+    min_age = min(age),
+    max_age = max(age),
+    sd_age = sd(age_mo)
+  ) %>%
+  left_join(subj_info_usable_trials)
+  
+overall_subj_info_usable_trials %>%
+  knitr::kable()
+
+```
+
+## Demographics of final useable sample {.tabset}
+
+Next, we summarize demographic information for the final sample (removing participant exclusions).
+
+```{r}
+demographics_summary <- d %>%
+  filter(exclude_participant == 0) %>%
+  distinct(sub_num,demographic_us_race_ethnicity_identification,demographic_education_level,demographic_annual_income,demographic_country,demographic_state,demographic_density)
+```
+
+### Race/ Ethnicity
+
+```{r}
+multiple_categories_list <- c("White, Middle Eastern or North African","White, Hispanic, Latino, or Spanish origin","White, Black or African American, Middle Eastern or North African","White, Black or African American","White, Asian, Middle Eastern or North African","White, Asian","Hispanic, Latino, or Spanish origin, Black or African American","Hispanic, Latino, or Spanish origin, Asian","Black or African American, Asian","Asian, Middle Eastern or North African")
+
+race_ethnicity <- demographics_summary %>%
+  group_by(demographic_us_race_ethnicity_identification)%>%
+  summarize(
+    N = n()
+  ) %>%
+  ungroup() %>%
+  mutate(percent=N/sum(N),
+         multiple_categories=ifelse(demographic_us_race_ethnicity_identification %in% multiple_categories_list,1,0))
+#percent reporting multiple categories
+sum(filter(race_ethnicity,multiple_categories==1)$N)/sum(race_ethnicity$N)
+
+#quick visualization
+ggplot(demographics_summary,aes(y=demographic_us_race_ethnicity_identification)) +
+  geom_bar()
+```
+
+### Parent Income
+
+```{r}
+income <- demographics_summary %>%
+  group_by(demographic_annual_income)%>%
+  summarize(
+    N = n()
+  )
+
+income %>%
+  knitr::kable()
+
+#quick visualiztion
+ggplot(demographics_summary,aes(demographic_annual_income)) +
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+### Parent Education Level
+
+```{r}
+education <- demographics_summary %>%
+  group_by(demographic_education_level)%>%
+  summarize(
+    N = n()
+  )
+
+education %>%
+  knitr::kable()
+```
+
+### Geographic Information
+
+```{r}
+states <- demographics_summary %>%
+  group_by(demographic_state)%>%
+  summarize(
+    N = n()
+  )
+
+ggplot(demographics_summary,aes(demographic_state)) +
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90))
+
+population_density <- demographics_summary %>%
+  group_by(demographic_density) %>%
+  summarize(
+    N = n()
+  )
+population_density %>%
+  knitr::kable()
+
+```
+
+## Summarize Overall Target Looking by Participant {.tabset}
+
+Here, we summarize each participants' average accuracy during the critical window and average baseline-corrected proportion target looking.
+
+```{r}
+# save key columns
+key_cols_summarized_trial_data <- c(
+  "sub_num","session", "age","age_mo","days_between_sessions", "child_gender", "trial_order","trial_number","condition","target_image","distractor_image","target_category","distractor_category","target_typicality_z","distractor_typicality_z","target_parent_typicality_rating","distractor_parent_typicality_rating","target_parent_typicality_rating_z","distractor_parent_typicality_rating_z","target_parent_typicality_by_category_z","distractor_parent_typicality_by_category_z","mean_target_looking_critical","mean_target_looking_baseline","corrected_target_looking","exclude_participant","age_exclusion","trial_exclusion","trial_exclusion_reason","exclude_technical_issue","exclude_frame_rate","useable_window","useable_critical_window","useable_baseline_window","useable_window_short","total_trials_short","exclude_participant_insufficient_data_short","mean_target_looking_critical_short","corrected_target_looking_short")
+
+#extract summarized trial-level accuracy (see 2_process_exclusions.Rmd for details on how summarized columns are computed)
+trial_corrected_accuracy_all <- d %>%
+  select(all_of(key_cols_summarized_trial_data)) %>%
+  distinct()
+
+trial_corrected_accuracy <- trial_corrected_accuracy_all %>%
+  filter(exclude_participant==0) %>%
+  filter(trial_exclusion==0)
+
+# summarize average accuracy
+avg_corrected_target_looking <- trial_corrected_accuracy  %>%
+  group_by(sub_num) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci,
+            average_critical_window_looking=mean(mean_target_looking_critical,na.rm=TRUE),
+            critical_window_ci = qt(0.975, N-1)*sd(mean_target_looking_critical,na.rm=T)/sqrt(N),
+            critical_window_lower_ci=average_critical_window_looking-critical_window_ci,
+            critical_window_upper_ci=average_critical_window_looking+critical_window_ci)
+
+#baseline-corrected target looking summarized overall
+overall_corrected_target_looking <- avg_corrected_target_looking %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+overall_corrected_target_looking %>%
+  knitr::kable()
+```
+
+### By Typicality Condition
+
+We summarize each participants' average accuracy during the critical window and average baseline-corrected proportion target looking, split by typicality condition.
+
+```{r}
+# summarize average accuracy within participant
+avg_corrected_target_looking_by_typicality <- trial_corrected_accuracy  %>%
+  group_by(sub_num, condition) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            se=sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci,
+            lower_se=average_corrected_target_looking-se,
+            upper_se=average_corrected_target_looking+se,
+            average_critical_window_looking=mean(mean_target_looking_critical,na.rm=TRUE),
+            critical_window_ci = qt(0.975, N-1)*sd(mean_target_looking_critical,na.rm=T)/sqrt(N),
+            critical_window_lower_ci=average_critical_window_looking-critical_window_ci,
+            critical_window_upper_ci=average_critical_window_looking+critical_window_ci)
+
+#baseline-corrected target looking summarized overall
+overall_corrected_target_looking_by_typicality <- avg_corrected_target_looking_by_typicality %>%
+  group_by(condition) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+
+overall_corrected_target_looking_by_typicality %>%
+  knitr::kable()
+
+```
+
+### By Target Label
+
+We summarize each participants' average accuracy during the critical window and average baseline-corrected proportion target looking, split by typicality condition and target label.
+
+```{r}
+# summarize average accuracy within participant
+avg_corrected_target_looking_by_category <- trial_corrected_accuracy  %>%
+  group_by(sub_num, condition,target_category) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci,
+            average_critical_window_looking=mean(mean_target_looking_critical,na.rm=TRUE),
+            critical_window_ci = qt(0.975, N-1)*sd(mean_target_looking_critical,na.rm=T)/sqrt(N),
+            critical_window_lower_ci=average_critical_window_looking-critical_window_ci,
+            critical_window_upper_ci=average_critical_window_looking+critical_window_ci)
+```
+
+## Main Analyses
+
+## Aim 1 {.tabset}
+
+### 1.1 {.tabset}
+
+#### 1.1.1.
+
+To investigate whether there was an effect of typicality on infants’ word recognition,we fit a linear mixed-effects model predicting average baseline-corrected proportion target looking from typicality condition (centered), including a by-participant random intercept. No random slope was included because the number of observations in the model would otherwise be equal to the number of random effects - however, a model with (overriding the lmer error message) or without typicality condition as a random slope yields identical results.
+
+```{r}
+avg_corrected_target_looking_by_typicality <- avg_corrected_target_looking_by_typicality %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+
+m_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1+typicality_condition_c|sub_num),data=avg_corrected_target_looking_by_typicality,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+
+#Note that we ignore the warning here that number of observations is equal to the number of random effects, which lmer dislikes due to making it impossible to separate error at different hierarchical levels
+#however, the model fit (at the fixed level) is for all intents and purposes identical for the model retaining the random slope for typicality and one removing the random slope for typicality
+#(see commented-out model below)
+#we therefore proceed with the (numerically identical) model with the random slope retained, for consistency with the Stage 1 plan.
+#This same rationale applies to subsequent participant-level models we fit below.
+
+#m_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1|sub_num),data=avg_corrected_target_looking_by_typicality)
+
+summary(m_1_1)
+confint(m_1_1,method="Wald")
+
+```
+
+Infants successfully recognized the target words (Model Intercept: b=0.07, 95% CI [0.06, 0.09], t(83) = 8.59, p< .001).
+
+#### Overall Typicality Effect Plot
+
+Next, we plot the overall average base-line corrected proportion target looking for each condition (in black). Individual points represent individual subjects, lines link subject responses between conditions. Error bars represent 95% CIs.
+
+```{r}
+#Overall baseline-corrected proportion target looking by condition
+pal <- wes_palette("Rushmore1", n=5)
+set.seed(1)
+jitterer <- position_jitter(width = .05,seed=1)
+p0 <- ggplot(avg_corrected_target_looking_by_typicality,aes(x=condition,y=average_corrected_target_looking, fill=condition))+
+  geom_half_violin(data=filter(avg_corrected_target_looking_by_typicality, condition=="atypical"),position = position_nudge(x = -.1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="l")+
+  geom_half_violin(data=filter(avg_corrected_target_looking_by_typicality, condition=="typical"),position = position_nudge(x = .1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="r")+
+  geom_path(aes(group=sub_num),color="black",fill=NA,alpha=0.15,size=0.75,position=jitterer)+
+  geom_point(aes(color=condition,group=sub_num), size = 2.5, alpha=0.15,position=jitterer)+
+  geom_point(data=overall_corrected_target_looking_by_typicality,aes(y=corrected_target_looking),color="black",size=5)+
+  geom_line(data=overall_corrected_target_looking_by_typicality,aes(y=corrected_target_looking,group=1),color="black",size=3)+
+  geom_errorbar(data=overall_corrected_target_looking_by_typicality,aes(y=corrected_target_looking,ymin=lower_ci,ymax=upper_ci),width=0,size=1.2,color="black")+
+  #geom_boxplot(outlier.shape = NA, alpha = .5, width = .1, colour = "black")+
+  #scale_colour_brewer(palette = "Dark2")+
+  #scale_fill_brewer(palette = "Dark2")+
+  geom_hline(yintercept=0,linetype="dashed")+
+  scale_colour_manual(values=pal[c(3,4)])+
+  scale_fill_manual(values=pal[c(3,4)])+
+  theme(legend.position="none")+
+  xlab("Typicality Condition")+
+  ylab("Baseline-Corrected\nProportion Target Looking")+
+  theme(axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=14),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        strip.text.x = element_text(size = 16,face="bold"))
+
+p0
+ggsave(here::here("..","figures","baseline_corrected_accuracy_overall.png"),width=7,height=6)
+```
+
+#### 1.1.2
+
+```{r}
+overall_condition_summary <- avg_corrected_target_looking_by_typicality %>%
+  ungroup() %>%
+  group_by(sub_num) %>%
+  summarize(
+    condition_diff = average_corrected_target_looking[condition=="typical"]-average_corrected_target_looking[condition=="atypical"]
+  ) %>%
+  ungroup() %>%
+  summarize(
+    N=n(),
+    diff = mean(condition_diff),
+    sd = sd(condition_diff)
+  )
+
+tsum_TOST(m1=overall_condition_summary$diff,sd1=overall_condition_summary$sd,n1=overall_condition_summary$N,eqb=0.25, eqbound_type = "SMD")
+```
+
+There was no significant effect of typicality, b=0.01, 95% CI [-0.009, 0.04], t(83)=1.20, p=.23, Cohen’s d=0.13. However, the equivalence test was also not statistically significant, t(83) = -1.08, p=.14. We therefore could not reject the null hypothesis that the absolute effect size was at least as large as d=0.25.
+
+```{r}
+#quick sanity check
+#t-test in tost is equivalent to regular old paired t-test
+# AND equivalent to lmer estimate of typicality effect
+t.test(
+  avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"],
+  avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"], 
+  paired=T)
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"],
+         avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"],
+         paired=T)
+```
+
+#### 1.1.3
+
+```{r}
+## Typical word recognition
+# recentering the model on the typical condition to make the intercept interpretable
+m_1_1_3_typ <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_typ + (1+ typicality_condition_typ|sub_num),data=avg_corrected_target_looking_by_typicality,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+
+summary(m_1_1_3_typ)
+
+confint(m_1_1_3_typ,method="Wald")
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"])
+
+## Atypical word recognition
+# recentering the model on the atypical condition to make the intercept interpretable
+m_1_1_3_atyp <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_atyp + (1+ typicality_condition_atyp|sub_num),data=avg_corrected_target_looking_by_typicality,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+
+summary(m_1_1_3_atyp)
+
+confint(m_1_1_3_atyp,method="Wald")
+
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"])
+```
+
+Infants robustly recognized the target words for both typical (Model: b=0.08, 95% CI [0.06, 0.10], t(83)=7.23, p<.001; Cohen’s d = 0.79 [0.54, 1.03]; Mean baseline-corrected looking: M=8.0%, 95% CI [5.8%, 10.1%]) and atypical exemplars (Model: b=0.06, 95% CI [0.05, 0.08], t(83)=6.66, p<.001, Cohen’s d = 0.73 [0.48, 0.97]; Mean baseline-corrected looking: M=6.5%, 95% CI [4.5%, 8.4%]). 
+
+### 1.2
+
+```{r}
+trial_corrected_accuracy <- trial_corrected_accuracy %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+
+#model with typicality condition yields a singular fit, so we removed the random slope
+# however, the singular model still yields relatively identical results to the model
+# without the typicality condition random slope
+# m_1_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c + 
+#             (1 + typicality_condition_c|sub_num) +
+#             (1|target_category),
+#           data=trial_corrected_accuracy)
+
+m_1_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c + 
+            (1 | sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_1_2)
+confint(m_1_2,method="Wald")
+
+#Centering on typical condition
+m_1_2_typ <- lmer(corrected_target_looking ~ 1 + typicality_condition_typ + 
+            (1 |sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_1_2_typ)
+confint(m_1_2_typ,method="Wald")
+
+#Centering on atypical condition
+m_1_2_atyp <- lmer(corrected_target_looking ~ 1 + typicality_condition_atyp + 
+            (1 |sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_1_2_atyp)
+confint(m_1_2_atyp,method="Wald")
+```
+
+The model with the maximal random effects structure yielded a singular fit that was only remedied by removing the by-participant random slope for typicality condition. However, the (singular) model including the typicality random slope yielded virtually identical results to the converging model including random intercepts for participant and target word only. As in the average participant-level analysis, infants’ overall recognition of target words was significant in the trial-level model (b=0.07, 95% CI [0.05,0.10], t(5.2)=6.28, p=.001) and there was no significant effect of typicality (b=0.01, 95% CI [-0.01,0.04], t(3017)=0.87, p=.38). Word recognition was robust both for typical (b=0.08, 95% CI [0.05,0.10], t(8.7)=5.95, p<.001) and atypical exemplars (b=0.07, 95% CI [0.04,0.9], t(8.7)=5.13, p<.001).
+
+### 1.3
+
+The cluster-based permutation analysis is executed in cluster_permutation_analysis.Rmd.
+
+In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-300ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.27.
+
+### Timecourse Plots {.tabset}
+
+#### Overall
+
+Next, we plot the data. First we summarize the data in two steps: (1) summarize the data by subject for each time point, followed by (2) averaging looking for each time point across subjects.
+
+```{r}
+#summarizing within subject for each time point
+summarize_subj <- d_resampled %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  group_by(sub_num, child_gender, time_normalized_corrected) %>%
+  summarize(N=n(),
+            mean_age=mean(age),
+            mean_age_mo=mean(age_mo),
+            non_na_n = sum(!is.na(accuracy_transformed)), 
+            mean_accuracy=mean(accuracy_transformed,na.rm=TRUE),
+            ci=qt(0.975, non_na_n-1)*sd(accuracy_transformed,na.rm=T)/sqrt(non_na_n),
+            lower_ci=mean_accuracy-ci,
+            upper_ci=mean_accuracy+ci) %>%
+  ungroup()
+
+#summarizing across subjects for each time point
+summarize_across_subj <- summarize_subj %>%
+  group_by(time_normalized_corrected) %>%
+  dplyr::summarize(n=n(),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
+            se_accuracy=sd_accuracy/sqrt(n))
+
+ggplot(summarize_across_subj,aes(time_normalized_corrected,accuracy))+
+  xlim(-2000,4000)+
+  geom_smooth(method="gam")+
+  geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
+  geom_point()+
+  geom_vline(xintercept=0,size=1.5)+
+  geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
+  geom_vline(xintercept=300,linetype="dotted")+
+  ylim(0.35,0.65)+
+  xlab("Time (normalized to target word onset) in ms")+
+  ylab("Proportion Target Looking")
+ggsave(here::here("..","figures","overall_accuracy.png"))
+
+```
+
+#### Timecourse by age
+
+```{r}
+summarize_across_subj_by_age <- summarize_subj %>%
+  mutate(age_group=cut_number(mean_age_mo,n=4)) %>%
+  group_by(age_group,time_normalized_corrected) %>%
+  dplyr::summarize(n=n(),
+                   accuracy=mean(mean_accuracy,na.rm=TRUE),
+                   sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
+                   se_accuracy=sd_accuracy/sqrt(n))
+ggplot(summarize_across_subj_by_age,aes(time_normalized_corrected,accuracy))+
+  xlim(-2000,4000)+
+  geom_smooth(method="gam")+
+  geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
+  geom_point()+
+  geom_vline(xintercept=0,size=1.5)+
+  geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
+  geom_vline(xintercept=300,linetype="dotted")+
+  facet_wrap(~age_group)+
+  xlab("Time (normalized to target word onset) in ms")+
+  ylab("Proportion Target Looking")
+ggsave(here::here("..","figures","overall_accuracy_by_age.png"),width=12, height=9)
+```
+
+#### Timecourse by condition
+
+```{r}
+summarize_subj_condition <- d_resampled %>%
+  filter(exclude_participant==0) %>%
+  filter(useable_window==1) %>%
+  group_by(sub_num, child_gender, condition, time_normalized_corrected) %>%
+  summarize(
+    mean_age=mean(age),
+    mean_age_mo=mean(age_mo),
+    mean_accuracy=mean(accuracy_transformed,na.rm=TRUE))
+
+summarize_across_subj_cond <- summarize_subj_condition %>%
+  group_by(condition,time_normalized_corrected) %>%
+  summarize(n=n(),
+            accuracy=mean(mean_accuracy,na.rm=TRUE),
+            sd_accuracy=sd(mean_accuracy,na.rm=TRUE),
+            se_accuracy=sd_accuracy/sqrt(n))
+
+#plot
+#timecourse plot
+pal <- wes_palette("Rushmore1", n=5)
+timecourse_plot <- ggplot(summarize_across_subj_cond,aes(time_normalized_corrected,accuracy,color=condition))+
+  geom_rect(data = data.frame(xmin = 300,
+                              xmax = 2800,
+                              ymin = -Inf,
+                              ymax = Inf),
+            aes(x=NULL, y=NULL,xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,color=NULL),
+            fill = "grey", alpha = 0.2)+
+  geom_rect(data = data.frame(xmin = -2000,
+                              xmax = 0,
+                              ymin = -Inf,
+                              ymax = Inf),
+            aes(x=NULL, y=NULL,xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,color=NULL),
+            fill = "grey", alpha = 0.2)+
+  geom_errorbar(aes(ymin=accuracy-se_accuracy,ymax=accuracy+se_accuracy),width=0)+
+  geom_point(alpha=0.5)+
+  geom_smooth(data=summarize_subj_condition,aes(y=mean_accuracy),method="gam")+
+  geom_vline(xintercept=0,size=1.5)+
+  geom_hline(yintercept=0.5,size=1.2,linetype="dashed")+
+  geom_vline(xintercept=300,linetype="dotted")+
+  geom_vline(xintercept=2800,linetype="dotted")+
+  geom_vline(xintercept=-2000,linetype="dotted")+
+  geom_vline(xintercept=0,linetype="dotted")+
+  theme(legend.position = c(0.8,0.15))+
+  annotate("text",label="Critical Window",x=1550,y=0.9,size=6)+
+  annotate("text",label="Baseline Window",x=-1000,y=0.9,size=6)+
+  ylim(0,1)+
+  #xlim(-2000,4000)+
+  scale_x_continuous(breaks=seq(-2000,4000,1000),limits=c(-2000,4000))+
+  scale_colour_manual(values=pal[c(3,4)])+
+  ylab("Proportion Target Looking")+
+  xlab("Time (centered on target word onset, in ms)")+
+  theme(
+    strip.background = element_rect(size=1, colour = "black"),
+    strip.text = element_text(size=16,face="bold"),
+    axis.title=element_text(size=20,face="bold"),
+    axis.text = element_text(size=14),
+    legend.text=element_text(size=18),
+    legend.title=element_text(size=18))
+ggsave(here::here("..","figures","typicality_accuracy.png"),width=10,height=6)
+```
+
+## Aim 2
+
+### Linear mixed-effects model
+
+```{r}
+#join in average age-centered variables
+trial_corrected_accuracy <- trial_corrected_accuracy %>%
+  left_join(subj_info_multisession)
+  
+#fit main model
+# the random slope of typicality causes a singular boundary fit
+# all attempts to prune other random effects (including covariances) were not successful,
+# so we removed the random slope for typicality.
+# Note that the effects for the (singular fit) model including the random slope for typicality are 
+# equivalent to the model with typicality condition as a random slope.
+m_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c * age_mo_c + 
+            (1|sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy)
+
+summary(m_2)
+confint(m_2,method="Wald")
+
+
+#save interim model object
+m_2_tidy <- m_2 %>%
+  summarize_mixed_effects_model()
+```
+
+In the trial-level linear mixed-effects model including age, typicality condition, and their interaction, we found a significant effect of age (`r apa_print(m_2)$estimate$age_mo_c`, `r apa_print(m_2)$statistic$age_mo_c`), suggesting that word recognition accuracy increased with age overall. There was no significant interaction between age and typicality (`r apa_print(m_2)$estimate$typicality_condition_c_age_mo_c`, `r apa_print(m_2)$statistic$typicality_condition_c_age_mo_c`), meaning that we found no evidence that the effect of typicality changed with age.
+
+### Plot {.tabset}
+
+#### Overall
+
+```{r}
+ggplot(avg_corrected_target_looking,aes(mean_age,average_corrected_target_looking))+
+  geom_pointrange(aes(ymin=lower_ci,ymax=upper_ci),
+                  position=position_jitter(width=0.1),
+                  width=0,
+                  size=1.5) +
+  geom_hline(yintercept=0,linetype="dashed")+
+  geom_smooth(method="lm")+
+  xlab("Age (in months)")+
+  ylab("Baseline-Corrected Proportion Target Looking")+
+  ylim(-0.55,0.55)+
+  scale_x_continuous(breaks=seq(12,18,1))
+ggsave(here::here("..","figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
+```
+
+#### By Condition
+
+```{r}
+pal <- wes_palette("Rushmore1", n=5)
+p1 <- ggplot(avg_corrected_target_looking_by_typicality,aes(mean_age_mo,average_corrected_target_looking,color=condition,group=condition))+
+  geom_pointrange(aes(ymin=lower_se,ymax=upper_se), 
+                  position=position_jitter(width=0.2),
+                  width=0,
+                  size=1) +
+  geom_hline(yintercept=0,linetype="dashed")+
+  geom_smooth(method="lm",color="black",size=1.3)+
+  xlab("Age (in months)")+
+  ylab("Baseline-Corrected\nProportion Target Looking")+
+  #ylim(-0.55,0.5)+
+  scale_colour_manual(values=pal[c(3,4)])+
+  scale_x_continuous(breaks=seq(12,18,1))+
+  facet_wrap(~condition)+
+  theme(
+    strip.background = element_rect(size=1, colour = "black"),
+    strip.text = element_text(size=16,face="bold"),
+    axis.title=element_text(size=20,face="bold"),
+    axis.text = element_text(size=14))+
+  theme(legend.position="none")
+ggsave(here::here("..","figures","age_relationship_baseline_corrected_accuracy_typicality.png"),width=9,height=6)
+```
+
+
+```{r}
+#combine key plots into one main figure
+library(patchwork)
+
+(p0 + p1) / timecourse_plot + 
+  plot_annotation(tag_levels = 'A')+
+  theme(plot.tag = element_text(size = 18))
+ggsave(here::here("..","figures","main_figure.png"),width=12,height=12)
+```
+
+
+## Aim 3
+
+To test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
+
+```{r}
+#subject details for aim 3 analysis (how many participants have survey data)
+aim3_subject_info <- trial_corrected_accuracy %>%
+  filter(!is.na(target_parent_typicality_rating_z)) %>%
+  ungroup()%>%
+  summarize(
+    N = length(unique(sub_num)),
+    mean_age = mean(age_c),
+    sd_age = sd(age_c)
+  )
+
+aim3_subject_info%>%
+  knitr::kable()
+
+#fit main model
+# as before, the random slope of typicality (this time parent-rated typicality) causes a singular boundary fit
+# all attempts to prune other random effects (including covariances) were not successful,
+# so we removed the random slope for target_parent_typicality_rating_z.
+# Note that the effects for the (singular fit) model including the random slope for typicality are 
+# equivalent to the model with typicality as a random slope.
+# In other words, the decision to omit the random slope does not substantively impact the main estimates or change the pattern of results
+# m_3 <- lmer(corrected_target_looking ~ 1 + target_parent_typicality_rating_z + age_mo_c + (1+ target_parent_typicality_rating_z|sub_num) + (1|target_category), trial_corrected_accuracy)
+m_3 <- lmer(corrected_target_looking ~ 1 + target_parent_typicality_rating_z + age_mo_c + (1|sub_num) + (1|target_category), trial_corrected_accuracy)
+
+summary(m_3)
+
+m_3_tidy <- m_3 %>%
+  summarize_mixed_effects_model()
+```
+
+Caregiver report of exemplar typicality did not significantly predict infants’ baseline-corrected word recognition accuracy (`r apa_print(m_3)$estimate$target_parent_typicality_rating_z`, `r apa_print(m_3)$statistic$target_parent_typicality_rating_z`).  Controlling for parent-reported typicality, age remained a significant predictor of infants’ word recognition (`r apa_print(m_3)$estimate$age_mo_c`, `r apa_print(m_3)$statistic$age_mo_c`). 
+
+### Visualization
+
+```{r}
+#quick visualization of the (non-)effect for each category
+#by category
+ggplot(trial_corrected_accuracy,aes(target_parent_typicality_rating_z,corrected_target_looking))+
+  geom_point(alpha=0.1)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~target_category)
+```
+
+## 4. Robustness Analyses
+
+We also conducted a series of robustness analyses to probe the degree to which any results hinged on key analytic decisions.
+
+### 4.1. Window Choice
+
+#### Summarize data
+
+We conducted the same main analyses as those described above using an alternative, shorter critical window of 300-1800ms (e.g., Fernald et al., 2008) (with the exception of the cluster-based permutation analysis described in analysis section 1.3).
+
+First, we summarize participants looking behavior as before, using the new critical window.
+
+```{r}
+# apply exclusions based on the new critical window
+trial_corrected_accuracy_short_window <- trial_corrected_accuracy_all %>%
+  filter(exclude_participant_insufficient_data_short==0) %>%
+  #only include trials that are useable based on looking in the 300-1800ms window
+  filter(useable_window_short==1) %>%
+  #ignore trial exclusions due to "insufficient looking" based on 300-2800ms window
+  filter(is.na(trial_exclusion_reason) | trial_exclusion_reason=="insufficient looking")
+
+# summarize average accuracy within participant, split by typicality
+avg_corrected_target_looking_by_typicality_short_window <- trial_corrected_accuracy_short_window  %>%
+  group_by(sub_num, condition) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking_short,na.rm=TRUE),
+            se=sd(corrected_target_looking_short,na.rm=T)/sqrt(N),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking_short,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci,
+            lower_se=average_corrected_target_looking-se,
+            upper_se=average_corrected_target_looking+se)
+
+#baseline-corrected target looking summarized overall
+overall_corrected_target_looking_by_typicality_short_window <- avg_corrected_target_looking_by_typicality_short_window %>%
+  group_by(condition) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+
+overall_corrected_target_looking_by_typicality_short_window %>%
+  knitr::kable()
+
+```
+
+#### Participant-level analysis
+
+##### Aim 1.1
+
+```{r}
+#1.1. Participant-level analysis of the typicality effect
+avg_corrected_target_looking_by_typicality_short_window <- avg_corrected_target_looking_by_typicality_short_window %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+
+m_4_1_1_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1+ typicality_condition_c|sub_num),data=avg_corrected_target_looking_by_typicality_short_window,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+
+summary(m_4_1_1_1)
+confint(m_4_1_1_1,method="Wald")
+
+#effect size
+cohens_d(
+  filter(avg_corrected_target_looking_by_typicality_short_window,condition=="typical")$average_corrected_target_looking,
+  filter(avg_corrected_target_looking_by_typicality_short_window,condition=="atypical")$average_corrected_target_looking,
+  paired=T)
+```
+
+There was no significant effect of typicality in the average participant-level analysis, b=0.02, 95% CI [-0.007, 0.05], t(81)=1.49, p=.14, Cohen’s d=0.16 [-0.05, 0.38].
+
+```{r}
+# run equivalence test
+overall_condition_summary_short_window <- avg_corrected_target_looking_by_typicality_short_window %>%
+  group_by(sub_num) %>%
+  summarize(
+    condition_diff_alternative = average_corrected_target_looking[condition=="typical"]-average_corrected_target_looking[condition=="atypical"]
+  ) %>%
+  ungroup() %>%
+  summarize(
+    N=n(),
+    diff = mean(condition_diff_alternative),
+    sd = sd(condition_diff_alternative)
+  )
+
+tsum_TOST(m1=overall_condition_summary_short_window$diff,sd1=overall_condition_summary_short_window$sd,n1=overall_condition_summary_short_window$N,eqb=0.25, eqbound_type = "SMD")
+```
+
+As in the main analysis, the equivalence test was also not significant, t(81)=-0.78, p=.22. 
+
+```{r}
+#word recognition for typical items
+m_1_1_3_typ_short_window <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_typ + (1+ typicality_condition_typ|sub_num),data=avg_corrected_target_looking_by_typicality_short_window,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+summary(m_1_1_3_typ_short_window)
+confint(m_1_1_3_typ_short_window,method="Wald")
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality_short_window$average_corrected_target_looking[avg_corrected_target_looking_by_typicality_short_window$condition=="typical"])
+
+
+#word recognition for atypical items
+m_1_1_3_atyp_short_window <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_atyp + (1+ typicality_condition_atyp|sub_num),data=avg_corrected_target_looking_by_typicality_short_window,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+summary(m_1_1_3_atyp_short_window)
+confint(m_1_1_3_atyp_short_window,method="Wald")
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality_short_window$average_corrected_target_looking[avg_corrected_target_looking_by_typicality_short_window$condition=="atypical"])
+```
+
+Infants showed robust recognition of both typical (b=0.08, 95% CI [0.06, 0.10], t(81)=7.03, p<.001, Cohen’s d=0.78 [0.53, 1.02]) and atypical targets (b=0.06, 95% CI [0.04, 0.08], t(81)=5.35, p<.001, Cohen’s d=0.59 [0.35, 0.82]).
+
+#### Trial-level analyses (Aims 1.2, 2, and 3)
+
+##### Aim 1.2.
+
+```{r}
+# 1.2.
+# trial-level analysis of the typicality effect
+trial_corrected_accuracy_short_window <- trial_corrected_accuracy_short_window %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+
+m_4_1_1_2 <- lmer(corrected_target_looking_short ~ 1 + typicality_condition_c + 
+            (1 |sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy_short_window)
+summary(m_4_1_1_2)
+confint(m_4_1_1_2,method="Wald")
+```
+
+We again found no significant effect of typicality (b=0.02, 95% CI [-0.01, 0.04], t(2999)=1.06, p=.29). 
+
+##### Aim 2
+
+```{r}
+# Aim 2: Typicality by Age interaction
+trial_corrected_accuracy_short_window <- trial_corrected_accuracy_short_window %>%
+  left_join(subj_info_multisession)
+  
+
+m_4_1_2 <- lmer(corrected_target_looking_short ~ 1 + typicality_condition_c * age_mo_c + 
+            (1|sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy_short_window)
+summary(m_4_1_2)
+confint(m_4_1_2,method="Wald")
+```
+
+As in the main analysis, we also found no interaction between age and typicality (Aim 2). Age remained a significant predictor of accuracy.
+
+##### Aim 3
+
+```{r}
+#Aim 3
+#parent typicality ratings as a predictor
+m_4_1_3 <- lmer(corrected_target_looking_short ~ 1 + target_parent_typicality_rating_z + age_mo_c + (1|sub_num) + (1|target_category), trial_corrected_accuracy_short_window)
+
+summary(m_4_1_3)
+
+m_4_1_3_tidy <- m_4_1_3 %>%
+  summarize_mixed_effects_model()
+```
+
+Caregiver report of exemplar typicality did not significantly predict infants’ baseline-corrected word recognition accuracy (`r apa_print(m_4_1_3)$estimate$target_parent_typicality_rating_z`, `r apa_print(m_4_1_3)$statistic$target_parent_typicality_rating_z`).  After controlling for the effect of parental report of typicality, age remained a significant predictor of infants’ word recognition (`r apa_print(m_4_1_3)$estimate$age_mo_c`, `r apa_print(m_4_1_3)$statistic$age_mo_c`). 
+
+### 4.2 excluding unknown words
+
+We were unable to conduct a robustness analysis excluding words marked as unknown by caregivers due to the omission of the MCDI during data collection. 
+
+### 4.3 Using reaction times as the main dependent measure
+
+To assess the consistency of typicality effects across multiple indices of word recognition, we fit the main two models in Aim 1 (section 1.1 and 1.2 in the Analysis Plan), testing for a typicality effect at the participant level and at the trial level, using a second dependent measure: reaction time. 
+
+#### Load RT 
+
+Reaction times are computed using helper functions in the R scripts rt_helper.R and compute_rt.R.
+
+Here, we load in the trial-by-trial reaction time data and join it with other trial properties.
+
+```{r}
+#load RT data
+rt_path <- here::here("..","..","data","processed_data","CATegories_exp2_RT_by_trial.csv")
+d_rt <- read_csv(rt_path)
+
+#get some other useful metadata and combine with the RT data
+d_trial_level <- d %>%
+  distinct(sub_num,session, trial_number,condition, age, age_mo, target_image, child_gender,target_category,exclude_technical_issue,exclude_frame_rate)
+d_rt<- d_rt %>%
+  left_join(d_trial_level)
+
+#participants must contribute 4 typical and 4 atypical trials to be included in analysis
+d_rt_subj_summary <- d_rt %>%
+  #we only care about distractor-to-target shifts (not e.g. T-D, target-distractor shifts)
+  filter(shift_type == "D-T")%>%
+  #only include RTs within the critical window
+  filter(rt>=300) %>%
+  filter(rt<=2800) %>%
+  #only include participants from the final sample
+  filter(exclude_participant==0) %>%
+  #exclude any trials with technical issues or frame rate issues
+  filter(exclude_frame_rate==0) %>%
+  filter(exclude_technical_issue==0) %>%
+  group_by(sub_num, condition) %>%
+  summarize(
+    trials = n()
+  ) %>%
+  pivot_wider(names_from=condition,names_prefix="useable_rt_trials_",values_from=trials) %>%
+  # only include participants with at least 4 reaction time trials of each type
+  mutate(
+    sufficient_rt_trials=case_when(
+      is.na(useable_rt_trials_typical) ~ 0,
+      is.na(useable_rt_trials_atypical) ~ 0,
+      useable_rt_trials_typical>=4 & useable_rt_trials_atypical>=4 ~ 1,
+      TRUE ~ 0)
+  )
+
+#add exclusionary criteria to DF
+d_rt <- d_rt %>%
+  left_join(d_rt_subj_summary)
+
+#apply exclusions and store the final RT dataset to use in analyses
+d_rt_final <- d_rt %>%
+  filter(shift_type == "D-T")%>%
+  #only include RTs within the critical window
+  filter(rt>=300) %>%
+  filter(rt<=2800) %>%
+  #only include participants from the final sample
+  filter(exclude_participant==0) %>%
+  #exclude any trials with technical issues or frame rate issues
+  filter(exclude_frame_rate==0) %>%
+  filter(exclude_technical_issue==0) %>%
+  filter(sufficient_rt_trials==1)
+```
+
+#### Visualization of RTs
+
+```{r}
+hist(filter(d_rt_final)$rt)
+
+#log-transofrm rt
+d_rt_final <- d_rt_final %>%
+  mutate(
+    log_rt = log(rt),
+    log_shift_start_rt=log(shift_start_rt)
+  )
+```
+
+The data are right skewed, which is common for RTs. We will use log transformations in the subsequent models to account for the distribution of the data.
+
+#### 4.3.1 Participant-level analysis with RT as DV
+
+```{r}
+#summarize reaction time by participant and condition
+avg_subj_rt <- d_rt_final %>%
+  group_by(sub_num, child_gender,condition) %>%
+  summarize(N=n(),
+            average_rt=mean(rt,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(rt,na.rm=T)/sqrt(N),
+            lower_ci=average_rt-ci,
+            upper_ci=average_rt+ci,
+            average_log_rt=mean(log_rt,na.rm=TRUE),
+            log_rt_ci=qt(0.975, N-1)*sd(log_rt,na.rm=T)/sqrt(N),
+            lower_log_rt_ci=average_log_rt-log_rt_ci,
+            upper_log_rt_ci=average_log_rt+log_rt_ci) %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    )
+  )
+
+#overall reaction times
+overall_rt <- avg_subj_rt %>%
+  group_by(condition) %>%
+  summarize(N=n(),
+            avg_rt=mean(average_rt,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_rt,na.rm=T)/sqrt(N),
+            lower_ci=avg_rt-ci,
+            upper_ci=avg_rt+ci)
+
+overall_rt %>%
+  knitr::kable()
+
+# participant-level model testing the typicality effect
+m_4_3_1 <- lmer(average_log_rt ~ 1 + typicality_condition_c + (1|sub_num),data=avg_subj_rt)
+
+summary(m_4_3_1)
+confint(m_4_3_1,method="Wald")
+```
+
+#### 4.3.2 Trial-level analysis with RT as DV
+
+```{r}
+d_rt_final <- d_rt_final %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    )
+  )
+
+m_4_3_2 <- lmer(log_rt ~ 1 + typicality_condition_c + 
+            (1|sub_num) +
+            (1|target_category),
+          data=d_rt_final)
+
+summary(m_4_3_2)
+confint(m_4_3_2,method="Wald")
+```
+
+### 4.4 Testing whether effects interact with test session.
+
+Given the multi-session structure of our data collection procedure, we also tested whether analyses held individually in each test session, by repeating the analyses above while including an interaction with test session (session 1 vs. session 2). 
+
+```{r}
+# summarize participants' overall average accuracy by session
+avg_corrected_target_looking_by_session <- trial_corrected_accuracy  %>%
+  group_by(sub_num,session,age,age_mo,days_between_sessions) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci)
+
+# summarize average accuracy within participant, split by session and typicality
+avg_corrected_target_looking_by_typicality_session <- trial_corrected_accuracy  %>%
+  group_by(sub_num,session,age,age_mo,days_between_sessions, condition) %>%
+  summarize(N=n(),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            se=sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci,
+            lower_se=average_corrected_target_looking-se,
+            upper_se=average_corrected_target_looking+se,
+            average_critical_window_looking=mean(mean_target_looking_critical,na.rm=TRUE),
+            critical_window_ci = qt(0.975, N-1)*sd(mean_target_looking_critical,na.rm=T)/sqrt(N),
+            critical_window_lower_ci=average_critical_window_looking-critical_window_ci,
+            critical_window_upper_ci=average_critical_window_looking+critical_window_ci)
+```
+
+#### 4.4.1. Participant-level analysis with test session interaction
+
+```{r}
+avg_corrected_target_looking_by_typicality_session <- avg_corrected_target_looking_by_typicality_session %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),    
+    session_c = session - 1.5
+  )
+
+m_4_4_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c*session_c + (1+session_c|sub_num),data=avg_corrected_target_looking_by_typicality_session)
+
+summary(m_4_4_1)
+confint(m_4_4_1,method="Wald")
+```
+
+Below, we summarize participants' average looking in the typical/atypical conditions by session
+
+```{r}
+#baseline-corrected target looking summarized overall
+overall_corrected_target_looking_by_typicality_session <- avg_corrected_target_looking_by_typicality_session %>%
+  group_by(session,condition) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+
+overall_corrected_target_looking_by_typicality_session %>%
+  knitr::kable()
+```
+
+#### 4.4.2 Trial-level analysis with test session interaction
+
+```{r}
+trial_corrected_accuracy <- trial_corrected_accuracy %>%
+  mutate(
+    session_c = session - 1.5
+  )
+
+m_4_4_2 <- lmer(corrected_target_looking ~ 1 + typicality_condition_c*session_c + 
+            (1+session_c |sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_4_4_2)
+confint(m_4_4_2,method="Wald")
+```
+
+## 5. Exploratory analyses
+
+### 5.1. Predicting average accuracy from continuous typicality ratings
+
+#### Continuous typicality of target alone
+
+Images were classified as typical vs. atypical based on an adult norming study. In this analysis, we investigated whether treating typicality as a continuous metric, using the norming ratings as a predictor, would provide us more power to detect a typicality effect.
+
+```{r}
+m_5_1_1 <- lmer(corrected_target_looking ~ 1 + target_typicality_z + 
+            (1|sub_num)+
+              (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_5_1_1)
+confint(m_5_1_1,method="Wald")
+```
+
+Quick plot. Descriptively, it appears that *perhaps* there is a decrement in looking for items on the extreme end of typicality, and otherwise fairly similar target looking.
+
+```{r}
+ggplot(trial_corrected_accuracy,aes(target_typicality_z,corrected_target_looking))+
+  geom_point(aes(color=condition))+
+  geom_hline(yintercept=0, linetype="dashed")+
+  geom_smooth()
+```
+
+#### Continuous typicality of target AND distractor
+
+```{r}
+m_5_1_2 <- lmer(corrected_target_looking ~ 1 + target_typicality_z + distractor_typicality_z+
+            (1+target_typicality_z + distractor_typicality_z|sub_num)+
+              (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_5_1_2)
+confint(m_5_1_1,method="Wald")
+```
+
+### 5.2. Category and Item-level analysis
+
+Next, we investigate category- (target word) and item-level (target image) variation in proportion target looking.
+
+#### Summarize overall target looking
+
+##### Target Word
+
+```{r}
+# summarize average accuracy within participant (by word alone)
+avg_corrected_target_looking_by_word <- trial_corrected_accuracy  %>%
+  group_by(sub_num, target_category) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci,
+            average_critical_window_looking=mean(mean_target_looking_critical,na.rm=TRUE),
+            critical_window_ci = qt(0.975, N-1)*sd(mean_target_looking_critical,na.rm=T)/sqrt(N),
+            critical_window_lower_ci=average_critical_window_looking-critical_window_ci,
+            critical_window_upper_ci=average_critical_window_looking+critical_window_ci,
+            average_baseline_window_looking=mean(mean_target_looking_baseline,na.rm=TRUE),
+            baseline_window_ci = qt(0.975, N-1)*sd(mean_target_looking_baseline,na.rm=T)/sqrt(N),
+            baseline_window_lower_ci=average_baseline_window_looking-baseline_window_ci,
+            baseline_window_upper_ci=average_baseline_window_looking+baseline_window_ci)
+
+# summarize average accuracy within participant (by word split by typicality)
+avg_corrected_target_looking_by_typicality_word <- trial_corrected_accuracy  %>%
+  group_by(sub_num, condition,target_category) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            average_critical_window_looking=mean(mean_target_looking_critical,na.rm=TRUE),
+            average_baseline_window_looking=mean(mean_target_looking_baseline,na.rm=TRUE))
+
+#overall summarized looking
+#by word alone
+overall_target_looking_by_word <- avg_corrected_target_looking_by_word %>%
+  group_by(target_category) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci,
+            target_looking_critical_window=mean(average_critical_window_looking,na.rm=TRUE),
+            ci_critical_window=qt(0.975, N-1)*sd(average_critical_window_looking,na.rm=T)/sqrt(N),
+            lower_ci_critical_window=target_looking_critical_window-ci_critical_window,
+            upper_ci_critical_window=target_looking_critical_window+ci_critical_window,
+            target_looking_baseline_window=mean(average_baseline_window_looking,na.rm=TRUE),
+            ci_baseline_window=qt(0.975, N-1)*sd(average_baseline_window_looking,na.rm=T)/sqrt(N),
+            lower_ci_baseline_window=target_looking_baseline_window-ci_baseline_window,
+            upper_ci_baseline_window=target_looking_baseline_window+ci_baseline_window
+            )
+#by word split by typicality
+overall_target_looking_by_typicality_word <- avg_corrected_target_looking_by_typicality_word %>%
+  group_by(condition,target_category) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci,
+            target_looking_critical_window=mean(average_critical_window_looking,na.rm=TRUE),
+            ci_critical_window=qt(0.975, N-1)*sd(average_critical_window_looking,na.rm=T)/sqrt(N),
+            lower_ci_critical_window=target_looking_critical_window-ci_critical_window,
+            upper_ci_critical_window=target_looking_critical_window+ci_critical_window,
+            target_looking_baseline_window=mean(average_baseline_window_looking,na.rm=TRUE),
+            ci_baseline_window=qt(0.975, N-1)*sd(average_baseline_window_looking,na.rm=T)/sqrt(N),
+            lower_ci_baseline_window=target_looking_baseline_window-ci_baseline_window,
+            upper_ci_baseline_window=target_looking_baseline_window+ci_baseline_window
+            )
+```
+
+Overall, participants showed robust learning of all four words, in both typicality conditions.
+
+```{r}
+overall_target_looking_by_word %>%
+  select(target_category:upper_ci) %>%
+  knitr::kable()
+```
+
+```{r}
+overall_target_looking_by_typicality_word %>%
+  select(target_category:upper_ci) %>%
+  knitr::kable()
+```
+
+```{r}
+#checking the typicality effect for bird
+t.test(
+  filter(avg_corrected_target_looking_by_typicality_word,condition=="typical"&target_category=="bird")$average_corrected_target_looking,
+  filter(avg_corrected_target_looking_by_typicality_word,condition=="atypical"&target_category=="bird")$average_corrected_target_looking,
+  paired=TRUE
+)
+#checking the typicality effect for bird
+t.test(
+  filter(avg_corrected_target_looking_by_typicality_word,condition=="typical"&target_category=="cat")$average_corrected_target_looking,
+  filter(avg_corrected_target_looking_by_typicality_word,condition=="atypical"&target_category=="cat")$average_corrected_target_looking,
+  paired=TRUE
+)
+#checking the typicality effect for dog
+t.test(
+  filter(avg_corrected_target_looking_by_typicality_word,condition=="typical"&target_category=="dog")$average_corrected_target_looking,
+  filter(avg_corrected_target_looking_by_typicality_word,condition=="atypical"&target_category=="dog")$average_corrected_target_looking,
+  paired=TRUE
+)
+#checking the typicality effect for fish
+t.test(
+  filter(avg_corrected_target_looking_by_typicality_word,condition=="typical"&target_category=="fish")$average_corrected_target_looking,
+  filter(avg_corrected_target_looking_by_typicality_word,condition=="atypical"&target_category=="fish")$average_corrected_target_looking,
+  paired=TRUE
+)
+```
+
+
+###### Plot
+
+```{r}
+pal <- wes_palette("Rushmore1", n=5)
+set.seed(1)
+jitterer <- position_jitter(width = .05,seed=1)
+p3 <- ggplot(avg_corrected_target_looking_by_typicality_word,aes(x=condition,y=average_corrected_target_looking, fill=condition))+
+  geom_half_violin(data=filter(avg_corrected_target_looking_by_typicality_word, condition=="atypical"),position = position_nudge(x = -.1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="l")+
+  geom_half_violin(data=filter(avg_corrected_target_looking_by_typicality_word, condition=="typical"),position = position_nudge(x = .1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="r")+
+  geom_path(aes(group=sub_num),color="black",fill=NA,alpha=0.05,size=0.75,position=jitterer)+
+  geom_point(aes(color=condition,group=sub_num), size = 2.5, alpha=0.05,position=jitterer)+
+  geom_point(data=overall_target_looking_by_typicality_word,aes(y=corrected_target_looking),color="black",size=1.8)+
+  geom_line(data=overall_target_looking_by_typicality_word,aes(y=corrected_target_looking,group=1),color="black",size=1.5)+
+  geom_errorbar(data=overall_target_looking_by_typicality_word,aes(y=corrected_target_looking,ymin=lower_ci,ymax=upper_ci),width=0,color="black")+
+  #geom_boxplot(outlier.shape = NA, alpha = .5, width = .1, colour = "black")+
+  #scale_colour_brewer(palette = "Dark2")+
+  #scale_fill_brewer(palette = "Dark2")+
+  geom_hline(yintercept=0,linetype="dashed")+
+  scale_colour_manual(values=pal[c(3,4)])+
+  scale_fill_manual(values=pal[c(3,4)])+
+  facet_wrap(.~target_category)+
+  theme(legend.position="none")+
+  xlab("Typicality Condition")+
+  ylab("Baseline-Corrected\nProportion Target Looking")+
+  theme(axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        strip.text.x = element_text(size = 16,face="bold"))
+
+
+ggsave(here::here("..","figures","baseline_corrected_accuracy_by_category.png"),width=7,height=6)
+```
+
+##### Target Image
+
+```{r}
+# summarize average accuracy within participant
+avg_corrected_target_looking_by_image <- trial_corrected_accuracy  %>%
+  group_by(sub_num, condition,target_category,target_image,target_typicality_z) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            average_critical_window_looking=mean(mean_target_looking_critical,na.rm=TRUE),
+            average_baseline_window_looking=mean(mean_target_looking_baseline,na.rm=TRUE))
+
+#baseline-corrected target looking summarized overall
+overall_target_looking_by_image <- avg_corrected_target_looking_by_image %>%
+  group_by(condition,target_category,target_image,target_typicality_z) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci,
+            target_looking_critical_window=mean(average_critical_window_looking,na.rm=TRUE),
+            ci_critical_window=qt(0.975, N-1)*sd(average_critical_window_looking,na.rm=T)/sqrt(N),
+            lower_ci_critical_window=target_looking_critical_window-ci_critical_window,
+            upper_ci_critical_window=target_looking_critical_window+ci_critical_window,
+            target_looking_baseline_window=mean(average_baseline_window_looking,na.rm=TRUE),
+            ci_baseline_window=qt(0.975, N-1)*sd(average_baseline_window_looking,na.rm=T)/sqrt(N),
+            lower_ci_baseline_window=target_looking_baseline_window-ci_baseline_window,
+            upper_ci_baseline_window=target_looking_baseline_window+ci_baseline_window
+            ) %>%
+  rename(target_image_name=target_image) %>%
+  mutate(target_image=str_replace(target_image_name,"_600x600",""),
+         target_image_path=here("images",paste(target_image_name,".png",sep="")))
+overall_target_looking_by_image %>%
+  ungroup() %>%
+  relocate(target_image) %>%
+  select(-target_image_path,-target_image_name) %>%
+  knitr::kable()
+```
+
+###### Plot
+
+```{r}
+ggplot(overall_target_looking_by_image,aes(reorder(target_image,corrected_target_looking),corrected_target_looking))+
+  geom_image(aes(y=corrected_target_looking+0.1,image=target_image_path),size=.1)+
+  geom_hline(yintercept=0,linetype="dashed")+
+  geom_errorbar(aes(ymin=lower_ci,ymax=upper_ci,color=condition),width=0)+
+  geom_point(aes(color=condition),size=3)+
+  xlab("Target Image")+
+  ylab("Baseline-Corrected\nProportion Target Looking")+
+  theme(axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16,angle=90,vjust=0.5),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        strip.text.x = element_text(size = 16,face="bold"),
+        legend.position=c(0.8,0.15)
+        )+
+  scale_color_manual(values=pal[c(3,4)])
+ggsave(here::here("..","figures","baseline_corrected_accuracy_by_word.png"),width=9,height=6)
+
+```
+
+### 5.3. Reliability
+
+#### 5.3.1. How correlated is accuracy within participants between session 1 and session 2
+
+```{r}
+avg_corrected_target_looking_by_session_wide <- avg_corrected_target_looking_by_session %>%
+  ungroup() %>%
+  select(sub_num,session,average_corrected_target_looking) %>%
+  pivot_wider(names_from=session,names_prefix="session_",values_from=average_corrected_target_looking)
+
+#compute correlation
+cor.test(
+  avg_corrected_target_looking_by_session_wide$session_1,
+  avg_corrected_target_looking_by_session_wide$session_2)
+
+ggplot(avg_corrected_target_looking_by_session_wide,aes(session_1,session_2)) +
+  geom_point()+
+  geom_smooth(method="lm")+
+  annotate("text",label="r=.27, t(78)=2.49, p=.01",x=-0.3,y=0.25,size=5)+
+  xlab("Session 1\nAverage Baseline-Corrected Proportion Target Looking")+
+  ylab("Session 2\nAverage Baseline-Corrected Proportion Target Looking")
+ggsave(here::here("..","figures","session_correlation.png"),width=9,height=6)
+```
+
+```{r}
+avg_corrected_target_looking_by_typicality_session_wide <- avg_corrected_target_looking_by_typicality_session %>%
+  ungroup() %>%
+  select(sub_num,session,condition,average_corrected_target_looking) %>%
+  pivot_wider(names_from=session,names_prefix="session_",values_from=average_corrected_target_looking)
+
+#compute correlation
+#typical
+cor.test(
+  filter(avg_corrected_target_looking_by_typicality_session_wide,condition=="typical")$session_1,
+  filter(avg_corrected_target_looking_by_typicality_session_wide,condition=="typical")$session_2)
+#atypical
+cor.test(
+  filter(avg_corrected_target_looking_by_typicality_session_wide,condition=="atypical")$session_1,
+  filter(avg_corrected_target_looking_by_typicality_session_wide,condition=="atypical")$session_2)
+
+ggplot(avg_corrected_target_looking_by_typicality_session_wide,aes(session_1,session_2,color=condition)) +
+  geom_point()+
+  geom_smooth(method="lm")+
+  xlab("Session 1\nAverage Baseline-Corrected Proportion Target Looking")+
+  ylab("Session 2\nAverage Baseline-Corrected Proportion Target Looking")+
+  facet_wrap(~condition)+
+  scale_color_manual(values=pal[c(3,4)])+
+  theme(legend.position="none")
+ggsave(here::here("..","figures","session_correlation_by_typicality.png"),width=9,height=6)
+```
+
+#### 5.3.2. ICCs
+
+```{r}
+df_for_icc <- trial_corrected_accuracy %>%
+  #some light renaming to use Peekbank icc function
+  mutate(
+    administration_id = sub_num
+  ) %>%
+  unite("trial_id", administration_id, trial_number,remove=F) %>%
+  mutate(
+    target_label=target_image
+  )
+
+#ICC for participants
+icc_participants <- df_for_icc %>%
+  get_icc(object = "administration",column="corrected_target_looking",type_icc="consistency")
+icc_participants_baseline <- df_for_icc %>%
+  get_icc(object = "administration",column="mean_target_looking_baseline",type_icc="consistency")
+icc_participants_critical <- df_for_icc %>%
+  get_icc(object = "administration",column="mean_target_looking_critical",type_icc="consistency")
+
+
+#ICC for stimuli
+icc_stimuli <- df_for_icc %>%
+  get_icc(object = "stimulus",column="corrected_target_looking",type_icc="consistency")
+icc_stimuli_baseline <- df_for_icc %>%
+  get_icc(object = "stimulus",column="mean_target_looking_baseline",type_icc="consistency")
+icc_stimuli_critical <-  df_for_icc %>%
+  get_icc(object = "stimulus",column="mean_target_looking_critical",type_icc="consistency")
+```
+
+### 5.4. Exploring alternative trial-based inclusion criteria
+
+Participants were required to contribute at least 24 valid trials in order to be included in the final sample. Here, we explore the impact of this criterion on whether we observe a typicality effect, by estimating the typicality effect for a range of looser and stricter trial-based exclusion criteria
+
+```{r}
+min_trials_required_list = c(4,8,12,16,20,24,28,32,36,40,44,48)
+
+# set up summarized dataset to use
+subj_typ_data <- trial_corrected_accuracy_all %>%
+  #apply exclusion criteria to trials
+  filter(exclude_frame_rate==0) %>%
+  filter(exclude_technical_issue==0) %>%
+  filter(useable_window==1) %>%
+  filter(age_exclusion==0) %>%
+  group_by(sub_num,condition) %>%
+  summarize(
+    N=n(),
+    average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE)
+    ) %>%
+  ungroup() %>%
+  group_by(sub_num) %>%
+  mutate(total_trials=sum(N,na.rm=TRUE)) %>%
+  pivot_wider(names_from=condition,values_from=c(N,average_corrected_target_looking)) %>%
+  ungroup() 
+
+#add and apply min trial exclusion criteria,
+#creating nested dataframes for each minimum trial exclusion criterion
+#then test the typicality effect within each dataset and store the results
+
+typ_effect_min_valid_trials <- expand_grid(
+  subj_typ_data,
+  min_valid_trials_req = min_trials_required_list
+) %>%
+  #apply min trial exclusion criterion 
+  group_by(min_valid_trials_req) %>%
+  filter(total_trials>=min_valid_trials_req) %>%
+  mutate(
+    N=length(sub_num)
+  ) %>%
+  group_by(min_valid_trials_req,N) %>%
+  #nest the data
+  nest() %>%
+  mutate(t_test = map(data, ~ t.test(.x$average_corrected_target_looking_typical, .x$average_corrected_target_looking_atypical,paired = T)),
+         result = map(t_test, tidy)
+         ) %>%
+  unnest(result)
+
+# typ_effect_min_valid_trials %>%
+#   knitr::kable()
+
+## plot the result
+ggplot(typ_effect_min_valid_trials, aes(min_valid_trials_req,estimate))+
+  geom_errorbar(aes(ymin=conf.low,ymax=conf.high),width=0)+
+  geom_point(size=3)+
+  geom_hline(yintercept=0,linetype="dashed")+
+  geom_text(aes(label=N),nudge_y = 0.07)+
+  ylab("Estimated Participant-Level Typicality Effect")+
+  xlab("Minimum Number of Trials Required for Inclusion")
+
+ggsave(here::here("..","figures","typicality_effect_min_trials_for_inclusion.png"),width=9,height=6)
+```
+
+### 5.5. Testing the main results with a final sample of N=80
+
+In our Stage 1 manuscript, we preregistered a sample of N=80. Our current results report data from all participants who contributed valid data, leading to a final N of 84 participants. Here, we remove the data from the final 4 participants who contributed data on Lookit and re-run the main analyses from Aim 1 (1.1 and 1.2), to ensure that the decision to include all participants did not change the outcome of the study.
+
+#### Remove the final 4 participants
+
+CAT_343, CAT_344, CAT_345, and CAT_346 were the final 4 participants contributing data on Lookit.
+
+```{r}
+subj_to_remove <- c("CAT_343","CAT_344","CAT_345","CAT_346")
+trial_corrected_accuracy_red <- trial_corrected_accuracy_all %>%
+  filter(exclude_participant==0) %>%
+  filter(trial_exclusion==0) %>%
+  filter(!(sub_num %in% subj_to_remove))
+
+# summarize by-participant and typicality
+avg_corrected_target_looking_by_typicality_red <- trial_corrected_accuracy_red  %>%
+  group_by(sub_num, condition) %>%
+  summarize(N=n(),
+            mean_age = mean(age),
+            mean_age_mo = mean(age_mo),
+            average_corrected_target_looking=mean(corrected_target_looking,na.rm=TRUE),
+            se=sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            ci=qt(0.975, N-1)*sd(corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=average_corrected_target_looking-ci,
+            upper_ci=average_corrected_target_looking+ci,
+            lower_se=average_corrected_target_looking-se,
+            upper_se=average_corrected_target_looking+se)
+
+#baseline-corrected target looking summarized overall
+overall_corrected_target_looking_by_typicality_red <- avg_corrected_target_looking_by_typicality_red %>%
+  group_by(condition) %>%
+  summarize(N=n(),
+            corrected_target_looking=mean(average_corrected_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_corrected_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=corrected_target_looking-ci,
+            upper_ci=corrected_target_looking+ci)
+
+overall_corrected_target_looking_by_typicality_red %>%
+  knitr::kable()
+```
+
+#### Participant-level analysis
+
+```{r}
+avg_corrected_target_looking_by_typicality_red <- avg_corrected_target_looking_by_typicality_red %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+
+m_1_1_red <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c + (1+ typicality_condition_c|sub_num),data=avg_corrected_target_looking_by_typicality_red,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+summary(m_1_1_red)
+confint(m_1_1_red,method="Wald")
+```
+
+There remained no significant effect of typicality in the participant-level analysis.
+
+```{r}
+## Typical word recognition
+# recentering the model on the typical condition to make the intercept interpretable
+m_1_1_3_typ_red <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_typ + (1+ typicality_condition_typ|sub_num),data=avg_corrected_target_looking_by_typicality_red,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+summary(m_1_1_3_typ_red)
+confint(m_1_1_3_typ_red,method="Wald")
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality_red$average_corrected_target_looking[avg_corrected_target_looking_by_typicality_red$condition=="typical"])
+
+## Atypical word recognition
+# recentering the model on the atypical condition to make the intercept interpretable
+m_1_1_3_atyp_red <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_atyp + (1+ typicality_condition_atyp|sub_num),data=avg_corrected_target_looking_by_typicality_red,control=lmerControl(check.nobs.vs.nlev= "ignore",check.nobs.vs.nRE= "ignore"))
+summary(m_1_1_3_atyp_red)
+confint(m_1_1_3_atyp_red,method="Wald")
+#effect size
+cohens_d(avg_corrected_target_looking_by_typicality_red$average_corrected_target_looking[avg_corrected_target_looking_by_typicality_red$condition=="atypical"])
+```
+
+Infants recognized both typical and atypical exemplars, with similar effect sizes.
+
+#### Trial-level analysis
+
+```{r}
+trial_corrected_accuracy_red <- trial_corrected_accuracy_red %>%
+  mutate(
+    typicality_condition_c = case_when(
+      condition == "atypical" ~ -0.5,
+      condition == "typical" ~ 0.5,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_typ = case_when(
+      condition == "atypical" ~ -1,
+      condition == "typical" ~ 0,
+      TRUE ~ NA_real_
+    ),
+    typicality_condition_atyp = case_when(
+      condition == "atypical" ~ 0,
+      condition == "typical" ~ 1,
+      TRUE ~ NA_real_
+    ),
+  )
+
+#model with typicality random intercept has singular fit but yields basically identical results
+m_1_2_red <- lmer(corrected_target_looking ~ 1 + typicality_condition_c + 
+            (1 | sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy_red)
+summary(m_1_2_red)
+confint(m_1_2_red,method="Wald")
+```
+
+The trial-level model also yields no significant typicality effect.
+
+## Session Info
+
+```{r}
+sessionInfo()
+```
+

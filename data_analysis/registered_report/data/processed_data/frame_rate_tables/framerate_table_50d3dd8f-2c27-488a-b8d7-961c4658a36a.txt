@@ -1,0 +1,4 @@
+Trial	Framerate	Framecount
+4	29.5798	435
+10	28.6592	28
+11	29.7048	164

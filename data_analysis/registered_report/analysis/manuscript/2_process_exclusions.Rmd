@@ -1,0 +1,439 @@
+---
+title: "CATegories Processing Exclusions"
+output: html_document
+---
+
+## Load packages
+
+```{r setup, message=FALSE}
+library(tidyverse)
+library(janitor)
+library(here)
+library(readxl)
+
+knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
+```
+
+We'll also set some general parameters
+
+```{r global_params}
+data_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data.csv")
+processed_subj_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_participant_data_anonymized.csv")
+#exclusion_info_path <- here::here("..","..","data","processed_data","CATegories_exclusion_info.csv")
+```
+
+## Load data
+
+```{r}
+d <- read_csv(data_path)
+#exclusion_list <- read_csv(exclusion_info_path)
+```
+
+## Aggregate and summarize trial-level information
+
+### Summarizing trial-level information
+
+In order for a trial to be included, participants must contribute at least 50% looking during the windows of interest when computing baseline-corrected proportion target looking: the critical window (300 ms - 2800 ms relative to target word onset) and the baseline window (-2000 ms - 0 ms relative to target word onset). We also create columns to track exclusions for an alternate critical window (300 ms - 1800 ms).
+
+We also compute relevant side-bias information.
+
+```{r}
+critical_window <- c(300,2800)
+critical_window_short <- c(300,1800)
+baseline_window <- c(-2000,0)
+
+# summarize critical window
+summarize_subj_useable_trials_critical_window <- d %>%
+  filter(time_normalized_corrected>=critical_window[1]&time_normalized_corrected<=critical_window[2]) %>%
+  group_by(sub_num,session,age,trial_order,trial_number,target_image,condition) %>%
+  summarize(
+    length_critical_window=n(),
+    useable_frames_critical_window=sum(!is.na(accuracy_transformed)),
+    percent_useable_critical_window=useable_frames_critical_window/length_critical_window,
+    useable_critical_window=ifelse(percent_useable_critical_window>=0.5,1,0), #useable if at least 50% looking
+    mean_target_looking_critical=mean(accuracy_transformed,na.rm=TRUE)
+  )
+# summarize short critical window
+summarize_subj_useable_trials_critical_window_short <- d %>%
+  filter(time_normalized_corrected>=critical_window_short[1]&time_normalized_corrected<=critical_window_short[2]) %>%
+  group_by(sub_num,session,age,trial_order,trial_number,target_image,condition) %>%
+  summarize(
+    length_critical_window_short=n(),
+    useable_frames_critical_window_short=sum(!is.na(accuracy_transformed)),
+    percent_useable_critical_window_short=useable_frames_critical_window_short/length_critical_window_short,
+    useable_critical_window_short=ifelse(percent_useable_critical_window_short>=0.5,1,0), #useable if at least 50% looking
+    mean_target_looking_critical_short=mean(accuracy_transformed,na.rm=TRUE)
+  )
+
+#combine in one dataset
+summarize_subj_useable_trials_critical_window <- summarize_subj_useable_trials_critical_window %>%
+  left_join(summarize_subj_useable_trials_critical_window_short)
+
+#summarize baseline window information
+summarize_subj_useable_trials_baseline_window <- d %>%
+  filter(time_normalized_corrected>=baseline_window[1] & time_normalized_corrected<=baseline_window[2]) %>%
+  group_by(sub_num, session, age,trial_order,trial_number,target_image,condition) %>%
+  summarize(
+    length_baseline_window=n(),
+    useable_frames_baseline_window=sum(!is.na(accuracy_transformed)),
+    percent_useable_baseline_window=useable_frames_baseline_window/length_baseline_window,
+    useable_baseline_window=ifelse(percent_useable_baseline_window>=0.5,1,0), #useable if at least 50% looking
+    mean_target_looking_baseline=mean(accuracy_transformed,na.rm=TRUE),
+    percent_right_looking = mean(response=="right"),
+    percent_left_looking = mean(response=="left")
+  ) %>%
+  mutate(
+    side_bias_right = ifelse(percent_right_looking>0.8,1,0),
+    side_bias_left= ifelse(percent_left_looking>0.8,1,0)
+  )
+
+#overall useable trials
+summarize_subj_trials <- d %>%
+  distinct(sub_num, session,age,trial_order,trial_number,target_image,condition) %>%
+  left_join(summarize_subj_useable_trials_critical_window) %>%
+  left_join(summarize_subj_useable_trials_baseline_window) %>%
+  mutate(
+    useable_window = case_when(
+      is.na(useable_baseline_window) ~ 0,
+      is.na(useable_critical_window) ~ 0,
+      useable_baseline_window==1&useable_critical_window==1 ~ 1,
+      TRUE ~ 0),
+    useable_window_short = case_when(
+      is.na(useable_baseline_window) ~ 0,
+      is.na(useable_critical_window_short) ~ 0,
+      useable_baseline_window==1&useable_critical_window_short==1 ~ 1,
+      TRUE ~ 0),
+    corrected_target_looking = mean_target_looking_critical - mean_target_looking_baseline,
+    corrected_target_looking_short = mean_target_looking_critical_short - mean_target_looking_baseline
+  )
+```
+
+## Subject-level exclusions
+
+```{r}
+# create a list to track any overall subject-level exclusions (prior to excluding trials)
+subject_exclusions <- c()
+```
+
+### Age-based exclusions
+
+This exclusion also requires taking into account information about session.
+
+```{r}
+age_excluded_infant_sessions <- d %>%
+  distinct(sub_num,session,age) %>%
+  #filter out children outside of the age bounds (older than 13 months and younger than 19 months)
+  filter(!(395<age & age<=578)) %>%
+  mutate(
+    age_exclusion = 1
+  )
+
+#reintegrate with data because this session-level exclusion decision has implications for data-contribution-based exclusions
+d <- d %>%
+  left_join(age_excluded_infant_sessions) %>%
+  mutate(
+    age_exclusion = case_when(
+      is.na(age_exclusion) ~ 0,
+      TRUE ~ age_exclusion)
+    )
+
+summarize_subj_trials <- summarize_subj_trials %>%
+  left_join(age_excluded_infant_sessions) %>%
+  mutate(
+    age_exclusion = case_when(
+      is.na(age_exclusion) ~ 0,
+      TRUE ~ age_exclusion)
+    )
+```
+
+### English Language Exposure
+
+Infants who had no exposure to English were excluded.
+
+```{r}
+non_english_exposure <- d %>%
+  distinct(sub_num,child_language_list) %>%
+  mutate(
+    english_in_language_list = ifelse(str_detect(child_language_list,"en"),1,0)
+  ) %>%
+  filter(english_in_language_list==0) %>%
+  pull(sub_num)
+subject_exclusions <- c(subject_exclusions,non_english_exposure)
+```
+
+### Preterm
+
+Infants born at a 35-week gestational age or less (born 28 days or more before their due date) were excluded from the final sample.
+
+```{r}
+# infants 36 weeks or older are not considered preterm
+# (equivalent to less than 28 days pre due date)
+not_pre_term <- c("36 weeks","37 weeks","38 weeks","39 weeks","40 or more weeks")
+preterm_infants <- d %>%
+  distinct(sub_num,child_age_at_birth) %>%
+  #also ignore infants where we do not have this information
+  filter(!(child_age_at_birth %in% c(not_pre_term,"Not sure or prefer not to answer"))) %>%
+  pull(sub_num)
+subject_exclusions <- c(subject_exclusions,preterm_infants)
+```
+
+### Developmental Concerns
+
+Any infants noted as having a developmental concern were excluded.
+
+```{r}
+dev_concern_infants <- d %>%
+  distinct(sub_num,dev_concern) %>%
+  filter(dev_concern!="no") %>%
+  pull(sub_num)
+subject_exclusions <- c(subject_exclusions,dev_concern_infants)
+```
+
+### Side bias
+
+We analyzed whether infants preferentially fixated a single side of the screen prior to the onset of the target word (baseline window: -2000 ms - 0 ms prior to target word onset). Infants who fixated one side of the screen for more than 80% of the baseline window on 80% or more trials in a given testing session were excluded from further analyses (including data from their other test session).
+
+```{r}
+side_bias_evaluation <- summarize_subj_useable_trials_baseline_window %>%
+  group_by(sub_num,session) %>%
+  summarize(
+    total_trials=n(),
+    side_bias_right = sum(side_bias_right),
+    side_bias_left = sum(side_bias_left),
+    percent_side_bias_right = side_bias_right/total_trials,
+    percent_side_bias_left = side_bias_left/total_trials
+  )
+
+# Any infants with a persistent side bias to the left or right?
+side_bias_infants <- side_bias_evaluation %>%
+  filter(percent_side_bias_right>=0.8 | percent_side_bias_left>=0.8) %>%
+  pull(sub_num)
+subject_exclusions <- c(subject_exclusions,side_bias_infants)
+```
+
+No side bias infants were identified.
+
+### Data contribution
+
+Subject-level data exclusions are handled below, after handling all trial-level exclusions.
+
+### Technical issues
+
+We assessed technical concerns on the level of the trial and then subsequently excluded participants with insufficient useable trials, no overarching technical-level exclusions were made.
+
+## Trial-level exclusions
+
+### Technical error
+
+We excluded trials for which experiment logs indicated some form of technical issue (unusual recording or audio times) or that parents paused the trial.
+
+```{r}
+  #trial exclusions for unusual timing issues and/or pauses
+technical_trial_issues <- d %>%
+  distinct(sub_num,session,trial_order,trial_number,pauseStudy,video_capture_time,audio_time,framerate) %>%
+  mutate(
+  exclude_technical_issue = case_when(
+    !is.na(pauseStudy) ~ 1,
+    video_capture_time>10 ~ 1,
+    video_capture_time<4 ~ 1,
+    audio_time>10 ~ 1,
+    TRUE ~ 0
+  ),
+  #mirror exclusion assignment
+  technical_issue_exclusion_reason = case_when(
+    !is.na(pauseStudy) ~ "study paused",
+    video_capture_time>10 ~ "unusually long trial",
+    video_capture_time<4 ~ "unusually short trial",
+    audio_time>10 ~ "unusual audio time"
+    )
+)
+```
+
+### Frame Rate
+
+Trials were excluded if the frame rate of a given trial was below 15 Hz on average (rounded up). 
+
+```{r}
+technical_trial_issues <- technical_trial_issues %>%
+  mutate(
+    exclude_frame_rate = ifelse(framerate<14.5,1,0)
+  )
+#integrate with central tracking file
+summarize_subj_trials <- summarize_subj_trials %>%
+  left_join(technical_trial_issues)
+```
+
+Inspect frame rates and discrepancies between frame counts for videos vs. coding files.
+
+```{r}
+trial_frame_rate <- d %>% 
+  group_by(sub_num,session,trial_number) %>% 
+  summarize(framerate=framerate[1],
+            total_frame_count=total_frame_count[1],
+            framecount=framecount[1],
+            frame_count_discrepancy=frame_count_discrepancy[1]) 
+```
+
+### Auditory interference/ parent interference
+
+This is handled during prescreening/ coding.
+
+### Codability of the video
+
+This is handled during prescreening/ coding.
+
+### insufficient looking data
+
+Trials are excluded if the child was not fixating either object for more than 50% of the critical window (300ms-2800ms) or the baseline window (-2000ms - 0ms).
+
+This is handled in the section aggregating and summarizing trial-level information above.
+
+### Summarize all trial-level exclusions
+
+```{r}
+summarize_subj_trials <- summarize_subj_trials %>%
+  mutate(
+    trial_exclusion = case_when(
+      useable_window==0 ~ 1,
+      exclude_frame_rate==1 ~ 1,
+      exclude_technical_issue==1 ~ 1,
+      TRUE ~ 0
+    ), 
+    trial_exclusion_reason = case_when(
+      useable_window==0 & exclude_frame_rate==1 & exclude_technical_issue==1 ~ "insufficient looking - low framerate - technical issue",
+      useable_window==0 & exclude_frame_rate==1 ~ "insufficient looking - low framerate",
+      useable_window==0 & exclude_technical_issue==1 ~ "insufficient looking - technical issue",
+      exclude_frame_rate==1 & exclude_technical_issue==1 ~ "low framerate - technical issue",
+      useable_window==0 ~ "insufficient looking",
+      exclude_frame_rate==1 ~ "low framerate",
+      exclude_technical_issue==1 ~ "technical issue",
+      TRUE ~ ""
+    )
+  )
+```
+
+## Summarize data contribution exclusions
+
+```{r}
+## summarize the total number of useable trials
+summarize_useable_trials <- summarize_subj_trials %>%
+  #filter trial-level exclusions
+  filter(trial_exclusion==0) %>%
+  #filter age exclusions
+  filter(age_exclusion==0) %>%
+  group_by(sub_num, session,trial_order) %>%
+  summarize(
+    num_useable_trials=sum(useable_window),
+    num_useable_trials_critical_window = sum(useable_critical_window),
+    num_useable_trials_short=sum(useable_window_short)
+  )
+
+#total trials
+participant_total_useable_trials <- summarize_useable_trials %>%
+  ungroup() %>%
+  group_by(sub_num) %>%
+  summarize(
+    number_distinct_sessions = n(),
+    total_trials = sum(num_useable_trials),
+    total_trials_critical_window = sum(num_useable_trials_critical_window),
+    total_trials_short = sum(num_useable_trials_short)
+  )
+
+#add back in participants excluded because they had zero trials that were useable
+subj_sessions <- read_csv(processed_subj_path)  %>%
+  filter(session<=2) %>%
+  ungroup() %>%
+  group_by(sub_num) %>%
+  summarize(
+    number_distinct_sessions = n())
+
+participant_total_useable_trials <- subj_sessions %>%
+  left_join(participant_total_useable_trials) %>%
+  #replace NAs for participants with no useable trials with 0s
+  mutate(
+    total_trials = ifelse(is.na(total_trials),0,total_trials),
+    total_trials_critical_window = ifelse(is.na(total_trials_critical_window),0,total_trials_critical_window),
+    total_trials_short = ifelse(is.na(total_trials_short),0,total_trials_short)
+  ) %>%
+  mutate(
+    exclude_participant_insufficient_data = ifelse(total_trials<24,1,0),
+    exclude_participant_insufficient_data_critical = ifelse(total_trials_critical_window<24,1,0),
+    exclude_participant_insufficient_data_short = ifelse(total_trials_short<24,1,0)
+  )
+
+#participants to exclude based on data contribution
+sum(participant_total_useable_trials$exclude_participant_insufficient_data,na.rm=T)
+#participants to keep
+sum(participant_total_useable_trials$exclude_participant_insufficient_data==0,na.rm=T)
+
+#join with main data frame
+d <- d %>%
+  left_join(participant_total_useable_trials)
+d <- d %>%
+  left_join(summarize_useable_trials)
+d <- d %>%
+  left_join(summarize_subj_trials)
+
+summarize_useable_trials_wide <- summarize_useable_trials %>%
+  ungroup() %>%
+  select(sub_num,session,num_useable_trials) %>%
+  group_by(sub_num) %>%
+  pivot_wider(
+    names_from = "session",
+    names_prefix = "num_useable_trials_session_",
+    values_from = "num_useable_trials"
+  )
+
+participant_total_useable_trials <- participant_total_useable_trials %>%
+  left_join(summarize_useable_trials_wide)
+```
+
+## Summarize all exclusions
+
+```{r}
+d <- d %>%
+  mutate(
+    preterm_infant_exclusion = ifelse(sub_num %in% preterm_infants,1,0),
+    non_english_exposure_exclusion = ifelse(sub_num %in% non_english_exposure,1,0),
+    dev_concern_exclusion = ifelse(sub_num %in% dev_concern_infants,1,0),
+    side_bias_exclusion = ifelse(sub_num %in% side_bias_infants,1,0),
+  ) %>%
+  mutate(
+    exclude_participant = case_when(
+      preterm_infant_exclusion == 1 ~ 1,
+      non_english_exposure_exclusion == 1 ~ 1,
+      dev_concern_exclusion == 1 ~ 1,
+      side_bias_exclusion == 1 ~ 1,
+      exclude_participant_insufficient_data == 1 ~ 1,
+      TRUE ~ 0
+    ))
+
+overview_exclusions <- distinct(d,
+                                sub_num,
+                                exclude_participant,
+                                preterm_infant_exclusion,
+                                non_english_exposure_exclusion,
+                                dev_concern_exclusion,
+                                side_bias_exclusion,
+                                exclude_participant_insufficient_data)
+
+participant_total_useable_trials <- participant_total_useable_trials %>%
+  left_join(overview_exclusions) %>%
+  mutate(exclude_participant = ifelse(is.na(exclude_participant),1,exclude_participant))
+
+summarize_subj_trials <- summarize_subj_trials %>%
+  left_join(overview_exclusions) %>%
+  mutate(exclude_participant = ifelse(is.na(exclude_participant),1,exclude_participant))
+```
+
+## Write data
+
+```{r}
+#write a dataset with exclusions processed
+write_csv(d, here::here("..","..","data","processed_data","CATegories_exp2_processed_data_with_exclusion_info.csv"))
+saveRDS(d, here::here("..","..","data","processed_data","CATegories_exp2_processed_data_with_exclusion_info.rds"))
+#write out useable trial summary
+write_csv(participant_total_useable_trials,here::here("..","..","data","processed_data","CATegories_exp2_useable_trial_summary.csv"))
+write_csv(summarize_subj_trials,here::here("..","..","data","processed_data","CATegories_exp2_trial_summary_data.csv"))
+```
+
