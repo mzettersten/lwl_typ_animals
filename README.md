@@ -1,5 +1,11 @@
-# lwl_typ_animals
-Repository for experiments on the development of category-based word knowledge/ expertise in word meanings.
+# CATegories
+Materials, data, and analysis for a study on the development of category-based word knowledge/ expertise in word meanings.
+
+[authors removed for peer review] (Stage 2 registered report under review). Becoming word meaning experts: Infants’ processing of familiar words in the context of typical and atypical exemplars. In-principle acceptance of Stage 1 RR at Child Development. Preprint: [redacted for peer review].
+
+## Abstract
+
+How do infants become word meaning experts? This registered report investigated the structure of infants’ early lexical representations by manipulating the typicality of exemplars from familiar animal categories. 14- to 18-month-old infants (N=84; 51 female; M=15.7 months; race/ethnicity: 64% White, 8% Asian, 2% Hispanic, 1% Black, 23% multiple categories) were tested on their ability to recognize typical and atypical category exemplars after hearing familiar basic-level category labels. Infants robustly recognized both typical (d=0.79, 95% CI [0.54, 1.03]) and atypical (d=0.73, 95% CI [0.48, 0.97]) exemplars, with no significant difference between typicality conditions (d=0.13, 95% CI [-0.08, 0.35]). These results support a broad-to-narrow account of infants’ early word meanings. Implications for the role of experience in the development of lexical knowledge are discussed.
 
 
 ## Overview over folder structure
