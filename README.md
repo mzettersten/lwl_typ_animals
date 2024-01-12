@@ -46,11 +46,21 @@ https://osf.io/3t8gf/?view_only=d4031533ac8549d5a8682b7819ba7bee
     └── final_images
 ```
 
-
-
 ## Details on individual folders
 
 Below are more detailed explanations of individual folder components
+
+### Data Analysis
+
+This folder contains the data anad analysis scripts for both the pilot and the registered report experiment.
+
+### Figures
+
+The main figures included in the registered report.
+
+### Lookit Experiments
+
+This folder includes the main stimuli and trial information used in the Lookit experiments reported in the registered report
 
 ### LWL Experiment Demo
 
@@ -61,10 +71,6 @@ Demo of experiment testing word recognition for typical and atypical exemplars i
 (Note that your  browser window will go to fullscreen. Click Esc if you would like to leave fullscreen mode).
 
 [An example trial list can be viewed here](https://docs.google.com/spreadsheets/d/1pub4ZIhPw9XYxMUPjyrj3eIku_YdQ1TYmEu8WPwyiDw/edit?usp=sharing)
-
-### Stimuli
-
-Repository containing images of typical and atypical category members (current categories: bird, cat, dog, fish).
 
 ### Norming: Nameability and Typicality Ratings
 
@@ -77,3 +83,7 @@ Link to norming studies (demo):
 - [nameability ratings demo](https://mzettersten.github.io/lwl_typ_animals/norming/norming_experiments/name_animals/name_animals.html)
 
 - [typicality ratings demo](https://mzettersten.github.io/lwl_typ_animals/norming/norming_experiments/typical_animals/typical_animals.html)
+
+### Stimuli
+
+Repository containing images of typical and atypical category members (current categories: bird, cat, dog, fish). This is the full set of images that were included in our norming studies, not the final set of images used in the experiment in the Registered Report. For the final images used in the registered report, see the folder **lwl_experiment_demo** > **stimuli** > **images**
