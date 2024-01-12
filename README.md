@@ -4,6 +4,7 @@ Repository for experiments on the development of category-based word knowledge/ 
 
 ## Overview over folder structure
 
+```
 ├── data_analysis
 │   ├── pilot
 │   │   ├── analysis_scripts
@@ -34,6 +35,7 @@ Repository for experiments on the development of category-based word knowledge/ 
 └── stimuli
     ├── final_image_list.xlsx
     └── final_images
+```
 
 ## LWL Experiment Demo
 
