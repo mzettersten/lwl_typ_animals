@@ -1,6 +1,40 @@
 # lwl_typ_animals
 Repository for experiments on the development of category-based word knowledge/ expertise in word meanings.
 
+
+## Overview over folder structure
+
+├── data_analysis
+│   ├── pilot
+│   │   ├── analysis_scripts
+│   │   ├── data
+│   │   ├── figures
+│   │   └── power_simulation
+│   └── registered_report
+│       ├── analysis
+│       │   ├── figures
+│       │   └── manuscript
+│       └── data
+│           └── processed_data
+├── figures
+├── lookit_experiments
+│   ├── img
+│   ├── json_trials
+│   ├── mp3
+│   ├── mp4
+│   └── ogg
+├── lwl_experiment_demo
+├── norming
+│   ├── analysis
+│   ├── images
+│   ├── norming_experiments
+│   │   ├── name_animals
+│   │   └── typical_animals
+│   └── processed_data
+└── stimuli
+    ├── final_image_list.xlsx
+    └── final_images
+
 ## LWL Experiment Demo
 
 Demo of experiment testing word recognition for typical and atypical exemplars in a looking-while-listening paradigm.
