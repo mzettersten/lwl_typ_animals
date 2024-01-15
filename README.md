@@ -54,9 +54,27 @@ Below are more detailed explanations of individual folder components
 
 This folder contains the data anad analysis scripts for both the pilot and the registered report experiment.
 
-* registered_report: contains the data and analysis scripts for the main experiment in the registered report
-  - Test
-  -
+* registered_report: contains the data and analysis scripts for the main experiment in the registered report.
+    * data/processed_data: This folder contains all of the main data files for the Registered Report experiment
+      - animal_ratings_stimuli_full.csv: Metadata file containing information about each image and image name.
+      - CATegories_analysis_window_frame_ranges.csv:
+      - categories_dreamsim_image_pairwise_distances.csv
+      - CATegories_exclusion_info.csv
+      - CATegories_exp2_peyecoder_data_anonymized.csv
+      - CATegories_exp2_processed_data_resampled.csv
+      - CATegories_exp2_processed_data_with_exclusion_info.csv
+      - CATegories_exp2_processed_data_with_exclusion_info.rds
+      - CATegories_exp2_processed_data.csv
+      - CATegories_exp2_processed_data.rds
+      - CATegories_exp2_processed_frame_data.csv
+      - CATegories_exp2_processed_participant_data_anonymized.csv
+      - CATegories_exp2_processed_participant_data.csv
+      - CATegories_exp2_processed_survey_data.csv
+      - CATegories_exp2_RT_by_trial.csv
+      - CATegories_exp2_trial_summary_data.csv
+      - CATegories_exp2_useable_trial_summary.csv
+      - frame_rate_tables: Folder containing tables of the trial-wise frame rates for each video session, after postprocessing of the Lookit videos
+      - typicality_animals_summarized.csv
 * pilot: contains the data and analysis scripts for the pilot study
 
   
