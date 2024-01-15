@@ -54,6 +54,13 @@ Below are more detailed explanations of individual folder components
 
 This folder contains the data anad analysis scripts for both the pilot and the registered report experiment.
 
+* registered_report: contains the data and analysis scripts for the main experiment in the registered report
+  - Test
+  -
+* pilot: contains the data and analysis scripts for the pilot study
+
+  
+
 ### Figures
 
 The main figures included in the registered report.
