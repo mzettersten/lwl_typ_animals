@@ -93,7 +93,7 @@ This folder contains the data anad analysis scripts for both the pilot and the r
       - **CATegories_exp2_useable_trial_summary.csv**: Data file summarizing information about useable trials for each participant
       - **frame_rate_tables**: Folder containing tables of the trial-wise frame rates for each video session, after postprocessing of the Lookit videos
       - **typicality_animals_summarized.csv**: Metadata file containing information about typicality norms (from the typicality norming study) for each individual image
-* pilot: contains the data and analysis scripts for the pilot study
+* **pilot**: contains the data and analysis scripts for the pilot study
 
 ### Figures
 
