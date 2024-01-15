@@ -61,7 +61,7 @@ This folder contains the data anad analysis scripts for both the pilot and the r
       - **1_process_looking_data.Rmd**: Step 1 in the processing pipeline - all of the main processing of the looking data and integration with metadata is handled during this step
       - **2_process_exclusions.Rmd**: Step 2 in the processing pipeline - the processing of exclusions happens in this step
       - **categories_dreamsim_distances.R**: Data file for evaluating properties of the DreamSim distances data (not currently used - planned for additional exploratory analyses)
-      - **CATegories_main_data_codebook.csv**: Codebook for the main CATegories data file (including exclusion information
+      - **CATegories_main_data_codebook.csv**: Codebook for the main CATegories data file (including exclusion information)
       - **cluster_permutation_analysis.html**: HTML render of the R markdown for performing cluster-based permutation analyses
       - **cluster_permutation_analysis.Rmd**: R markdown for performing cluster-based permutation analyses
       - **common.R**: script for commonly used R functions
