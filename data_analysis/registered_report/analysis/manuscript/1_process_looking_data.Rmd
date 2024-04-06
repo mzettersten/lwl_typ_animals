@@ -19,6 +19,7 @@ knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE
 ```
 
 ```{r global_params}
+FIRST_TIME <- TRUE
 ms_per_frame <- 1000/30 #target frame rate
 skip_frames <- 0 # how many frames were skipped at the beginning of each video
 looking_data_path <- here::here("..","..","data","processed_data","CATegories_exp2_peyecoder_data_anonymized.csv")
@@ -137,7 +138,7 @@ distinct <- d %>%
 
 ## Integrate frame rate information to correct times
 
-```{r}
+```{r, eval = FIRST_TIME}
 #trials to keep
 trials_to_keep <- c(11,12,13,14,16,17,18,19,21,22,23,24,26,27,28,29,31,32,33,34,36,37,38,39)
 #list frame rate tables
@@ -150,6 +151,16 @@ fr_table <- map_df(fr_table_list,~mutate(read_delim(here::here(frame_rate_info_p
   #transform Trial to trial_num
   mutate(trial_number = Trial-10) %>%
   rename(response_uuid=response_id) 
+
+#save frame rate table
+write_csv(fr_table,here::here("..","..","data","processed_data","CATegories_exp2_frame_rate_table.csv"))
+```
+
+Integrate the data with the frame rate information
+
+```{r}
+#read in frame rate table
+fr_table <- read_csv(here::here("..","..","data","processed_data","CATegories_exp2_frame_rate_table.csv"))
 
 #integrate with data
 d <- d %>%
@@ -179,7 +190,8 @@ unusual_frame_count_trials <- d %>%
 d <- d %>%
   mutate(
     ms_per_frame = 1000/framerate,
-    corrected_time = frame_counter * ms_per_frame,
+    #ensure time starts at zero on first frame by subtracting 1 from frame_counter
+    corrected_time = (frame_counter-1) * ms_per_frame,
     corrected_time_centered = corrected_time - 2650
   ) %>%
   mutate(accuracy_transformed = case_when(
@@ -426,6 +438,23 @@ d <- d %>%
     )
   )
 ```
+
+## Remove some columns that are no longer needed
+
+```{r}
+cols_to_remove <- c(
+  "audio_time",
+  "audio_lag_vs_video",
+  "audio_lag_vs_display_images",
+  "audio_lag_vs_start_timer",
+  "video_end_minus_audio_end"
+)
+
+d <- d %>%
+  ungroup() %>%
+  select(-all_of(cols_to_remove))
+```
+
 
 ## Write the full dataset
 

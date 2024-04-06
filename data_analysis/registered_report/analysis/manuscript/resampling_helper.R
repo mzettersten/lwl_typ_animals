@@ -57,7 +57,7 @@ resample_times <- function(df_table, sample_duration) {
       dplyr::mutate(admin_trial_id = paste(.data$administration_id,
                                            .data$trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
-      purrr::map_df(resample_aoi_trial) %>%
+      purrr::map_df(resample_aoi_trial, sample_duration=sample_duration) %>%
       dplyr::arrange(.data$administration_id, .data$trial_id)
   
   return(df_out)

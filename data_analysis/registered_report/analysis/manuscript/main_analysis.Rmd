@@ -4,6 +4,7 @@ author: "Anonymized"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
+    code_folding: show
     toc: true
     toc_depth: 3
     toc_float: true
@@ -33,6 +34,8 @@ library(effectsize)
 library(ggimage)
 library(sessioninfo)
 library(broom)
+library(performance)
+#devtools::install_github("jmgirard/agreement")
 source("compute_iccs.R")
 source("common.R")
 
@@ -352,7 +355,7 @@ avg_corrected_target_looking_by_category <- trial_corrected_accuracy  %>%
 
 ## Main Analyses
 
-## Aim 1 {.tabset}
+## 1. Aim 1 {.tabset}
 
 ### 1.1 {.tabset}
 
@@ -395,7 +398,7 @@ confint(m_1_1,method="Wald")
 
 ```
 
-Infants successfully recognized the target words (Model Intercept: b=0.07, 95% CI [0.06, 0.09], t(83) = 8.59, p< .001).
+Infants successfully recognized the target words (Model Intercept: `r apa_print(m_1_1)$estimate$Intercept`, `r apa_print(m_1_1)$statistic$Intercept`).
 
 #### Overall Typicality Effect Plot
 
@@ -406,7 +409,7 @@ Next, we plot the overall average base-line corrected proportion target looking 
 pal <- wes_palette("Rushmore1", n=5)
 set.seed(1)
 jitterer <- position_jitter(width = .05,seed=1)
-p0 <- ggplot(avg_corrected_target_looking_by_typicality,aes(x=condition,y=average_corrected_target_looking, fill=condition))+
+overall_typicality_plot <- ggplot(avg_corrected_target_looking_by_typicality,aes(x=condition,y=average_corrected_target_looking, fill=condition))+
   geom_half_violin(data=filter(avg_corrected_target_looking_by_typicality, condition=="atypical"),position = position_nudge(x = -.1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="l")+
   geom_half_violin(data=filter(avg_corrected_target_looking_by_typicality, condition=="typical"),position = position_nudge(x = .1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="r")+
   geom_path(aes(group=sub_num),color="black",fill=NA,alpha=0.15,size=0.75,position=jitterer)+
@@ -429,13 +432,13 @@ p0 <- ggplot(avg_corrected_target_looking_by_typicality,aes(x=condition,y=averag
         axis.text.y  = element_text(size=16),
         strip.text.x = element_text(size = 16,face="bold"))
 
-p0
-ggsave(here::here("..","figures","baseline_corrected_accuracy_overall.png"),width=7,height=6)
+overall_typicality_plot 
+ggsave(here::here("..","figures","baseline_corrected_accuracy_overall.png"),width=7,height=6,bg = "white")
 ```
 
 #### 1.1.2
 
-```{r}
+```{r results=FALSE,message=FALSE, warning=FALSE}
 overall_condition_summary <- avg_corrected_target_looking_by_typicality %>%
   ungroup() %>%
   group_by(sub_num) %>%
@@ -449,12 +452,8 @@ overall_condition_summary <- avg_corrected_target_looking_by_typicality %>%
     sd = sd(condition_diff)
   )
 
-tsum_TOST(m1=overall_condition_summary$diff,sd1=overall_condition_summary$sd,n1=overall_condition_summary$N,eqb=0.25, eqbound_type = "SMD")
-```
+tost_results <- tsum_TOST(m1=overall_condition_summary$diff,sd1=overall_condition_summary$sd,n1=overall_condition_summary$N,eqb=0.25, eqbound_type = "SMD")
 
-There was no significant effect of typicality, b=0.01, 95% CI [-0.009, 0.04], t(83)=1.20, p=.23, Cohen’s d=0.13. However, the equivalence test was also not statistically significant, t(83) = -1.08, p=.14. We therefore could not reject the null hypothesis that the absolute effect size was at least as large as d=0.25.
-
-```{r}
 #quick sanity check
 #t-test in tost is equivalent to regular old paired t-test
 # AND equivalent to lmer estimate of typicality effect
@@ -463,10 +462,12 @@ t.test(
   avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"], 
   paired=T)
 #effect size
-cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"],
+typicality_effect_cohens_d <- cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"],
          avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"],
          paired=T)
 ```
+
+There was no significant effect of typicality, `r apa_print(m_1_1)$estimate$typicality_condition_c`, `r apa_print(m_1_1)$statistic$typicality_condition_c`, Cohen’s d=`r typicality_effect_cohens_d$Cohens_d`, 95% CI [`r typicality_effect_cohens_d$CI_low`,`r typicality_effect_cohens_d$CI_high`]. `r tost_results$decision$TOST`. We therefore could not reject the null hypothesis that the absolute effect size was at least as large as d=0.25.
 
 #### 1.1.3
 
@@ -479,7 +480,7 @@ summary(m_1_1_3_typ)
 
 confint(m_1_1_3_typ,method="Wald")
 #effect size
-cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"])
+typical_cohens_d <- cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="typical"])
 
 ## Atypical word recognition
 # recentering the model on the atypical condition to make the intercept interpretable
@@ -490,10 +491,10 @@ summary(m_1_1_3_atyp)
 confint(m_1_1_3_atyp,method="Wald")
 
 #effect size
-cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"])
+atypical_cohens_d <-cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"])
 ```
 
-Infants robustly recognized the target words for both typical (Model: b=0.08, 95% CI [0.06, 0.10], t(83)=7.23, p<.001; Cohen’s d = 0.79 [0.54, 1.03]; Mean baseline-corrected looking: M=8.0%, 95% CI [5.8%, 10.1%]) and atypical exemplars (Model: b=0.06, 95% CI [0.05, 0.08], t(83)=6.66, p<.001, Cohen’s d = 0.73 [0.48, 0.97]; Mean baseline-corrected looking: M=6.5%, 95% CI [4.5%, 8.4%]). 
+Infants robustly recognized the target words for both typical (Model: `r apa_print(m_1_1_3_typ)$estimate$Intercept`, `r apa_print(m_1_1_3_typ)$statistic$Intercept`; Cohen’s d = `r typical_cohens_d$Cohens_d`, 95% CI [`r typical_cohens_d$CI_low`,`r typical_cohens_d$CI_high`]; Mean baseline-corrected looking: M=`r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$corrected_target_looking,3)*100`%, 95% CI [`r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$lower_ci,3)*100`%, `r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$upper_ci,3)*100`%]) and atypical exemplars (Model: `r apa_print(m_1_1_3_atyp)$estimate$Intercept`, `r apa_print(m_1_1_3_atyp)$statistic$Intercept`; Cohen’s d = `r atypical_cohens_d$Cohens_d`, 95% CI [`r atypical_cohens_d$CI_low`,`r atypical_cohens_d$CI_high`]; Mean baseline-corrected looking: M=`r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$corrected_target_looking,3)*100`%, 95% CI [`r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$lower_ci,3)*100`%, `r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$upper_ci,3)*100`%]). 
 
 ### 1.2
 
@@ -549,13 +550,13 @@ summary(m_1_2_atyp)
 confint(m_1_2_atyp,method="Wald")
 ```
 
-The model with the maximal random effects structure yielded a singular fit that was only remedied by removing the by-participant random slope for typicality condition. However, the (singular) model including the typicality random slope yielded virtually identical results to the converging model including random intercepts for participant and target word only. As in the average participant-level analysis, infants’ overall recognition of target words was significant in the trial-level model (b=0.07, 95% CI [0.05,0.10], t(5.2)=6.28, p=.001) and there was no significant effect of typicality (b=0.01, 95% CI [-0.01,0.04], t(3017)=0.87, p=.38). Word recognition was robust both for typical (b=0.08, 95% CI [0.05,0.10], t(8.7)=5.95, p<.001) and atypical exemplars (b=0.07, 95% CI [0.04,0.9], t(8.7)=5.13, p<.001).
+The model with the maximal random effects structure yielded a singular fit that was only remedied by removing the by-participant random slope for typicality condition. However, the (singular) model including the typicality random slope yielded virtually identical results to the converging model including random intercepts for participant and target word only. As in the average participant-level analysis, infants’ overall recognition of target words was significant in the trial-level model (`r apa_print(m_1_2)$estimate$Intercept`, `r apa_print(m_1_2)$statistic$Intercept`) and there was no significant effect of typicality (`r apa_print(m_1_2)$estimate$typicality_condition_c`, `r apa_print(m_1_2)$statistic$typicality_condition_c`). Word recognition was robust both for typical (`r apa_print(m_1_2_typ)$estimate$Intercept`, `r apa_print(m_1_2_typ)$statistic$Intercept`) and atypical exemplars (`r apa_print(m_1_2_atyp)$estimate$Intercept`, `r apa_print(m_1_2_atyp)$statistic$Intercept`).
 
 ### 1.3
 
 The cluster-based permutation analysis is executed in cluster_permutation_analysis.Rmd.
 
-In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-300ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.27.
+In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-200ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.36.
 
 ### Timecourse Plots {.tabset}
 
@@ -598,7 +599,7 @@ ggplot(summarize_across_subj,aes(time_normalized_corrected,accuracy))+
   ylim(0.35,0.65)+
   xlab("Time (normalized to target word onset) in ms")+
   ylab("Proportion Target Looking")
-ggsave(here::here("..","figures","overall_accuracy.png"))
+ggsave(here::here("..","figures","overall_accuracy.png"),bg = "white")
 
 ```
 
@@ -623,7 +624,7 @@ ggplot(summarize_across_subj_by_age,aes(time_normalized_corrected,accuracy))+
   facet_wrap(~age_group)+
   xlab("Time (normalized to target word onset) in ms")+
   ylab("Proportion Target Looking")
-ggsave(here::here("..","figures","overall_accuracy_by_age.png"),width=12, height=9)
+ggsave(here::here("..","figures","overall_accuracy_by_age.png"),width=12, height=9,bg = "white")
 ```
 
 #### Timecourse by condition
@@ -686,10 +687,11 @@ timecourse_plot <- ggplot(summarize_across_subj_cond,aes(time_normalized_correct
     axis.text = element_text(size=14),
     legend.text=element_text(size=18),
     legend.title=element_text(size=18))
-ggsave(here::here("..","figures","typicality_accuracy.png"),width=10,height=6)
+timecourse_plot
+ggsave(here::here("..","figures","typicality_accuracy.png"),width=10,height=6,bg = "white")
 ```
 
-## Aim 2
+## 2. Aim 2
 
 ### Linear mixed-effects model
 
@@ -725,7 +727,7 @@ In the trial-level linear mixed-effects model including age, typicality conditio
 #### Overall
 
 ```{r}
-ggplot(avg_corrected_target_looking,aes(mean_age,average_corrected_target_looking))+
+ggplot(avg_corrected_target_looking,aes(mean_age_mo,average_corrected_target_looking))+
   geom_pointrange(aes(ymin=lower_ci,ymax=upper_ci),
                   position=position_jitter(width=0.1),
                   width=0,
@@ -736,14 +738,14 @@ ggplot(avg_corrected_target_looking,aes(mean_age,average_corrected_target_lookin
   ylab("Baseline-Corrected Proportion Target Looking")+
   ylim(-0.55,0.55)+
   scale_x_continuous(breaks=seq(12,18,1))
-ggsave(here::here("..","figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6)
+ggsave(here::here("..","figures","age_relationship_baseline_corrected_accuracy.png"),width=7,height=6,bg = "white")
 ```
 
 #### By Condition
 
 ```{r}
 pal <- wes_palette("Rushmore1", n=5)
-p1 <- ggplot(avg_corrected_target_looking_by_typicality,aes(mean_age_mo,average_corrected_target_looking,color=condition,group=condition))+
+age_by_typicality_plot <- ggplot(avg_corrected_target_looking_by_typicality,aes(mean_age_mo,average_corrected_target_looking,color=condition,group=condition))+
   geom_pointrange(aes(ymin=lower_se,ymax=upper_se), 
                   position=position_jitter(width=0.2),
                   width=0,
@@ -762,7 +764,8 @@ p1 <- ggplot(avg_corrected_target_looking_by_typicality,aes(mean_age_mo,average_
     axis.title=element_text(size=20,face="bold"),
     axis.text = element_text(size=14))+
   theme(legend.position="none")
-ggsave(here::here("..","figures","age_relationship_baseline_corrected_accuracy_typicality.png"),width=9,height=6)
+ggsave(here::here("..","figures","age_relationship_baseline_corrected_accuracy_typicality.png"),width=9,height=6,bg = "white")
+age_by_typicality_plot
 ```
 
 
@@ -770,16 +773,16 @@ ggsave(here::here("..","figures","age_relationship_baseline_corrected_accuracy_t
 #combine key plots into one main figure
 library(patchwork)
 
-(p0 + p1) / timecourse_plot + 
+(overall_typicality_plot + age_by_typicality_plot) / timecourse_plot + 
   plot_annotation(tag_levels = 'A')+
   theme(plot.tag = element_text(size = 18))
-ggsave(here::here("..","figures","main_figure.png"),width=12,height=12)
+ggsave(here::here("..","figures","main_figure.png"),width=12,height=12,bg = "white")
 ```
 
 
-## Aim 3
+## 3. Aim 3
 
-To test whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
+In Aim 3, we tested whether individual differences in word recognition or typicality effects are predicted by differences in experiences with each exemplar.
 
 ```{r}
 #subject details for aim 3 analysis (how many participants have survey data)
@@ -904,13 +907,13 @@ summary(m_4_1_1_1)
 confint(m_4_1_1_1,method="Wald")
 
 #effect size
-cohens_d(
+typicality_effect_short_window_cohens_d <- cohens_d(
   filter(avg_corrected_target_looking_by_typicality_short_window,condition=="typical")$average_corrected_target_looking,
   filter(avg_corrected_target_looking_by_typicality_short_window,condition=="atypical")$average_corrected_target_looking,
   paired=T)
 ```
 
-There was no significant effect of typicality in the average participant-level analysis, b=0.02, 95% CI [-0.007, 0.05], t(81)=1.49, p=.14, Cohen’s d=0.16 [-0.05, 0.38].
+There was no significant effect of typicality in the average participant-level analysis, `r apa_print(m_4_1_1_1)$estimate$typicality_condition_c`, `r apa_print(m_4_1_1_1)$statistic$typicality_condition_c`, Cohen’s d=`r typicality_effect_short_window_cohens_d$Cohens_d`, 95% CI [`r typicality_effect_short_window_cohens_d$CI_low`,`r typicality_effect_short_window_cohens_d$CI_high`].
 
 ```{r}
 # run equivalence test
@@ -926,10 +929,10 @@ overall_condition_summary_short_window <- avg_corrected_target_looking_by_typica
     sd = sd(condition_diff_alternative)
   )
 
-tsum_TOST(m1=overall_condition_summary_short_window$diff,sd1=overall_condition_summary_short_window$sd,n1=overall_condition_summary_short_window$N,eqb=0.25, eqbound_type = "SMD")
+tost_results_short_window <- tsum_TOST(m1=overall_condition_summary_short_window$diff,sd1=overall_condition_summary_short_window$sd,n1=overall_condition_summary_short_window$N,eqb=0.25, eqbound_type = "SMD")
 ```
 
-As in the main analysis, the equivalence test was also not significant, t(81)=-0.78, p=.22. 
+`r tost_results_short_window$decision$TOST`, as in the main analysis.
 
 ```{r}
 #word recognition for typical items
@@ -937,7 +940,7 @@ m_1_1_3_typ_short_window <- lmer(average_corrected_target_looking ~ 1 + typicali
 summary(m_1_1_3_typ_short_window)
 confint(m_1_1_3_typ_short_window,method="Wald")
 #effect size
-cohens_d(avg_corrected_target_looking_by_typicality_short_window$average_corrected_target_looking[avg_corrected_target_looking_by_typicality_short_window$condition=="typical"])
+typical_cohens_d_short_window <- cohens_d(avg_corrected_target_looking_by_typicality_short_window$average_corrected_target_looking[avg_corrected_target_looking_by_typicality_short_window$condition=="typical"])
 
 
 #word recognition for atypical items
@@ -945,10 +948,10 @@ m_1_1_3_atyp_short_window <- lmer(average_corrected_target_looking ~ 1 + typical
 summary(m_1_1_3_atyp_short_window)
 confint(m_1_1_3_atyp_short_window,method="Wald")
 #effect size
-cohens_d(avg_corrected_target_looking_by_typicality_short_window$average_corrected_target_looking[avg_corrected_target_looking_by_typicality_short_window$condition=="atypical"])
+atypical_cohens_d_short_window <- cohens_d(avg_corrected_target_looking_by_typicality_short_window$average_corrected_target_looking[avg_corrected_target_looking_by_typicality_short_window$condition=="atypical"])
 ```
 
-Infants showed robust recognition of both typical (b=0.08, 95% CI [0.06, 0.10], t(81)=7.03, p<.001, Cohen’s d=0.78 [0.53, 1.02]) and atypical targets (b=0.06, 95% CI [0.04, 0.08], t(81)=5.35, p<.001, Cohen’s d=0.59 [0.35, 0.82]).
+Infants showed robust recognition of both typical (`r apa_print(m_1_1_3_typ_short_window)$estimate$Intercept`, `r apa_print(m_1_1_3_typ_short_window)$statistic$Intercept`; Cohen’s d = `r typical_cohens_d_short_window$Cohens_d`, 95% CI [`r typical_cohens_d_short_window$CI_low`,`r typical_cohens_d_short_window$CI_high`]) and atypical targets (`r apa_print(m_1_1_3_atyp_short_window)$estimate$Intercept`, `r apa_print(m_1_1_3_atyp_short_window)$statistic$Intercept`; Cohen’s d = `r atypical_cohens_d_short_window$Cohens_d`, 95% CI [`r atypical_cohens_d_short_window$CI_low`,`r atypical_cohens_d_short_window$CI_high`]).
 
 #### Trial-level analyses (Aims 1.2, 2, and 3)
 
@@ -984,7 +987,7 @@ summary(m_4_1_1_2)
 confint(m_4_1_1_2,method="Wald")
 ```
 
-We again found no significant effect of typicality (b=0.02, 95% CI [-0.01, 0.04], t(2999)=1.06, p=.29). 
+We again found no significant effect of typicality (`r apa_print(m_4_1_1_2)$estimate$typicality_condition_c`, `r apa_print(m_4_1_1_2)$statistic$typicality_condition_c`). 
 
 ##### Aim 2
 
@@ -1002,7 +1005,7 @@ summary(m_4_1_2)
 confint(m_4_1_2,method="Wald")
 ```
 
-As in the main analysis, we also found no interaction between age and typicality (Aim 2). Age remained a significant predictor of accuracy.
+Age remained a significant predictor of accuracy, `r apa_print(m_4_1_2)$estimate$age_mo_c`, `r apa_print(m_4_1_2)$statistic$age_mo_c`. However, we found no evidence of a typicality by age interaction (`r apa_print(m_4_1_2)$statistic$typicality_condition_c_age_mo_c`). 
 
 ##### Aim 3
 
@@ -1019,7 +1022,7 @@ m_4_1_3_tidy <- m_4_1_3 %>%
 
 Caregiver report of exemplar typicality did not significantly predict infants’ baseline-corrected word recognition accuracy (`r apa_print(m_4_1_3)$estimate$target_parent_typicality_rating_z`, `r apa_print(m_4_1_3)$statistic$target_parent_typicality_rating_z`).  After controlling for the effect of parental report of typicality, age remained a significant predictor of infants’ word recognition (`r apa_print(m_4_1_3)$estimate$age_mo_c`, `r apa_print(m_4_1_3)$statistic$age_mo_c`). 
 
-### 4.2 excluding unknown words
+### 4.2 Excluding unknown words
 
 We were unable to conduct a robustness analysis excluding words marked as unknown by caregivers due to the omission of the MCDI during data collection. 
 
@@ -1029,7 +1032,7 @@ To assess the consistency of typicality effects across multiple indices of word 
 
 #### Load RT 
 
-Reaction times are computed using helper functions in the R scripts rt_helper.R and compute_rt.R.
+Reaction times are computed in 3_compute_rt.Rmd.
 
 Here, we load in the trial-by-trial reaction time data and join it with other trial properties.
 
@@ -1145,6 +1148,8 @@ summary(m_4_3_1)
 confint(m_4_3_1,method="Wald")
 ```
 
+There was no significant effect of typicality on infants’ log reaction time on the participant level (`r apa_print(m_4_3_1)$estimate$typicality_condition_c`, `r apa_print(m_4_3_1)$statistic$typicality_condition_c`).
+
 #### 4.3.2 Trial-level analysis with RT as DV
 
 ```{r}
@@ -1165,6 +1170,8 @@ m_4_3_2 <- lmer(log_rt ~ 1 + typicality_condition_c +
 summary(m_4_3_2)
 confint(m_4_3_2,method="Wald")
 ```
+
+There was no significant effect of typicality on infants’ log reaction time on the trial level (`r apa_print(m_4_3_2)$estimate$typicality_condition_c`, `r apa_print(m_4_3_2)$statistic$typicality_condition_c`).
 
 ### 4.4 Testing whether effects interact with test session.
 
@@ -1219,7 +1226,7 @@ avg_corrected_target_looking_by_typicality_session <- avg_corrected_target_looki
       condition == "typical" ~ 1,
       TRUE ~ NA_real_
     ),    
-    session_c = session - 1.5
+    session_c = session - 1.5,
   )
 
 m_4_4_1 <- lmer(average_corrected_target_looking ~ 1 + typicality_condition_c*session_c + (1+session_c|sub_num),data=avg_corrected_target_looking_by_typicality_session)
@@ -1228,7 +1235,7 @@ summary(m_4_4_1)
 confint(m_4_4_1,method="Wald")
 ```
 
-Below, we summarize participants' average looking in the typical/atypical conditions by session
+Focusing on the participant-level model, there was no significant interaction between typicality and test session (`r apa_print(m_4_4_1)$estimate$typicality_condition_c_session_c`, `r apa_print(m_4_4_1)$statistic$typicality_condition_c_session_c`) and the effect of typicality remained non-significant (`r apa_print(m_4_4_1)$estimate$typicality_condition_c`, `r apa_print(m_4_4_1)$statistic$typicality_condition_c`). 
 
 ```{r}
 #baseline-corrected target looking summarized overall
@@ -1260,15 +1267,20 @@ summary(m_4_4_2)
 confint(m_4_4_2,method="Wald")
 ```
 
+Similarly, we found no evidence for an interaction between typicality and test session in the trial-level model (`r apa_print(m_4_4_2)$estimate$typicality_condition_c_session_c`, `r apa_print(m_4_4_2)$statistic$typicality_condition_c_session_c`).
+
 ## 5. Exploratory analyses
 
 ### 5.1. Predicting average accuracy from continuous typicality ratings
 
 #### Continuous typicality of target alone
 
-Images were classified as typical vs. atypical based on an adult norming study. In this analysis, we investigated whether treating typicality as a continuous metric, using the norming ratings as a predictor, would provide us more power to detect a typicality effect.
+Images were classified as typical vs. atypical based on an adult norming study. 
+In this analysis, we investigated whether treating typicality as a continuous metric, using the norming ratings as a predictor, would provide us more power to detect a typicality effect.
 
 ```{r}
+#trial-level model
+#we first considered a model with a by-participant random slope for typicality, but this model yielded a singular fit. The results were qualitatively similar when including the random slope (marginal p-value for typicality)
 m_5_1_1 <- lmer(corrected_target_looking ~ 1 + target_typicality_z + 
             (1|sub_num)+
               (1|target_category),
@@ -1277,7 +1289,10 @@ summary(m_5_1_1)
 confint(m_5_1_1,method="Wald")
 ```
 
-Quick plot. Descriptively, it appears that *perhaps* there is a decrement in looking for items on the extreme end of typicality, and otherwise fairly similar target looking.
+There was no significant effect of target typicality when analyzed continuously in a trial-level model (`r apa_print(m_5_1_1)$estimate$target_typicality_z`, `r apa_print(m_5_1_1)$statistic$target_typicality_z`).
+
+We include a plot of the continuous typicality effect. 
+Descriptively, it appears that *perhaps* there is a decrement in looking for items on the extreme end of typicality, and otherwise fairly similar target looking.
 
 ```{r}
 ggplot(trial_corrected_accuracy,aes(target_typicality_z,corrected_target_looking))+
@@ -1286,16 +1301,52 @@ ggplot(trial_corrected_accuracy,aes(target_typicality_z,corrected_target_looking
   geom_smooth()
 ```
 
-#### Continuous typicality of target AND distractor
+#### Continuous typicality of target AND distractor, including interaction
 
 ```{r}
-m_5_1_2 <- lmer(corrected_target_looking ~ 1 + target_typicality_z + distractor_typicality_z+
-            (1+target_typicality_z + distractor_typicality_z|sub_num)+
+m_5_1_2 <- lmer(corrected_target_looking ~ 1 + target_typicality_z * distractor_typicality_z+
+            (1+target_typicality_z : distractor_typicality_z|sub_num)+
               (1|target_category),
           data=trial_corrected_accuracy)
 summary(m_5_1_2)
-confint(m_5_1_1,method="Wald")
+confint(m_5_1_2,method="Wald")
 ```
+
+We also explored including distractor typicality (z-scored) and its interaction with target typicality in the model. 
+We found a significant interaction between distractor and target typicality, `r apa_print(m_5_1_2)$estimate$target_typicality_z_distractor_typicality_z`, `r apa_print(m_5_1_2)$statistic$target_typicality_z_distractor_typicality_z`.
+The interaction seemed to be driven primarily by there being a stronger effect of target typicality when the distractor was more atypical compared to when the distractor was typical.
+
+```{r}
+#figure explaining interaction
+p1 <- ggplot(trial_corrected_accuracy,aes(target_typicality_z,corrected_target_looking))+
+    geom_point(aes(color=condition),alpha=0.2)+
+    geom_hline(yintercept=0, linetype="dashed")+
+    geom_smooth(method="lm",color="black")+
+  facet_wrap(~condition,scales = "free")+
+  xlab("Target Typicality (z-scored adult ratings)")+
+  scale_color_manual(values=pal[c(3,4)])+
+  theme(legend.position="none")
+p2 <- ggplot(trial_corrected_accuracy,aes(distractor_typicality_z,corrected_target_looking ))+
+    geom_point(aes(color=condition),alpha=0.2)+
+    geom_hline(yintercept=0, linetype="dashed")+
+    geom_smooth(method="lm",color="black")+
+  facet_wrap(~condition,scales = "free")+
+  scale_color_manual(values=pal[c(3,4)])+
+  xlab("Distractor Typicality (z-scored adult ratings)")+
+  theme(legend.position="none")
+p1+p2
+```
+
+#### Caregiver-reported typicality of target and distractor, including interaction
+
+```{r}
+#more complex random effects structures yielded a singular fit
+m_5_1_3 <- lmer(corrected_target_looking ~ target_parent_typicality_rating_z*distractor_parent_typicality_rating_z+ (1|sub_num) + (1|target_category), trial_corrected_accuracy)
+summary(m_5_1_3)
+confint(m_5_1_3,method="Wald")
+```
+
+We also investigated whether including caregiver-reported exemplar typicality for both target and distractor (as well as their interaction) predicted baseline-corrected proportion target looking, and found no interaction (`r apa_print(m_5_1_3)$estimate$target_parent_typicality_rating_z_distractor_parent_typicality_rating_z`, `r apa_print(m_5_1_3)$statistic$target_parent_typicality_rating_z_distractor_parent_typicality_rating_z`) or evidence of significant main effects.
 
 ### 5.2. Category and Item-level analysis
 
@@ -1393,7 +1444,7 @@ t.test(
   filter(avg_corrected_target_looking_by_typicality_word,condition=="atypical"&target_category=="bird")$average_corrected_target_looking,
   paired=TRUE
 )
-#checking the typicality effect for bird
+#checking the typicality effect for cat
 t.test(
   filter(avg_corrected_target_looking_by_typicality_word,condition=="typical"&target_category=="cat")$average_corrected_target_looking,
   filter(avg_corrected_target_looking_by_typicality_word,condition=="atypical"&target_category=="cat")$average_corrected_target_looking,
@@ -1445,7 +1496,7 @@ p3 <- ggplot(avg_corrected_target_looking_by_typicality_word,aes(x=condition,y=a
         strip.text.x = element_text(size = 16,face="bold"))
 
 
-ggsave(here::here("..","figures","baseline_corrected_accuracy_by_category.png"),width=7,height=6)
+ggsave(here::here("..","figures","baseline_corrected_accuracy_by_category.png"),width=7,height=6,bg = "white")
 ```
 
 ##### Target Image
@@ -1491,7 +1542,26 @@ overall_target_looking_by_image %>%
 ###### Plot
 
 ```{r}
-ggplot(overall_target_looking_by_image,aes(reorder(target_image,corrected_target_looking),corrected_target_looking))+
+#clean names for individual images for plot
+overall_target_looking_by_image <- overall_target_looking_by_image %>%
+  mutate(
+    target_image_clean = case_when(
+      target_image == "oriental" ~ "Oriental cat",
+      target_image == "chartreux" ~ "Chartreux cat",
+      target_image == "betafish" ~ "Betta fish",
+      target_image == "tabby" ~ "Tabby cat",
+      target_image == "germanshepherd" ~ "German Shepherd",
+      target_image == "cornishrex" ~ "Cornish Rex",
+      target_image == "arabianmau" ~ "Arabian Mau",
+      target_image == "bassethound" ~ "Basset Hound",
+      target_image == "goldenretriever" ~ "Golden Retriever",
+      target_image == "sphynx" ~ "Sphynx cat",
+      TRUE ~ str_to_title(target_image)
+    )
+  )
+
+
+ggplot(overall_target_looking_by_image,aes(reorder(target_image_clean,corrected_target_looking),corrected_target_looking))+
   geom_image(aes(y=corrected_target_looking+0.1,image=target_image_path),size=.1)+
   geom_hline(yintercept=0,linetype="dashed")+
   geom_errorbar(aes(ymin=lower_ci,ymax=upper_ci,color=condition),width=0)+
@@ -1499,14 +1569,14 @@ ggplot(overall_target_looking_by_image,aes(reorder(target_image,corrected_target
   xlab("Target Image")+
   ylab("Baseline-Corrected\nProportion Target Looking")+
   theme(axis.title.x = element_text(face="bold", size=20),
-        axis.text.x  = element_text(size=16,angle=90,vjust=0.5),
+        axis.text.x  = element_text(size=16,angle=90,vjust=0.5,hjust=1),
         axis.title.y = element_text(face="bold", size=20),
         axis.text.y  = element_text(size=16),
         strip.text.x = element_text(size = 16,face="bold"),
         legend.position=c(0.8,0.15)
         )+
   scale_color_manual(values=pal[c(3,4)])
-ggsave(here::here("..","figures","baseline_corrected_accuracy_by_word.png"),width=9,height=6)
+ggsave(here::here("..","figures","baseline_corrected_accuracy_by_word.png"),width=9,height=6,bg = "white")
 
 ```
 
@@ -1528,10 +1598,16 @@ cor.test(
 ggplot(avg_corrected_target_looking_by_session_wide,aes(session_1,session_2)) +
   geom_point()+
   geom_smooth(method="lm")+
-  annotate("text",label="r=.27, t(78)=2.49, p=.01",x=-0.3,y=0.25,size=5)+
+  annotate("text",label="r=.29, t(78)=2.70, p=.009",x=-0.3,y=0.25,size=5)+
   xlab("Session 1\nAverage Baseline-Corrected Proportion Target Looking")+
   ylab("Session 2\nAverage Baseline-Corrected Proportion Target Looking")
-ggsave(here::here("..","figures","session_correlation.png"),width=9,height=6)
+ggsave(here::here("..","figures","session_correlation.png"),width=9,height=6,bg = "white")
+
+#correlation also holds when excluding the outlier
+cor.test(
+  filter(avg_corrected_target_looking_by_session_wide,session_1>-0.25)$session_1,
+  filter(avg_corrected_target_looking_by_session_wide,session_1>-0.25)$session_2)
+
 ```
 
 ```{r}
@@ -1558,7 +1634,7 @@ ggplot(avg_corrected_target_looking_by_typicality_session_wide,aes(session_1,ses
   facet_wrap(~condition)+
   scale_color_manual(values=pal[c(3,4)])+
   theme(legend.position="none")
-ggsave(here::here("..","figures","session_correlation_by_typicality.png"),width=9,height=6)
+ggsave(here::here("..","figures","session_correlation_by_typicality.png"),width=9,height=6,bg = "white")
 ```
 
 #### 5.3.2. ICCs
@@ -1592,9 +1668,13 @@ icc_stimuli_critical <-  df_for_icc %>%
   get_icc(object = "stimulus",column="mean_target_looking_critical",type_icc="consistency")
 ```
 
+In S10.2.2., we further investigated the measurement reliability of infants’ word recognition (Byers-Heinlein et al., 2022) by estimating the intraclass correlation coefficient (ICC) of baseline-corrected proportion target looking across all trials, based on a mean-rating, consistency, 2-way random-effects model (model 2A). 
+We estimated low-to-moderate ICC values for both by-participant (ICC = `r round(icc_participants,2)`) and by-item (a given target image; ICC = `r round(icc_stimuli,2)`) consistency.
+
 ### 5.4. Exploring alternative trial-based inclusion criteria
 
-Participants were required to contribute at least 24 valid trials in order to be included in the final sample. Here, we explore the impact of this criterion on whether we observe a typicality effect, by estimating the typicality effect for a range of looser and stricter trial-based exclusion criteria
+Participants were required to contribute at least 24 valid trials in order to be included in the final sample. 
+Here, we explore the impact of this criterion on whether we observe a typicality effect, by estimating the typicality effect for a range of looser and stricter trial-based exclusion criteria
 
 ```{r}
 min_trials_required_list = c(4,8,12,16,20,24,28,32,36,40,44,48)
@@ -1649,14 +1729,16 @@ ggplot(typ_effect_min_valid_trials, aes(min_valid_trials_req,estimate))+
   geom_hline(yintercept=0,linetype="dashed")+
   geom_text(aes(label=N),nudge_y = 0.07)+
   ylab("Estimated Participant-Level Typicality Effect")+
-  xlab("Minimum Number of Trials Required for Inclusion")
+  xlab("Minimum Number of Trials Required for Inclusion")+
+  scale_x_continuous(breaks=min_trials_required_list)
 
-ggsave(here::here("..","figures","typicality_effect_min_trials_for_inclusion.png"),width=9,height=6)
+ggsave(here::here("..","figures","typicality_effect_min_trials_for_inclusion.png"),width=9,height=6,bg = "white")
 ```
 
 ### 5.5. Testing the main results with a final sample of N=80
 
-In our Stage 1 manuscript, we preregistered a sample of N=80. Our current results report data from all participants who contributed valid data, leading to a final N of 84 participants. Here, we remove the data from the final 4 participants who contributed data on Lookit and re-run the main analyses from Aim 1 (1.1 and 1.2), to ensure that the decision to include all participants did not change the outcome of the study.
+In our Stage 1 manuscript, we preregistered a sample of N=80. Our current results report data from all participants who contributed valid data, leading to a final N of 84 participants. 
+Here, we remove the data from the final 4 participants who contributed data on Lookit and re-run the main analyses from Aim 1 (1.1 and 1.2), to ensure that the decision to include all participants did not change the outcome of the study.
 
 #### Remove the final 4 participants
 
@@ -1723,7 +1805,7 @@ summary(m_1_1_red)
 confint(m_1_1_red,method="Wald")
 ```
 
-There remained no significant effect of typicality in the participant-level analysis.
+There remained no significant effect of typicality in the participant-level analysis, `r apa_print(m_1_1_red)$estimate$typicality_condition_c`, `r apa_print(m_1_1_red)$statistic$typicality_condition_c`.
 
 ```{r}
 ## Typical word recognition
@@ -1776,7 +1858,256 @@ summary(m_1_2_red)
 confint(m_1_2_red,method="Wald")
 ```
 
-The trial-level model also yields no significant typicality effect.
+The trial-level model also yields no significant typicality effect, `r apa_print(m_1_2_red)$estimate$typicality_condition_c`, `r apa_print(m_1_2_red)$statistic$typicality_condition_c`.
+
+### 5.6. Alternative Model Specifications for Baseline and Critical Window Looking
+
+We also considered alternative methods of specifying a regression model incorporating information about target looking during the baseline window and the critical window: predicting target looking during the critical window while controlling for baseline looking (5.6.1.) and predicting target looking from a model including the interaction between typicality and trial window (critical window vs. baseline window) (5.6.2.).
+
+#### 5.6.1. Controlling for baseline looking (instead of baseline correction)
+
+##### Typicality Effect: Trial-level model
+
+```{r}
+#model with a by-participant random slope for typicality condition yields a singular fit
+#however, the model itself yields very similar results.
+m_5_6_1 <- lmer(mean_target_looking_critical ~ 1 + typicality_condition_c + mean_target_looking_baseline +
+            (1|sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_5_6_1)
+confint(m_5_6_1,method="Wald")
+```
+
+We fit a linear mixed-effects model predicting proportion target looking during the critical window from typicality condition while controlling for proportion target looking during the baseline window.
+We included by-participant and by-word random intercepts.
+As in the main analyses, we found no significant typicality effect, `r apa_print(m_5_6_1)$estimate$typicality_condition_c`, `r apa_print(m_5_6_1)$statistic$typicality_condition_c`.
+
+##### Typicality Effect: Trial-level model with continuous typicality ratings
+
+```{r}
+#model with the by-participant random slope for target_typicality_z yields a singular fit (though qualitatively equivalent results)
+m_5_6_1_continuous <- lmer(mean_target_looking_critical ~ 1 + target_typicality_z + mean_target_looking_baseline +
+            (1|sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_5_6_1_continuous)
+confint(m_5_6_1_continuous,method="Wald")
+```
+
+Similarly, there was no significant effect when treating typicality as a continuous predictor (based on z-scored adult ratings), `r apa_print(m_5_6_1_continuous)$estimate$target_typicality_z`, `r apa_print(m_5_6_1_continuous)$statistic$target_typicality_z`.
+
+##### Age * Typicality Interaction
+
+```{r}
+m_5_6_1_age_int <- lmer(mean_target_looking_critical ~ 1 + typicality_condition_c*age_mo_c + mean_target_looking_baseline +
+            (1|sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy)
+summary(m_5_6_1_age_int)
+confint(m_5_6_1_age_int,method="Wald")
+```
+
+Following the analytic strategy for Aim 2, we also fit a linear mixed-effects model predicting proportion target looking during the critical window from age, typicality condition, and their interaction (all centered), while also controlling for proportion target looking during the baseline window. 
+The model included by-participant and by-item random intercepts.
+We found a significant effect of age (`r apa_print(m_5_6_1_age_int)$estimate$age_mo_c`, `r apa_print(m_2)$statistic$age_mo_c`) and looking during the baseline window (`r apa_print(m_5_6_1_age_int)$estimate$mean_target_looking_baseline`, `r apa_print(m_5_6_1_age_int)$statistic$mean_target_looking_baseline`).
+However, there was no significant interaction between age and typicality (`r apa_print(m_5_6_1_age_int)$estimate$typicality_condition_c_age_mo_c`, `r apa_print(m_5_6_1_age_int)$statistic$typicality_condition_c_age_mo_c`).
+
+##### Continuous effect of target AND distractor typicality
+
+```{r}
+m_5_6_1_continuous_td <- lmer(mean_target_looking_critical ~ 1 + target_typicality_z * distractor_typicality_z + mean_target_looking_baseline +
+            (1+target_typicality_z : distractor_typicality_z|sub_num) +
+            (1|target_category),
+          data=trial_corrected_accuracy,control=lmerControl(optimizer="bobyqa"))
+summary(m_5_6_1_continuous_td)
+confint(m_5_6_1_continuous_td,method="Wald")
+check_collinearity(m_5_6_1_continuous_td)
+#there is some concerning multicollinearity for the main effects of target and distractor typicality
+```
+
+Finally, we investigated the influence of both target and distractor typicality using z-scored adult typicality ratings.
+We fit a linear mixed-effects model predicting proportion target looking during the critical window from target typicality ratings (z-scored), distractor typicality ratings (z-scored), and their interaction, while also controlling for proportion target looking during the baseline window. 
+The model included by-participant and by-item random effects, as well as by-participant random slope for the interaction between target and distractor typicality (more complex random effects structures yielded a singular fit, albeit with comparable results).
+There was an interaction between target and distractor typicality, `r apa_print(m_5_6_1_continuous_td)$estimate$target_typicality_z_distractor_typicality_z`, `r apa_print(m_5_6_1_continuous_td)$statistic$target_typicality_z_distractor_typicality_z`.
+Proportion target looking during the critical window increased as distractor typicality increased (`r apa_print(m_5_6_1_continuous_td)$estimate$distractor_typicality_z`, `r apa_print(m_5_6_1_continuous_td)$statistic$distractor_typicality_z`), and this effect was larger when the target was more atypical (see Figure below).
+
+```{r}
+# figure explaining the interaction
+p1 <- ggplot(trial_corrected_accuracy,aes(target_typicality_z,mean_target_looking_baseline))+
+    geom_point(aes(color=condition),alpha=0.2)+
+    geom_hline(yintercept=0.5, linetype="dashed")+
+    geom_smooth(method="lm",color="black")+
+  facet_wrap(~condition,scales = "free")+
+  scale_color_manual(values=pal[c(3,4)])+
+  xlab("Target Typicality (z-scored adult ratings)")+
+  ylab("Mean Prop Target Looking\nBaseline Window")+
+  theme(legend.position="none")
+p2 <- ggplot(trial_corrected_accuracy,aes(distractor_typicality_z,mean_target_looking_baseline))+
+    geom_point(aes(color=condition),alpha=0.2)+
+    geom_hline(yintercept=0.5, linetype="dashed")+
+    geom_smooth(method="lm",color="black")+
+  facet_wrap(~condition,scales = "free")+
+  scale_color_manual(values=pal[c(3,4)])+
+  xlab("Distractor Typicality (z-scored adult ratings)")+
+  ylab("Mean Prop Target Looking\nBaseline Window")+
+  theme(legend.position="none")
+p3 <- ggplot(trial_corrected_accuracy,aes(target_typicality_z,mean_target_looking_critical))+
+    geom_point(aes(color=condition),alpha=0.2)+
+    geom_hline(yintercept=0.5, linetype="dashed")+
+    geom_smooth(method="lm",color="black")+
+  facet_wrap(~condition,scales = "free")+
+  scale_color_manual(values=pal[c(3,4)])+
+  xlab("Target Typicality (z-scored adult ratings)")+
+  ylab("Mean Prop Target Looking\nCritical Window")+
+  theme(legend.position="none")
+p4 <- ggplot(trial_corrected_accuracy,aes(distractor_typicality_z,mean_target_looking_critical))+
+    geom_point(aes(color=condition),alpha=0.2)+
+    geom_hline(yintercept=0.5, linetype="dashed")+
+    geom_smooth(method="lm",color="black")+
+  facet_wrap(~condition,scales = "free")+
+  scale_color_manual(values=pal[c(3,4)])+
+  xlab("Distractor Typicality (z-scored adult ratings)")+
+  ylab("Mean Prop Target Looking\nCritical Window")+
+  theme(legend.position="none")
+
+(p1+p2)/(p3+p4)+
+  plot_annotation(tag_levels = 'A')+
+  theme(plot.tag = element_text(size = 18))
+ggsave(here::here("..","figures","interaction_continuous_distractor_typicality_window.png"),width=10.5,height=9,bg = "white")
+```
+
+#### 5.6.2. Predicting target looking from the interaction of trial window and typicality
+
+##### Typicality Condition * Trial Window interaction
+
+```{r}
+#pivot the dataset longer to incorporate trial window as a predictor
+trial_corrected_accuracy_long_window <- trial_corrected_accuracy %>%
+  ungroup() %>%
+  #pivot longer 
+  pivot_longer(cols=c(mean_target_looking_baseline,mean_target_looking_critical),names_to = "trial_window",values_to = "prop_target_looking") %>%
+  #clean up trial window
+  mutate(trial_window=str_remove(trial_window,"mean_target_looking_")) %>%
+  mutate(trial_window_c = case_when(
+    trial_window=="critical" ~ 0.5,
+    trial_window=="baseline" ~ -0.5))
+
+# fit a linear mixed-effects model predicting proportion target looking from the interaction of trial window and typicality
+#the model had singular fits when including additional random slopes for typicality condition and/or trial window (though results were qualitatively equivalent)
+m_5_6_2 <- lmer(prop_target_looking ~ 1 + typicality_condition_c*trial_window_c +
+            (1|sub_num) +
+            (1+trial_window_c|target_category),
+          data=trial_corrected_accuracy_long_window)
+summary(m_5_6_2)
+confint(m_5_6_2,method="Wald")
+```
+
+We fit a linear mixed-effects model predicting proportion target looking from trial window (baseline vs. critical; centered), typicality condition (centered), and their interaction.
+We included by-participant and by-word random intercepts.
+We also included a by-word random slope for trial window (more complex random effects structures yielded singular fits).
+There was a significant effect of trial window, `r apa_print(m_5_6_2)$estimate$trial_window_c`, `r apa_print(m_5_6_2)$statistic$trial_window_c`, indicating successful word recognition (i.e., proportion target looking increased for the critical window compared to the baseline window)
+However, as in the main analyses, we found no significant trial window by typicality interaction, `r apa_print(m_5_6_2)$estimate$typicality_condition_c_trial_window_c`, `r apa_print(m_5_6_2)$statistic$typicality_condition_c_trial_window_c`.
+
+```{r}
+# Figure
+# summarize average accuracy within participant
+subj_corrected_target_looking_by_window <- trial_corrected_accuracy_long_window  %>%
+  group_by(sub_num, condition,trial_window) %>%
+  summarize(N=n(),
+            average_prop_target_looking=mean(prop_target_looking,na.rm=TRUE)
+  )
+#then summarize across participants
+avg_corrected_target_looking_by_window <- subj_corrected_target_looking_by_window  %>%
+  group_by(condition,trial_window) %>%
+  summarize(N=n(),
+            mean_prop_target_looking=mean(average_prop_target_looking,na.rm=TRUE),
+            ci=qt(0.975, N-1)*sd(average_prop_target_looking,na.rm=T)/sqrt(N),
+            lower_ci=mean_prop_target_looking-ci,
+            upper_ci=mean_prop_target_looking+ci
+  )
+
+#Create a plot
+set.seed(1)
+jitterer <- position_jitter(width = .05,seed=1)
+overall_typicality_trial_window_plot <- ggplot(subj_corrected_target_looking_by_window,aes(x=trial_window,y=average_prop_target_looking, fill=trial_window))+
+  geom_half_violin(data=filter(subj_corrected_target_looking_by_window, trial_window=="baseline"),position = position_nudge(x = -.1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="l")+
+  geom_half_violin(data=filter(subj_corrected_target_looking_by_window, trial_window=="critical"),position = position_nudge(x = .1, y = 0), width=1,trim = FALSE, alpha = .8,color=NA,side="r")+
+  geom_path(aes(group=sub_num),color="black",fill=NA,alpha=0.15,size=0.75,position=jitterer)+
+  geom_point(aes(color=trial_window,group=sub_num), size = 1.5, alpha=0.15,position=jitterer)+
+  geom_point(data=avg_corrected_target_looking_by_window,aes(y=mean_prop_target_looking),color="black",size=3)+
+  geom_line(data=avg_corrected_target_looking_by_window,aes(y=mean_prop_target_looking,group=1),color="black",size=1.5)+
+  geom_errorbar(data=avg_corrected_target_looking_by_window,aes(y=mean_prop_target_looking,ymin=lower_ci,ymax=upper_ci),width=0,size=1.2,color="black")+
+  geom_hline(yintercept=0.5,linetype="dashed")+
+  theme(legend.position="none")+
+  xlab("Trial Window")+
+  ylab("Proportion Target Looking")+
+  theme(axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=14),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        strip.text.x = element_text(size = 16,face="bold"))+
+  facet_wrap(~condition)
+
+
+overall_typicality_trial_window_plot
+ggsave(here::here("..","figures","trial_window_prop_looking_by_typicality.png"),width=7,height=6,bg = "white")
+
+```
+
+##### Continuous typicality ratings * Trial Window
+
+```{r}
+m_5_6_2_continuous <- lmer(prop_target_looking ~ 1 + target_typicality_z*trial_window_c +
+            (1|sub_num) +
+            (1+trial_window_c|target_category),
+          data=trial_corrected_accuracy_long_window)
+summary(m_5_6_2_continuous)
+confint(m_5_6_2_continuous,method="Wald")
+```
+
+Similarly, there was no significant interaction between trial window and typicality when treating typicality as a continuous predictor (based on z-scored adult ratings), `r apa_print(m_5_6_2_continuous)$estimate$target_typicality_z_trial_window_c`, `r apa_print(m_5_6_2_continuous)$statistic$target_typicality_z_trial_window_c`.
+
+##### Age * Typicality * Trial Window Interaction
+
+```{r}
+m_5_6_2_age_int <- lmer(prop_target_looking ~ 1 + typicality_condition_c*trial_window_c*age_mo_c +
+            (1|sub_num) +
+            (1+trial_window_c|target_category),
+          data=trial_corrected_accuracy_long_window)
+summary(m_5_6_2_age_int)
+confint(m_5_6_2_age_int,method="Wald")
+```
+
+There was also no three-way interaction between age, trial window, and typicality, `r apa_print(m_5_6_2_age_int)$estimate$typicality_condition_c_trial_window_c_age_mo_c`, `r apa_print(m_5_6_2_age_int)$statistic$typicality_condition_c_trial_window_c_age_mo_c`.
+Note that, consistent with alternative analytic strategies, there was a significant age by trial window interaction, suggesting that word recognition improved with age, `r apa_print(m_5_6_2_age_int)$estimate$trial_window_c_age_mo_c`, `r apa_print(m_5_6_2_age_int)$statistic$trial_window_c_age_mo_c`.
+
+Below is a quick and dirty plot depicting the age effect
+
+```{r}
+#quick plot of the age effect
+ggplot(trial_corrected_accuracy_long_window, aes(age_mo,prop_target_looking,color=trial_window,linetype=condition))+
+  geom_hline(yintercept=0.5,linetype="dashed")+
+  geom_smooth(method="loess")
+```
+
+##### Continuous effect of target AND distractor typicality w/ trial window
+
+```{r}
+m_5_6_2_continuous_td <- lmer(prop_target_looking ~ 1 + target_typicality_z*distractor_typicality_z*trial_window_c +
+            (1|sub_num) +
+            (1+trial_window_c|target_category),
+          data=trial_corrected_accuracy_long_window)
+summary(m_5_6_2_continuous_td)
+confint(m_5_6_2_continuous_td,method="Wald")
+```
+
+In order to explore the influence of both target and distractor typicality (analogously to the analyses in 5.3.), we fit a model including the interaction between continuous target image typicality (adult norms, z-scored), continuous distractor image typicality (adult norms, z-scored), trial window (centered), and their interaction. 
+The model included by-participant and by-word random intercepts, as well as a by-word random slope for trial window. 
+There was a significant three-way interaction between target typicality, distractor typicality, and trial window, `r apa_print(m_5_6_2_continuous_td)$estimate$target_typicality_z_distractor_typicality_z_trial_window_c`, `r apa_print(m_5_6_2_continuous_td)$statistic$target_typicality_z_distractor_typicality_z_trial_window_c`.
+There was a significant overall effect of distractor typicality on target looking, `r apa_print(m_5_6_2_continuous_td)$estimate$distractor_typicality_z`, `r apa_print(m_5_6_2_continuous_td)$statistic$distractor_typicality_z`, and this effect was stronger when the target was more atypical, `r apa_print(m_5_6_2_continuous_td)$estimate$target_typicality_z_distractor_typicality_z`, `r apa_print(m_5_6_2_continuous_td)$statistic$target_typicality_z_distractor_typicality_z`.
+The three-way interaction indicates that this interaction between distractor and target typicality was stronger in the critical window than in the baseline window, i.e., target looking increased as distractor typicality increased, and this effect was stronger in the critical window than in the baseline window when the target was atypical.
+
 
 ## Session Info
 

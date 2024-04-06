@@ -17,6 +17,7 @@ library(tidyverse)
 library(here)
 library(readxl)
 library(eyetrackingR)
+source("resampling_helper.R")
 
 knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
 ```
@@ -42,56 +43,57 @@ In this script, we focus on the cluster-based permutation analysis.
 
 In order to plot participants' average proportion looking to the target across the trial, we smooth/ resample time. This is necessary when plotting the timecourses given the variable sampling rate in the data (otherwise the mean observations "jump around" due to varying contributing data composition at different time points).
 
-```{r}
-target_ms_per_frame=1000/15
-#adapted from: https://github.com/langcog/peekds/blob/master/R/generate_aoi.R
-resample_trial <- function(df_trial) {
-  t_origin <- df_trial$time_normalized_corrected
-  data_origin <- df_trial$accuracy_transformed
-
-  # create the new timestamps for resampling
-  t_start <- min(t_origin) - (min(t_origin) %% target_ms_per_frame)
-  t_resampled <- seq(from = t_start, to = max(t_origin),
-                     by = target_ms_per_frame)
-
-  # exchange strings values with integers for resampling
-  # this step critical for interpolating missing vals quickly and correctly
-  aoi_num <- data_origin %>%
-    dplyr::recode(.missing = 2) #recode NA as 2
-    
-  # start resampling with approx
-  aoi_resampled <- stats::approx(x = t_origin, y = aoi_num, xout = t_resampled,
-                                 method = "constant", rule = 2,
-                                 ties = "ordered")$y
-  aoi_resampled_recoded <- aoi_resampled %>%
-    dplyr::recode("0"="0","1"="1","2" = "missing") %>%
-    as.numeric()
-
-  # adding back the columns to match schema
-  dplyr::tibble(time_normalized_corrected = t_resampled,
-                accuracy_transformed = aoi_resampled_recoded,
-                sub_num_session_order_trial_number = df_trial$sub_num_session_order_trial_number[1],
-                sub_num = df_trial$sub_num[1])
-}
-
+```{r message=FALSE, warning=FALSE, results=FALSE}
+target_ms_per_frame <- 1000/15
+#resample times
 d_resampled <- d %>%
-  dplyr::mutate(sub_num_session_order_trial_number = paste(.data$sub_num,.data$session,.data$trial_order,
-                                           .data$trial_number, sep = "_")) %>%
-      split(.$sub_num_session_order_trial_number) %>%
-      purrr::map_df(resample_trial) %>%
-      dplyr::arrange(.data$sub_num, .data$sub_num_session_order_trial_number)
+  #rename and transform variables for resampling function
+  mutate(
+    aoi = case_when(
+      accuracy_transformed == 1 ~ "target",
+      accuracy_transformed == 0 ~ "distractor",
+      is.na(accuracy_transformed) ~ "other"
+    )
+  ) %>%
+  mutate(t_norm=time_normalized_corrected,
+         trial_id = trial_number,
+         administration_id = paste(sub_num,session,trial_order,sep="_")) %>%
+  resample_times(sample_duration=target_ms_per_frame) #time resampling is set to 15 Hz
+```
 
+
+```{r}
+#clean up resampled data
+d_resampled_clean <- d_resampled %>%
+  mutate(
+    accuracy_transformed = case_when(
+      aoi == "target" ~ 1,
+      aoi == "distractor" ~ 0,
+      aoi == "other" ~ NA
+    )
+  ) %>%
+  separate(administration_id,into=c("exp_name","sub_number","session","trial_order"),sep="_",remove=F) %>%
+  unite(sub_num,exp_name,sub_number,sep="_") %>%
+  rename(trial_number=trial_id) %>%
+  rename(time_normalized_corrected=t_norm) %>%
+  mutate(session=as.numeric(session)) %>%
+  mutate(time_normalized_corrected =round(time_normalized_corrected,0)) %>%
+  select(-administration_id,-aoi) %>%
+  select(sub_num,session,trial_order,trial_number,time_normalized_corrected,accuracy_transformed)
+  
+#check number of rows to make sure resampling rate is correct
+nrow(d_resampled_clean)
+
+#extract key information from full dataset
 d_info <- d %>%
   select(-time_normalized_corrected,-accuracy_transformed) %>%
   distinct(sub_num, exclude_participant, trial_exclusion,trial_exclusion_reason,useable_window, age,age_mo, child_gender, condition, session,trial_order,trial_number,target_image,target_typicality_z)
 
-d_resampled <- d_resampled %>%
-  separate(sub_num_session_order_trial_number,into=c("exp_name","sub_number","session","trial_order","trial_number"),sep="_",remove=F) %>%
-  mutate(session=as.numeric(session),trial_number=as.numeric(trial_number)) %>%
-  left_join(d_info) %>%
-  mutate(time_normalized_corrected =round(time_normalized_corrected,0))
-
-write_csv(d_resampled,resampled_data_write_path)
+#join with resampled data
+d_resampled_clean <- d_resampled_clean %>%
+  left_join(d_info)
+  
+write_csv(d_resampled_clean,resampled_data_write_path)
 ```
 
 ### Timecourse analysis - cluster-based permutation analysis
@@ -99,7 +101,7 @@ write_csv(d_resampled,resampled_data_write_path)
 Next, we prepare the data for use with the eyetrackingR package
 
 ```{r}
-d_eyetrackingr <- d_resampled %>%
+d_eyetrackingr <- d_resampled_clean %>%
   filter(exclude_participant==0) %>%
   filter(useable_window==1) %>% # I think it would be safe to remove this
   filter(trial_exclusion==0) %>%
@@ -177,16 +179,16 @@ summary(clust_analysis)
 
 <!-- Test Type:	 t.test  -->
 <!-- Predictor:	 condition  -->
-<!-- Formula:	 Pair(Prop[condition == "atypical"], Prop[condition == "typical"]) ~      1  -->
+<!-- Formula:	 Prop ~ condition  -->
 <!-- Null Distribution   ======  -->
-<!--  Mean:		 0.13  -->
-<!--  2.5%:		 -16.2735  -->
-<!-- 97.5%:		 16.8198  -->
+<!--  Mean:		 -0.4905  -->
+<!--  2.5%:		 -17.8957  -->
+<!-- 97.5%:		 15.5683  -->
 <!-- Summary of Clusters ====== -->
 <!--   Cluster Direction SumStatistic StartTime EndTime Probability -->
-<!-- 1       1  Negative    -7.068782         0     300        0.28 -->
+<!-- 1       1  Negative    -4.665038         0     200       0.379 -->
 
-In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-300ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.27.
+In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-200ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.36.
 
 ### Exploratory Analysis: cluster-based permutation analysis with reduced window (300-2800 ms)
 

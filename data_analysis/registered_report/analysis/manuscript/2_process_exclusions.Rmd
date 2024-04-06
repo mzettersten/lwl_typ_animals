@@ -228,15 +228,15 @@ We assessed technical concerns on the level of the trial and then subsequently e
 We excluded trials for which experiment logs indicated some form of technical issue (unusual recording or audio times) or that parents paused the trial.
 
 ```{r}
-  #trial exclusions for unusual timing issues and/or pauses
+#trial exclusions for unusual timing issues and/or pauses
 technical_trial_issues <- d %>%
-  distinct(sub_num,session,trial_order,trial_number,pauseStudy,video_capture_time,audio_time,framerate) %>%
+  distinct(sub_num,session,trial_order,trial_number,pauseStudy,video_capture_time,audio_time_s,framerate) %>%
   mutate(
   exclude_technical_issue = case_when(
     !is.na(pauseStudy) ~ 1,
     video_capture_time>10 ~ 1,
     video_capture_time<4 ~ 1,
-    audio_time>10 ~ 1,
+    audio_time_s>10 ~ 1,
     TRUE ~ 0
   ),
   #mirror exclusion assignment
@@ -244,7 +244,7 @@ technical_trial_issues <- d %>%
     !is.na(pauseStudy) ~ "study paused",
     video_capture_time>10 ~ "unusually long trial",
     video_capture_time<4 ~ "unusually short trial",
-    audio_time>10 ~ "unusual audio time"
+    audio_time_s>10 ~ "unusual audio time"
     )
 )
 ```
