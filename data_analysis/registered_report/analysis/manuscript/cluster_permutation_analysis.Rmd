@@ -19,6 +19,8 @@ library(readxl)
 library(eyetrackingR)
 source("resampling_helper.R")
 
+set.seed(24)
+
 knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE)
 ```
 
@@ -26,10 +28,8 @@ knitr::opts_chunk$set(cache = FALSE, warn = FALSE,warning=FALSE, message = FALSE
 
 ```{r}
 #set paths
-#data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_with_exclusion_info.csv")
-#resampled_data_write_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_resampled.csv")
-data_file_path <- here::here("/Users/martincz/Documents/Madison/InfantLearningLab/CATegories/lookit_video_coding/exp2/analysis/manuscript","..","..","data","processed_data","CATegories_exp2_processed_data_with_exclusion_info.csv")
-resampled_data_write_path <- here::here("/Users/martincz/Documents/Madison/InfantLearningLab/CATegories/lookit_video_coding/exp2/analysis/manuscript","..","..","data","processed_data","CATegories_exp2_processed_data_resampled.csv")
+data_file_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_with_exclusion_info.csv")
+resampled_data_write_path <- here::here("..","..","data","processed_data","CATegories_exp2_processed_data_resampled.csv")
 
 #load data
 d <- read_csv(data_file_path) 
@@ -177,18 +177,18 @@ plot(clust_analysis) + theme_light()
 summary(clust_analysis)
 ```
 
-<!-- Test Type:	 t.test  -->
-<!-- Predictor:	 condition  -->
-<!-- Formula:	 Prop ~ condition  -->
-<!-- Null Distribution   ======  -->
-<!--  Mean:		 -0.4905  -->
-<!--  2.5%:		 -17.8957  -->
-<!-- 97.5%:		 15.5683  -->
-<!-- Summary of Clusters ====== -->
-<!--   Cluster Direction SumStatistic StartTime EndTime Probability -->
-<!-- 1       1  Negative    -4.665038         0     200       0.379 -->
+<!-- ## Test Type:    t.test  -->
+<!-- ## Predictor:    condition  -->
+<!-- ## Formula:  Prop ~ condition  -->
+<!-- ## Null Distribution   ======  -->
+<!-- ##  Mean:        -0.3103  -->
+<!-- ##  2.5%:        -18.1421  -->
+<!-- ## 97.5%:        16.9134  -->
+<!-- ## Summary of Clusters ====== -->
+<!-- ##   Cluster Direction SumStatistic StartTime EndTime Probability -->
+<!-- ## 1       1  Negative    -4.665038         0     200       0.405 -->
 
-In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-200ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.36.
+In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-200ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.41.
 
 ### Exploratory Analysis: cluster-based permutation analysis with reduced window (300-2800 ms)
 
