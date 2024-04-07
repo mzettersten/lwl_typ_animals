@@ -361,7 +361,7 @@ avg_corrected_target_looking_by_category <- trial_corrected_accuracy  %>%
 
 #### 1.1.1.
 
-To investigate whether there was an effect of typicality on infants’ word recognition,we fit a linear mixed-effects model predicting average baseline-corrected proportion target looking from typicality condition (centered), including a by-participant random intercept. No random slope was included because the number of observations in the model would otherwise be equal to the number of random effects - however, a model with (overriding the lmer error message) or without typicality condition as a random slope yields identical results.
+To investigate whether there was an effect of typicality on infants’ word recognition, we fit a linear mixed-effects model predicting average baseline-corrected proportion target looking from typicality condition (centered), including a by-participant random intercept. No random slope was included because the number of observations in the model would otherwise be equal to the number of random effects - however, a model with (overriding the lmer error message) or without typicality condition as a random slope yields identical results.
 
 ```{r}
 avg_corrected_target_looking_by_typicality <- avg_corrected_target_looking_by_typicality %>%
@@ -467,7 +467,7 @@ typicality_effect_cohens_d <- cohens_d(avg_corrected_target_looking_by_typicalit
          paired=T)
 ```
 
-There was no significant effect of typicality, `r apa_print(m_1_1)$estimate$typicality_condition_c`, `r apa_print(m_1_1)$statistic$typicality_condition_c`, Cohen’s d=`r typicality_effect_cohens_d$Cohens_d`, 95% CI [`r typicality_effect_cohens_d$CI_low`,`r typicality_effect_cohens_d$CI_high`]. `r tost_results$decision$TOST`. We therefore could not reject the null hypothesis that the absolute effect size was at least as large as d=0.25.
+There was no significant effect of typicality, `r apa_print(m_1_1)$estimate$typicality_condition_c`, `r apa_print(m_1_1)$statistic$typicality_condition_c`, Cohen’s d=`r round(typicality_effect_cohens_d$Cohens_d,2)`, 95% CI [`r round(typicality_effect_cohens_d$CI_low,2)`,`r round(typicality_effect_cohens_d$CI_high,2)`]. `r tost_results$decision$TOST`. We therefore could not reject the null hypothesis that the absolute effect size was at least as large as d=0.25.
 
 #### 1.1.3
 
@@ -494,7 +494,7 @@ confint(m_1_1_3_atyp,method="Wald")
 atypical_cohens_d <-cohens_d(avg_corrected_target_looking_by_typicality$average_corrected_target_looking[avg_corrected_target_looking_by_typicality$condition=="atypical"])
 ```
 
-Infants robustly recognized the target words for both typical (Model: `r apa_print(m_1_1_3_typ)$estimate$Intercept`, `r apa_print(m_1_1_3_typ)$statistic$Intercept`; Cohen’s d = `r typical_cohens_d$Cohens_d`, 95% CI [`r typical_cohens_d$CI_low`,`r typical_cohens_d$CI_high`]; Mean baseline-corrected looking: M=`r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$corrected_target_looking,3)*100`%, 95% CI [`r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$lower_ci,3)*100`%, `r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$upper_ci,3)*100`%]) and atypical exemplars (Model: `r apa_print(m_1_1_3_atyp)$estimate$Intercept`, `r apa_print(m_1_1_3_atyp)$statistic$Intercept`; Cohen’s d = `r atypical_cohens_d$Cohens_d`, 95% CI [`r atypical_cohens_d$CI_low`,`r atypical_cohens_d$CI_high`]; Mean baseline-corrected looking: M=`r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$corrected_target_looking,3)*100`%, 95% CI [`r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$lower_ci,3)*100`%, `r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$upper_ci,3)*100`%]). 
+Infants robustly recognized the target words for both typical (Model: `r apa_print(m_1_1_3_typ)$estimate$Intercept`, `r apa_print(m_1_1_3_typ)$statistic$Intercept`; Cohen’s d = `r round(typical_cohens_d$Cohens_d,2)`, 95% CI [`r round(typical_cohens_d$CI_low,2)`,`r round(typical_cohens_d$CI_high,2)`]; Mean baseline-corrected looking: M=`r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$corrected_target_looking,3)*100`%, 95% CI [`r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$lower_ci,3)*100`%, `r round(filter(overall_corrected_target_looking_by_typicality,condition=="typical")$upper_ci,3)*100`%]) and atypical exemplars (Model: `r apa_print(m_1_1_3_atyp)$estimate$Intercept`, `r apa_print(m_1_1_3_atyp)$statistic$Intercept`; Cohen’s d = `r round(atypical_cohens_d$Cohens_d,2)`, 95% CI [`r round(atypical_cohens_d$CI_low,2)`,`r round(atypical_cohens_d$CI_high,2)`]; Mean baseline-corrected looking: M=`r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$corrected_target_looking,3)*100`%, 95% CI [`r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$lower_ci,3)*100`%, `r round(filter(overall_corrected_target_looking_by_typicality,condition=="atypical")$upper_ci,3)*100`%]). 
 
 ### 1.2
 
@@ -556,7 +556,7 @@ The model with the maximal random effects structure yielded a singular fit that 
 
 The cluster-based permutation analysis is executed in cluster_permutation_analysis.Rmd.
 
-In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-200ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.36.
+In the cluster-based permutation analyses, we found one cluster of adjacent time bins ranging from 0-200ms with |t|>2 (in the direction of higher accuracy for typical exemplars compared to atypical exemplars). However, this cluster did not reach significance in the permutation test, p=.41.
 
 ### Timecourse Plots {.tabset}
 
@@ -809,6 +809,7 @@ aim3_subject_info%>%
 m_3 <- lmer(corrected_target_looking ~ 1 + target_parent_typicality_rating_z + age_mo_c + (1|sub_num) + (1|target_category), trial_corrected_accuracy)
 
 summary(m_3)
+confint(m_3,method="Wald")
 
 m_3_tidy <- m_3 %>%
   summarize_mixed_effects_model()
@@ -1348,7 +1349,7 @@ confint(m_5_1_3,method="Wald")
 
 We also investigated whether including caregiver-reported exemplar typicality for both target and distractor (as well as their interaction) predicted baseline-corrected proportion target looking, and found no interaction (`r apa_print(m_5_1_3)$estimate$target_parent_typicality_rating_z_distractor_parent_typicality_rating_z`, `r apa_print(m_5_1_3)$statistic$target_parent_typicality_rating_z_distractor_parent_typicality_rating_z`) or evidence of significant main effects.
 
-### 5.2. Category and Item-level analysis
+### 5.2. Category and item-level analysis
 
 Next, we investigate category- (target word) and item-level (target image) variation in proportion target looking.
 
@@ -1860,7 +1861,7 @@ confint(m_1_2_red,method="Wald")
 
 The trial-level model also yields no significant typicality effect, `r apa_print(m_1_2_red)$estimate$typicality_condition_c`, `r apa_print(m_1_2_red)$statistic$typicality_condition_c`.
 
-### 5.6. Alternative Model Specifications for Baseline and Critical Window Looking
+### 5.6. Alternative model specifications for baseline and critical window looking
 
 We also considered alternative methods of specifying a regression model incorporating information about target looking during the baseline window and the critical window: predicting target looking during the critical window while controlling for baseline looking (5.6.1.) and predicting target looking from a model including the interaction between typicality and trial window (critical window vs. baseline window) (5.6.2.).
 
@@ -2055,7 +2056,7 @@ ggsave(here::here("..","figures","trial_window_prop_looking_by_typicality.png"),
 
 ```
 
-##### Continuous typicality ratings * Trial Window
+##### Continuous Typicality Ratings * Trial Window
 
 ```{r}
 m_5_6_2_continuous <- lmer(prop_target_looking ~ 1 + target_typicality_z*trial_window_c +
@@ -2108,6 +2109,9 @@ There was a significant three-way interaction between target typicality, distrac
 There was a significant overall effect of distractor typicality on target looking, `r apa_print(m_5_6_2_continuous_td)$estimate$distractor_typicality_z`, `r apa_print(m_5_6_2_continuous_td)$statistic$distractor_typicality_z`, and this effect was stronger when the target was more atypical, `r apa_print(m_5_6_2_continuous_td)$estimate$target_typicality_z_distractor_typicality_z`, `r apa_print(m_5_6_2_continuous_td)$statistic$target_typicality_z_distractor_typicality_z`.
 The three-way interaction indicates that this interaction between distractor and target typicality was stronger in the critical window than in the baseline window, i.e., target looking increased as distractor typicality increased, and this effect was stronger in the critical window than in the baseline window when the target was atypical.
 
+### 5.7. Predicting target looking from the visual similarity between target and distractor
+
+We also conducted an exploratory analysis investigating the degree to which the visual similarity between the target image and the distractor image affected infants’ word recognition. We predicted that recognizing the target should be more difficult (i.e., lower proportion looking to the target during the critical window) the more (visually) similar the distractor image was to the target image. To obtain an estimate of visual similarity between each target and distractor image pair, we used DreamSim (https://dreamsim-nights.github.io/; Fu et al., 2023) to generate predictions of perceptual distance between each image pair. In this metric, lower distance indicates higher perceptual similarity, i.e. the lower the distance between two images, the more similar they are. We then used this distance metric as a predictor in a linear mixed-effects model predicting trial-by-trial proportion target looking during the critical window. See the analysis script categories_dreamsim_distances.R for further details on the analyses.
 
 ## Session Info
 

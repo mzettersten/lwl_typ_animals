@@ -6,6 +6,8 @@ library(ggimage)
 library(harrietr) #need to have ggtree installed too, download from github if necessary
 #devtools::install_github("YuLab-SMU/ggtree")
 library(dendextend)
+library(patchwork)
+library(performance)
 
 #### HELPER FUNCTIONS ####
 
@@ -80,6 +82,12 @@ dream_distances <- read_csv(dream_data_path) %>%
 typicality_data <- read_csv(typicality_data_path) %>%
   select(final_image_name,mean_typicality,category, typicality_subjective)
 
+
+#### Validate the perceptual metric ####
+
+# Here, we create several visualizations of the perceptual distance 
+# to see the extent to which it is capturing (expected) visual similarity within and across categories well
+
 all_distance_data <- dream_distances %>%
   left_join(typicality_data, by=c("item1"="final_image_name")) %>%
   rename(mean_typicality1=mean_typicality,
@@ -101,7 +109,7 @@ dream_dist <- all_distance_data %>%
   nest() %>%
   mutate(dist_obj = purrr::map(data, long_to_dist))
 
-#### create overall cluster objects ####
+#### create overall cluster objects
 dream_clusters <- dream_dist %>%
   mutate(cluster=lapply(dist_obj, function(d) clean_cluster(d))) %>%
   mutate(dend = lapply(cluster, function(clst) clst %>% as.dendrogram()))
@@ -119,7 +127,7 @@ dream_dist_by_cat <- all_distance_data %>%
   nest() %>%
   mutate(dist_obj = purrr::map(data, long_to_dist))
 
-#### create overall cluster objects ####
+#### create overall cluster objects by category
 dream_clusters_by_cat <- dream_dist_by_cat %>%
   mutate(cluster=lapply(dist_obj, function(d) clean_cluster(d))) %>%
   mutate(dend = lapply(cluster, function(clst) clst %>% as.dendrogram()))
@@ -196,17 +204,24 @@ m <- lmer(mean_target_looking_critical ~ 1 + distance_c + mean_target_looking_ba
             (1+distance_c|sub_num)+
             (1|target_category),
           data=trial_corrected_accuracy)
-summary(m) # barely significant effect of distance
+summary(m) # significant effect of distance
 
 #effect holds when controlling for target and distractor typicality
-m <- lmer(mean_target_looking_critical ~ 1 + distance_c + distractor_typicality_z*target_ mean_target_looking_baseline+
+m <- lmer(mean_target_looking_critical ~ 1 + distance_c + distractor_typicality_z*target_typicality_z + mean_target_looking_baseline+
             (1+distance_c|sub_num)+
             (1|target_category),
           data=trial_corrected_accuracy)
-summary(m) # barely significant effect of distance
+summary(m) # significant effect of distance
+confint(m,method="Wald")
+check_collinearity(m) # no worrying multicollinearity associated with distance, though SEs for target and distractor typicality are inflated, as in other models
 
 # looks to be a small (but potentially intriguing) effect
-ggplot(trial_corrected_accuracy,aes(distance,corrected_target_looking))+
+p1 <- ggplot(trial_corrected_accuracy,aes(distance,mean_target_looking_baseline))+
   geom_point()+
-  geom_smooth(method="loess")+
+  geom_smooth(method="lm")+
   facet_wrap(~target_category)
+p2 <- ggplot(trial_corrected_accuracy,aes(distance,mean_target_looking_critical))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  facet_wrap(~target_category)
+p1+p2
