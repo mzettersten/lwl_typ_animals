@@ -359,7 +359,7 @@ avg_corrected_target_looking_by_category <- trial_corrected_accuracy  %>%
 
 ### 1.1 {.tabset}
 
-#### 1.1.1.
+#### 1.1.1
 
 To investigate whether there was an effect of typicality on infants’ word recognition, we fit a linear mixed-effects model predicting average baseline-corrected proportion target looking from typicality condition (centered), including a by-participant random intercept. No random slope was included because the number of observations in the model would otherwise be equal to the number of random effects - however, a model with (overriding the lmer error message) or without typicality condition as a random slope yields identical results.
 
